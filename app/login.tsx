@@ -1,24 +1,10 @@
-import { View, Text, StyleSheet } from "react-native";
 import React from "react";
+import { View, Text } from "react-native";
 
 export default function Login() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🔐 Login Screen</Text>
+    <View style={{ flex:1, alignItems:"center", justifyContent:"center" }}>
+      <Text style={{ fontSize:22 }}>🔐 Login Screen</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F9FAFB",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#1D446C",
-  },
-});
