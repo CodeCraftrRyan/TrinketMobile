@@ -1,11 +1,12 @@
-import { View, Text, Button } from 'react-native';
-import { supabase } from '../lib/supabase';
+import { View, Text, Pressable } from "react-native";
 
 export default function Home() {
   return (
-    <View style={{ padding: 24 }}>
-      <Text>Home — logged in ✅</Text>
-      <Button title="Log out" onPress={() => supabase.auth.signOut()} />
+    <View className="flex-1 bg-bg items-center justify-center">
+      <Text className="text-text text-2xl mb-6">Tailwind Works!</Text>
+      <Pressable className="bg-primary px-4 py-3 rounded-md">
+        <Text className="text-white">Button</Text>
+      </Pressable>
     </View>
   );
 }

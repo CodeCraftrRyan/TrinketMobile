@@ -1,10 +1,24 @@
-import React from "react";
-import { View, Text } from "react-native";
+import { Text, View, Button } from 'react-native';
+import Screen from '../../components/Screen';
 
 export default function Items() {
+  // placeholder list
+  const items: any[] = [];
+
   return (
-    <View style={{ flex:1, alignItems:"center", justifyContent:"center" }}>
-      <Text style={{ fontSize:22 }}>📦 Items (coming soon)</Text>
-    </View>
+    <Screen>
+      <Text style={{ fontSize: 20, fontWeight: '600' }}>Your Items</Text>
+
+      {items.length === 0 ? (
+        <View style={{ padding: 12, borderWidth: 1, borderRadius: 8 }}>
+          <Text style={{ marginBottom: 8 }}>No items yet.</Text>
+          <Button title="Add your first item" onPress={() => { /* TODO: open form */ }} />
+        </View>
+      ) : (
+        <View style={{ gap: 8 }}>
+          {/* map items here later */}
+        </View>
+      )}
+    </Screen>
   );
 }

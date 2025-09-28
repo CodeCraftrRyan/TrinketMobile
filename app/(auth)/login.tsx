@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, TextInput, Button, Text, Alert } from 'react-native';
+import { View, TextInput, Pressable, Text, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 
@@ -15,24 +15,52 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       router.replace('/');
-    } catch (e:any) {
-      Alert.alert('Login failed', e.message ?? 'Check email/password');
+    } catch (e: any) {
+      Alert.alert('Login failed', e?.message ?? 'Check email/password');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <View style={{ padding: 24, gap: 12 }}>
-      <Text style={{ fontSize: 24, fontWeight: '600' }}>Welcome back</Text>
-      <TextInput placeholder="Email" autoCapitalize="none" keyboardType="email-address"
-        value={email} onChangeText={setEmail} style={{ borderWidth: 1, padding: 12, borderRadius: 8 }}/>
-      <TextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword}
-        style={{ borderWidth: 1, padding: 12, borderRadius: 8 }}/>
-      <Button title={loading ? 'Logging in…' : 'Log in'} onPress={onLogin} disabled={loading}/>
-      <Text>No account? <Link href="/(auth)/signup">Sign up</Link></Text>
-      <Text>Forgot your password? <Link href="/(auth)/forgot">Reset it</Link>
-      </Text>
+    <View className="flex-1 bg-bg p-4">
+      <View className="bg-card rounded-md p-4 border border-border gap-3">
+        <Text className="text-text text-xl font-semibold">Welcome back</Text>
+
+        <TextInput
+          placeholder="Email"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+          placeholderTextColor="#9CA3AF"
+          className="border border-border rounded-md px-3 py-3 text-text"
+        />
+
+        <TextInput
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          placeholderTextColor="#9CA3AF"
+          className="border border-border rounded-md px-3 py-3 text-text"
+        />
+
+        <Pressable
+          onPress={onLogin}
+          disabled={loading}
+          className={`bg-primary rounded-md px-4 py-3 ${loading ? 'opacity-50' : ''}`}
+        >
+          <Text className="text-white text-base text-center">{loading ? 'Logging in…' : 'Log in'}</Text>
+        </Pressable>
+
+        <Text className="text-muted">
+          No account? <Link href="/(auth)/signup">Sign up</Link>
+        </Text>
+        <Text className="text-muted">
+          Forgot your password? <Link href="/(auth)/forgot">Reset it</Link>
+        </Text>
+      </View>
     </View>
   );
 }
