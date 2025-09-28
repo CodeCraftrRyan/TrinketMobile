@@ -10,8 +10,17 @@
     "paths": {
       "~/*": [
         "./*"
+      ],
+      "@/*": [
+        "./app/*"
       ]
-    }
+    },
+    "skipLibCheck": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "types": ["react-native", "expo", "expo-router"],
+    "allowJs": true,
+    "verbatimModuleSyntax": true
   },
   "include": [
     "**/*.ts",

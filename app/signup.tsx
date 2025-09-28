@@ -1,24 +1,32 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
-import { Link } from "expo-router";
 import { supabase } from "../lib/supabase";
 
-export default function Login() {
+export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  async function handleLogin() {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  async function handleSignup() {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: "https://jephwdsmehrmninpaggs.supabase.co"
+      }
+    });
     if (error) {
-      Alert.alert("Login failed", error.message);
+      Alert.alert("Sign up failed", error.message);
     } else {
-      Alert.alert("Success", "You are logged in!");
+      Alert.alert(
+        "Check your email",
+        "We sent a confirmation link. Open it to activate your account."
+      );
     }
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🔐 Login</Text>
+      <Text style={styles.title}>🆕 Create Account</Text>
       <TextInput
         placeholder="Email"
         value={email}
@@ -28,20 +36,13 @@ export default function Login() {
         style={styles.input}
       />
       <TextInput
-        placeholder="Password"
+        placeholder="Password (min 6 chars)"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
         style={styles.input}
       />
-      <Button title="Sign in" onPress={handleLogin} />
-
-      <View style={{ height: 12 }} />
-      <Link href="/signup">
-        <Text style={{ color: "#1D446C", textDecorationLine: "underline" }}>
-          Need an account? Sign up
-        </Text>
-      </Link>
+      <Button title="Sign up" onPress={handleSignup} />
     </View>
   );
 }
@@ -51,4 +52,3 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "bold", marginBottom: 20, color: "#1D446C" },
   input: { borderWidth: 1, borderColor: "#ccc", padding: 10, marginBottom: 12, borderRadius: 6 }
 });
- 

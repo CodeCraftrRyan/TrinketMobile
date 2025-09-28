@@ -42,7 +42,9 @@
       "router": {},
       "eas": {
         "projectId": "7c9c7896-eeb4-4c97-98e1-bf922c29424e"
-      }
+      },
+      "EXPO_PUBLIC_SUPABASE_URL": "https://jephwdsmehrmninpaggs.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplcGh3ZHNtZWhybW5pbnBhZ2dzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMjM4MjAsImV4cCI6MjA3MTg5OTgyMH0.aYFm_NKTxfZDcRPrZMFuZhBviSHduYzaoWtURMIBsTE"
     },
     "owner": "codecrftr"
   }
