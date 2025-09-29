@@ -1,4 +1,4 @@
-import { Text, Button, View } from 'react-native';
+import { Button, Text, View } from 'react-native';
 import Screen from '../../components/Screen';
 import { supabase } from '../../lib/supabase';
 

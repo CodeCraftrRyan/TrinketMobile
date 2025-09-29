@@ -1,25 +1,61 @@
-import "./app.css";
-import { Stack } from "expo-router";
-import { useFonts, Inter_400Regular, Inter_600SemiBold } from "@expo-google-fonts/inter";
-import { View, StatusBar } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Tabs } from "expo-router";
 
-export default function Layout() {
-  const [loaded] = useFonts({ Inter_400Regular, Inter_600SemiBold });
-  if (!loaded) return <View style={{ flex: 1, backgroundColor: "#0B0F14" }} />;
-
+export default function TabsLayout() {
   return (
-    <>
-      <StatusBar barStyle="light-content" />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: "#0B0F14" },
-          headerTintColor: "#E5E7EB",
-          headerTitleStyle: { fontFamily: "Inter_600SemiBold" },
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: "#FFFFFF",
+        tabBarInactiveTintColor: "#94A3B8",
+        tabBarStyle: { backgroundColor: "#0B0F14", borderTopColor: "#1F2937" },
+      }}
+    >
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" color={color} size={size} />
+          ),
         }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" />
-      </Stack>
-    </>
+      />
+      <Tabs.Screen
+        name="items"
+        options={{
+          title: "Items",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="albums-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="add"
+        options={{
+          title: "Add",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: "Search",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="search-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" color={color} size={size} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }

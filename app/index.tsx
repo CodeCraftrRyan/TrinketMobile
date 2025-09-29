@@ -1,7 +1,7 @@
-import { LinearGradient } from "expo-linear-gradient";
-import { View, Text, Pressable, Image } from "react-native";
-import { Link } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { LinearGradient } from "expo-linear-gradient";
+import { Link } from "expo-router";
+import { Pressable, Text, View } from "react-native";
 
 export default function Index() {
   return (
@@ -16,13 +16,13 @@ export default function Index() {
         <Ionicons name="cube-outline" size={92} color="#E5E7EB" />
 
         <Text
-          className="text-text text-3xl text-center"
+          className="text-white text-3xl text-center"
           style={{ fontFamily: "Inter_600SemiBold" }}
         >
           Trinket
         </Text>
         <Text
-          className="text-muted text-center"
+          className="text-white text-center"
           style={{ fontFamily: "Inter_400Regular" }}
         >
           Save, search, and organize your stuff.
@@ -41,14 +41,14 @@ export default function Index() {
           <Link href="/(auth)/login" asChild>
             <Pressable className="bg-card border border-border px-4 py-3 rounded-md"
               style={{ shadowColor:"#000", shadowOpacity:0.15, shadowRadius:8, elevation:4 }}>
-              <Text className="text-text" style={{ fontFamily: "Inter_400Regular" }}>Log in</Text>
+              <Text className="text-white" style={{ fontFamily: "Inter_400Regular" }}>Log in</Text>
             </Pressable>
           </Link>
 
           <Link href="/(auth)/signup" asChild>
             <Pressable className="bg-card border border-border px-4 py-3 rounded-md"
               style={{ shadowColor:"#000", shadowOpacity:0.15, shadowRadius:8, elevation:4 }}>
-              <Text className="text-text" style={{ fontFamily: "Inter_400Regular" }}>Sign up</Text>
+              <Text className="text-white" style={{ fontFamily: "Inter_400Regular" }}>Sign up</Text>
             </Pressable>
           </Link>
         </View>
