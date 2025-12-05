@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
-export default function About() {
+export default function Pricing() {
   const router = useRouter();
 
   return (
@@ -20,12 +20,16 @@ export default function About() {
       >
         <Text style={{ color: "#111827", fontWeight: "600" }}>← Back</Text>
       </TouchableOpacity>
+
       {/* Page content */}
-    <View style={{ flex:1, alignItems:"center", justifyContent:"center", padding:20 }}>
-      <Text style={{ fontSize:20, textAlign:"center" }}>
-        ℹ️ Trinket helps you save and remember your items.
+      <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 12 }}>
+        Pricing
       </Text>
-    </View>
+      <View style={{ gap: 10 }}>
+        <Text>Free – Basics</Text>
+        <Text>Pro – More items & export</Text>
+        <Text>Premium – Everything + priority support</Text>
+      </View>
     </ScrollView>
   );
 }

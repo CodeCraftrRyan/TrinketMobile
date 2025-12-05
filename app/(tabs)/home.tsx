@@ -5,8 +5,8 @@ import Screen from '../../components/Screen';
 export default function Home() {
   return (
     <Screen>
-      <Text style={{ fontSize: 22, fontWeight: '600' }}>Welcome to Trinket 👋</Text>
-      <Text>Quick actions</Text>
+      <Text style={{ fontSize: 22, fontWeight: '600' }}>Welcome to Trinket</Text>
+      <Text>Trinket helps you create a beautiful digital archive of your most meaningful possessions, preserving their stories and memories for generations to come.</Text>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Link href="/(tabs)/items">
           <Button title="View Items" />
