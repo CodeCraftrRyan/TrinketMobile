@@ -33,9 +33,9 @@ export default function SignUp() {
   }
 
   async function savePeopleAndFinish() {
-    const { error } = await supabase.auth.updateUser({ data: { people_list: people } });
-    if (error) throw error;
-    router.replace('/home');
+  const { error } = await supabase.auth.updateUser({ data: { people_list: people } });
+  if (error) throw error;
+  router.replace('/(tabs)/items');
   }
 
   function back() {
@@ -71,9 +71,9 @@ export default function SignUp() {
         await savePeopleAndFinish();
       } else {
         // Save empty list and finish
-        const { error } = await supabase.auth.updateUser({ data: { people_list: [] } });
-        if (error) throw error;
-        router.replace('/home');
+  const { error } = await supabase.auth.updateUser({ data: { people_list: [] } });
+  if (error) throw error;
+  router.replace('/(tabs)/items');
       }
     } catch (e: any) {
       Alert.alert('Could not finish onboarding', e?.message ?? 'Please try again');
@@ -110,7 +110,7 @@ export default function SignUp() {
           {step === 0 && (
             <View style={styles.centerWrap}>
               <Text style={styles.welcomeTitle}>Welcome!</Text>
-              <Text style={styles.subtitle}>Let's set up your profile.</Text>
+              <Text style={styles.subtitle}>Let’s set up your profile.</Text>
               <Pressable onPress={next} style={styles.primaryBtn}>
                 <Text style={styles.primaryBtnText}>Get Started</Text>
               </Pressable>
@@ -119,8 +119,8 @@ export default function SignUp() {
 
           {step === 1 && (
             <View style={styles.formWrap}>
-              <Text style={styles.bigTitle}>What's your name?</Text>
-              <Text style={styles.subtitle}>Let's get to know you.</Text>
+              <Text style={styles.bigTitle}>What’s your name?</Text>
+              <Text style={styles.subtitle}>Let’s get to know you.</Text>
               <TextInput
                 placeholder="First Name"
                 value={firstName}

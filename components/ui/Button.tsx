@@ -1,16 +1,50 @@
-import { Pressable, Text } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 
-export function Button({ title, onPress, disabled }: { title:string; onPress:() => void; disabled?:boolean }) {
+export function Button({ title, onPress, disabled, variant = 'primary' }: { title:string; onPress:() => void; disabled?:boolean; variant?: 'primary' | 'ghost' }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      className={`bg-primary rounded-md px-4 py-3 ${disabled ? "opacity-50" : ""}`}
-      style={{ shadowColor:"#000", shadowOpacity:0.25, shadowRadius:10, shadowOffset:{width:0,height:6}, elevation:5 }}
+      style={[variant === 'primary' ? styles.button : styles.ghost, disabled && styles.disabled]}
     >
-      <Text className="text-white text-base text-center" style={{ fontFamily: "Inter_600SemiBold" }}>
-        {title}
-      </Text>
+      <Text style={[variant === 'primary' ? styles.text : styles.ghostText]}>{title}</Text>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    backgroundColor: '#0B1220',
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  ghost: {
+    backgroundColor: 'transparent',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#0B1220',
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  text: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  ghostText: {
+    color: '#0B1220',
+    fontWeight: '700',
+  },
+});

@@ -13,9 +13,10 @@ export default function Login() {
   async function onLogin() {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      router.replace('/');
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  // After login, go to items (dashboard removed)
+  router.replace('/(tabs)/items');
     } catch (e: any) {
       Alert.alert('Login failed', e?.message ?? 'Check email/password');
     } finally {
