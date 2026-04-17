@@ -2,23 +2,39 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-// import { supabase } from "../lib/supabase"; // <- hook up later
+import BrandHeader from '../components/ui/BrandHeader';
+import { supabase } from "../lib/supabase";
 
 export default function NewEvent() {
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [date, setDate] = useState(""); // e.g. 2025-10-05
-  const [notes, setNotes] = useState("");
+  const [name, setName] = useState("");
+  const [eventDate, setEventDate] = useState(""); // e.g. 2025-10-05
+  const [description, setDescription] = useState("");
+  const [coverPhotoUrl, setCoverPhotoUrl] = useState("");
+  const [peopleList, setPeopleList] = useState(""); // comma-separated
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function save() {
-    if (!title || !date) return Alert.alert("Missing info", "Title and date are required.");
+    if (!name || !eventDate) return Alert.alert("Missing info", "Event name and date are required.");
     try {
       setSaving(true);
-      // TODO: connect to Supabase later
-      // await supabase.from("events").insert({ title, date, notes });
-      Alert.alert("Saved", "Event created (placeholder).");
+      const { error } = await supabase.from("events").insert({
+        name,
+        event_date: eventDate,
+        description,
+        cover_photo_url: coverPhotoUrl || null,
+        people_list: peopleList ? peopleList.split(",").map(s => s.trim()) : [],
+        start_date: startDate || null,
+        end_date: endDate || null,
+        // Optionally: add user_id
+      });
+      if (error) throw error;
+      Alert.alert("Saved", "Event created.");
       router.back();
+    } catch (e: any) {
+      Alert.alert("Error", e.message || "Could not create event.");
     } finally {
       setSaving(false);
     }
@@ -26,30 +42,65 @@ export default function NewEvent() {
 
   return (
     <View style={styles.page}>
+      <BrandHeader style={{ marginBottom: 12 }} />
       <Text style={styles.h1}>New Event</Text>
+
+
 
       <TextInput
         style={styles.input}
-        placeholder="Title"
-        value={title}
-        onChangeText={setTitle}
-        placeholderTextColor="#9CA3AF"
+        placeholder="Event Name"
+        value={name}
+        onChangeText={setName}
+  placeholderTextColor="#4A7A9B"
       />
 
       <TextInput
         style={styles.input}
-        placeholder="Date (YYYY-MM-DD)"
-        value={date}
-        onChangeText={setDate}
-        placeholderTextColor="#9CA3AF"
+        placeholder="Event Date (YYYY-MM-DD)"
+        value={eventDate}
+        onChangeText={setEventDate}
+  placeholderTextColor="#4A7A9B"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Start Date (YYYY-MM-DD, optional)"
+        value={startDate}
+        onChangeText={setStartDate}
+  placeholderTextColor="#4A7A9B"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="End Date (YYYY-MM-DD, optional)"
+        value={endDate}
+        onChangeText={setEndDate}
+  placeholderTextColor="#4A7A9B"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Cover Photo URL (optional)"
+        value={coverPhotoUrl}
+        onChangeText={setCoverPhotoUrl}
+  placeholderTextColor="#4A7A9B"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="People (comma separated, optional)"
+        value={peopleList}
+        onChangeText={setPeopleList}
+  placeholderTextColor="#4A7A9B"
       />
 
       <TextInput
         style={[styles.input, { height: 120, textAlignVertical: "top", paddingTop: 12 }]}
-        placeholder="Notes (optional)"
-        value={notes}
-        onChangeText={setNotes}
-        placeholderTextColor="#9CA3AF"
+        placeholder="Description (optional)"
+        value={description}
+        onChangeText={setDescription}
+  placeholderTextColor="#4A7A9B"
         multiline
       />
 
@@ -65,11 +116,11 @@ export default function NewEvent() {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: "#fff", padding: 16 },
-  h1: { fontSize: 24, fontWeight: "800", color: "#111827", marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: "#D1D5DB", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, color: "#111827", marginBottom: 10 },
-  primaryBtn: { backgroundColor: "#111827", borderRadius: 10, paddingVertical: 14, alignItems: "center", marginTop: 6 },
+  page: { flex: 1, backgroundColor: "#F7FAFB", padding: 16 },
+  h1: { fontSize: 24, fontWeight: "800", color: "#0C1620", marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: "#D8E6EE", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, color: "#0C1620", marginBottom: 10 },
+  primaryBtn: { backgroundColor: "#B8783A", borderRadius: 10, paddingVertical: 14, alignItems: "center", marginTop: 6 },
   primaryBtnText: { color: "#fff", fontWeight: "700" },
   linkBtn: { alignItems: "center", marginTop: 10 },
-  linkText: { color: "#2563EB", fontWeight: "600" },
+  linkText: { color: "#B8783A", fontWeight: "600" },
 });

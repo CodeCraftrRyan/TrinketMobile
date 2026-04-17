@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import BrandHeader from '../components/ui/BrandHeader';
 
 export default function Pricing() {
   const router = useRouter();
@@ -20,6 +21,8 @@ export default function Pricing() {
       >
         <Text style={{ color: "#111827", fontWeight: "600" }}>← Back</Text>
       </TouchableOpacity>
+
+      <BrandHeader style={{ marginBottom: 16 }} />
 
       {/* Page content */}
       <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 12 }}>

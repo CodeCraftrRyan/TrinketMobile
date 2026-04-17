@@ -1,11 +1,22 @@
 export const tokens = {
-    colors: {
-      bg: "#0B0F14",
-      card: "#111827",
-      primary: "#4F46E5",
-      text: "#E5E7EB",
-      muted: "#9CA3AF",
-      border: "#1F2937",
-    },
-    radius: { md: 12 },
-  };
+  colors: {
+    bg: '#F7FAFB',
+    card: '#FFFFFF',
+    primary: '#4A7A9B',
+    text: '#0C1620',
+    muted: '#2E4A5E',
+    border: '#D8E6EE',
+    accent: '#B8783A',
+    surface: '#FFFFFF',
+    surfaceSoft: '#EEF5F8',
+    tint: '#E2EDF3',
+    borderStrong: '#C8DCE8',
+    ink: '#0C1620',
+    inkMid: '#2E4A5E',
+    inkLight: '#5E7E94',
+    inkGhost: '#9BBCD1',
+    accentWarm: '#B8783A',
+    accentCool: '#4A7A9B',
+  },
+  radius: { md: 12 },
+};

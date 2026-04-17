@@ -1,9 +1,8 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Screen from '../../../components/Screen';
-import { Button } from '../../../components/ui/Button';
-import { Card } from '../../../components/ui/Card';
 import { addRecentlyViewed } from '../../../lib/recent';
 import { supabase } from '../../../lib/supabase';
 
@@ -12,36 +11,24 @@ export default function ItemDetail() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<'photos' | 'details'>('photos');
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [categoryName, setCategoryName] = useState<string | null>(null);
+  const [peopleNames, setPeopleNames] = useState<string[]>([]);
 
   function imagesForItem() {
     if (!item) return [] as string[];
     if (Array.isArray(item.images) && item.images.length > 0) return item.images as string[];
+    if (Array.isArray(item.image_urls) && item.image_urls.length > 0) return item.image_urls as string[];
+    if (typeof item.image_urls === 'string' && item.image_urls.trim().length > 0) {
+      return item.image_urls.split(',').map((entry: string) => entry.trim()).filter(Boolean);
+    }
     if (item.image_url) return [item.image_url];
+    if (item.photo_url) return [item.photo_url];
+    if (item.cover_photo_url) return [item.cover_photo_url];
     return [] as string[];
   }
 
-  async function confirmDelete() {
-    Alert.alert('Delete item', 'Are you sure you want to delete this item?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            setLoading(true);
-            const { error } = await supabase.from('items').delete().eq('id', id);
-            if (error) throw error;
-            router.replace('/(tabs)/items');
-          } catch (e: any) {
-            Alert.alert('Delete failed', e?.message ?? String(e));
-          } finally {
-            setLoading(false);
-          }
-        },
-      },
-    ]);
+  function peopleForItem() {
+    return peopleNames;
   }
 
   useEffect(() => {
@@ -54,10 +41,50 @@ export default function ItemDetail() {
         if (error) throw error;
         if (!mounted) return;
         setItem(data ?? null);
+        setPeopleNames([]);
+        if (data?.id) {
+          try {
+            const { data: linkRows, error: linkError } = await supabase
+              .from('item_people')
+              .select('person_id')
+              .eq('item_id', data.id);
+            if (linkError) throw linkError;
+            const personIds = (linkRows ?? [])
+              .map((row: { person_id?: string | number | null }) => row.person_id)
+              .filter((value): value is string | number => value != null);
+            if (personIds.length) {
+              const { data: peopleRows, error: peopleError } = await supabase
+                .from('people')
+                .select('id,name')
+                .in('id', personIds);
+              if (peopleError) throw peopleError;
+              const names = (peopleRows ?? [])
+                .filter((row: { name?: string | null }) => row?.name)
+                .map((row: { name?: string | null }) => String(row.name));
+              setPeopleNames(names);
+            }
+          } catch (e) {
+            console.warn('Failed to load item people', e);
+          }
+        }
+        if (data?.category_id) {
+          try {
+            const { data: categoryData, error: categoryError } = await supabase
+              .from('categories')
+              .select('name')
+              .eq('id', data.category_id)
+              .maybeSingle();
+            if (!categoryError && categoryData?.name) {
+              setCategoryName(categoryData.name);
+            }
+          } catch {
+            // non-critical
+          }
+        }
         // record recently viewed
         try {
           if (data?.id) await addRecentlyViewed(String(data.id));
-        } catch (e) {
+        } catch {
           // non-critical
         }
       } catch (e: any) {
@@ -84,73 +111,206 @@ export default function ItemDetail() {
       <Screen>
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ marginBottom: 12 }}>Item not found.</Text>
-          <Text onPress={() => router.back()} style={{ color: '#2563EB' }}>Go back</Text>
+          <Text onPress={() => router.back()} style={{ color: '#B8783A' }}>Go back</Text>
         </View>
       </Screen>
     );
   }
 
+  const imageList = imagesForItem();
+  const mainImage = imageList[0];
+  const imageCountLabel = imageList.length > 0 ? `1 of ${imageList.length}` : '0 of 0';
+  const purchaseYear = item.date_purchased
+    ? new Date(item.date_purchased).getFullYear()
+    : item.year || item.purchase_year;
+  const purchaseLabel = purchaseYear ? `Purchased ${purchaseYear}` : null;
+
   return (
     <Screen>
-      <ScrollView>
-        <Card>
-          {/* Tabs: Photos / Details */}
-          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-            <TouchableOpacity onPress={() => setActiveTab('photos')} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: activeTab === 'photos' ? '#0B1220' : 'transparent' }}>
-              <Text style={{ color: activeTab === 'photos' ? '#fff' : '#374151', fontWeight: '700' }}>Photos</Text>
+      <ScrollView contentContainerStyle={{ paddingBottom: 28, backgroundColor: '#F7FAFB' }}>
+        <View style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden', backgroundColor: '#0C1620' }}>
+          {mainImage ? (
+            <Image source={{ uri: mainImage }} style={{ width: '100%', height: 300 }} resizeMode="cover" />
+          ) : (
+            <View style={{ height: 300, backgroundColor: '#0C1620', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#4A7A9B' }}>No image</Text>
+            </View>
+          )}
+
+          <View style={{ position: 'absolute', top: 16, left: 16, right: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <TouchableOpacity onPress={() => router.back()} style={{ backgroundColor: 'rgba(15,23,42,0.6)', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999 }}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>←</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setActiveTab('details')} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: activeTab === 'details' ? '#0B1220' : 'transparent' }}>
-              <Text style={{ color: activeTab === 'details' ? '#fff' : '#374151', fontWeight: '700' }}>Details</Text>
+            <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/add', params: { id: item.id } } as any)} style={{ backgroundColor: 'rgba(15,23,42,0.6)', paddingVertical: 6, paddingHorizontal: 14, borderRadius: 999 }}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>Edit</Text>
             </TouchableOpacity>
           </View>
 
-          {activeTab === 'photos' ? (
-            // Photos carousel
-            <View>
-              <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{ height: 260 }} onScroll={(e) => {
-                const x = e.nativeEvent.contentOffset.x;
-                const idx = Math.round(x / e.nativeEvent.layoutMeasurement.width);
-                setActiveIndex(idx);
-              }}>
-                {(imagesForItem().length > 0 ? imagesForItem() : [null]).map((src, i) => (
-                  <View key={i} style={{ width: 360, height: 260, marginRight: 12 }}>
-                    {src ? (
-                      <Image source={{ uri: src }} style={{ width: '100%', height: '100%', borderRadius: 10 }} />
-                    ) : (
-                      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6', borderRadius: 10 }}>
-                        <Text style={{ color: '#9CA3AF' }}>No image</Text>
-                      </View>
-                    )}
-                  </View>
-                ))}
-              </ScrollView>
-              <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8 }}>
-                {(imagesForItem().length > 0 ? imagesForItem() : [null]).map((_, i) => (
-                  <View key={i} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: i === activeIndex ? '#0B1220' : '#E6EEF6', marginHorizontal: 4 }} />
-                ))}
-              </View>
+          <View style={{ position: 'absolute', bottom: 14, left: 16, right: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {[0, 1, 2].map((dot) => (
+                <View key={dot} style={{ width: dot === 0 ? 24 : 8, height: 8, borderRadius: 999, backgroundColor: dot === 0 ? '#fff' : 'rgba(255,255,255,0.4)' }} />
+              ))}
             </View>
-          ) : (
-            // Details
-            <View>
-              <Text style={{ fontSize: 20, fontWeight: '700' }}>{item.title}</Text>
-              {item.tags && <Text style={{ color: '#6B7280', marginTop: 8 }}>{(item.tags || []).join(', ')}</Text>}
-              <View style={{ marginTop: 12 }}>
-                <Text style={{ color: '#111827', marginBottom: 8 }}>{item.description ?? item.notes ?? 'No description.'}</Text>
-                <Text style={{ color: '#6B7280' }}>{item.location}</Text>
-                <Text style={{ color: '#6B7280', marginTop: 4 }}>{item.price}</Text>
-                <Text style={{ color: '#6B7280', marginTop: 4 }}>{`Added ${item.added_at ?? item.added}`}</Text>
-              </View>
-
-              <View style={{ height: 12 }} />
-
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <Button title="Edit" onPress={() => router.push({ pathname: '/(tabs)/add', params: { id: item.id } } as any)} />
-                <Button title="Delete" onPress={() => confirmDelete()} />
-              </View>
+            <View style={{ backgroundColor: 'rgba(15,23,42,0.7)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>{imageCountLabel}</Text>
             </View>
-          )}
-        </Card>
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 18, borderWidth: 1, borderColor: '#D8E6EE', shadowColor: '#0C1620', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }}>
+            <Text style={{ color: '#B8783A', fontWeight: '700', letterSpacing: 2, fontSize: 12, marginBottom: 6 }}>
+              {(categoryName || item.item_category || item.category || item.category_id || 'Category').toString().toUpperCase()}
+            </Text>
+            <Text style={{ fontSize: 24, fontWeight: '800', color: '#0C1620' }}>{item.name || item.title}</Text>
+
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
+              {purchaseLabel && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#D8E6EE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
+                  <Ionicons name="calendar-outline" size={16} color="#4A7A9B" style={{ marginRight: 6 }} />
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>{purchaseLabel}</Text>
+                </View>
+              )}
+              {item.location && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#D8E6EE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
+                  <Ionicons name="location-outline" size={16} color="#4A7A9B" style={{ marginRight: 6 }} />
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>{item.location}</Text>
+                </View>
+              )}
+              {item.event && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#D8E6EE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
+                  <Ionicons name="calendar-outline" size={16} color="#4A7A9B" style={{ marginRight: 6 }} />
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>{item.event}</Text>
+                </View>
+              )}
+              {(item.estimated_value || item.price) && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#D8E6EE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>💰 ${item.estimated_value || item.price}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 18, borderWidth: 1, borderColor: '#D8E6EE' }}>
+            <Text style={{ color: '#4A7A9B', fontWeight: '700', letterSpacing: 2, fontSize: 12, marginBottom: 8 }}>DESCRIPTION</Text>
+            <Text style={{ color: '#0C1620', fontSize: 15, lineHeight: 22 }}>
+              {item.description ?? item.notes ?? 'No description.'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: '#D8E6EE' }}>
+            <View style={{ paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#D8E6EE' }}>
+              <Text style={{ color: '#4A7A9B', fontWeight: '700', letterSpacing: 2, fontSize: 12 }}>ITEM DETAILS</Text>
+            </View>
+            <View style={{ paddingHorizontal: 18, paddingVertical: 14 }}>
+              {item.condition && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Condition</Text>
+                  <Text style={{ color: '#B8783A', fontWeight: '800' }}>{item.condition}</Text>
+                </View>
+              )}
+              {item.brand && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Brand</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.brand}</Text>
+                </View>
+              )}
+              {item.model_number && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Model</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.model_number}</Text>
+                </View>
+              )}
+              {item.year && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Year</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.year}</Text>
+                </View>
+              )}
+              {item.size && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Size</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.size}</Text>
+                </View>
+              )}
+              {item.collection && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Collection</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.collection}</Text>
+                </View>
+              )}
+              {item.event && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Event</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.event}</Text>
+                </View>
+              )}
+              {peopleForItem().length > 0 && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>People</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{peopleForItem().join(', ')}</Text>
+                </View>
+              )}
+              {item.created_at && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '600' }}>Added</Text>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '600' }}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: '#D8E6EE' }}>
+            <View style={{ paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#D8E6EE' }}>
+              <Text style={{ color: '#4A7A9B', fontWeight: '700', letterSpacing: 2, fontSize: 12 }}>PURCHASE DETAILS</Text>
+            </View>
+            <View style={{ paddingHorizontal: 18, paddingVertical: 14 }}>
+              {item.price && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Price</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>${item.price}</Text>
+                </View>
+              )}
+              {item.estimated_value && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Estimated Value</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>${item.estimated_value}</Text>
+                </View>
+              )}
+              {item.date_purchased && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Purchased</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.date_purchased}</Text>
+                </View>
+              )}
+              {(item.acquisition_method || item.acquired) && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Acquired Via</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.acquisition_method || item.acquired}</Text>
+                </View>
+              )}
+              {item.location && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Location</Text>
+                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.location}</Text>
+                </View>
+              )}
+              {item.updated_at && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '600' }}>Updated</Text>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '600' }}>{new Date(item.updated_at).toLocaleDateString()}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
       </ScrollView>
     </Screen>
   );

@@ -1,12 +1,12 @@
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import BrandHeader from '../../components/ui/BrandHeader';
 import { supabase } from '../../lib/supabase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -15,8 +15,8 @@ export default function Login() {
       setLoading(true);
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
-  // After login, go to items (dashboard removed)
-  router.replace('/(tabs)/items');
+  // After login, go to home
+  router.replace('/(tabs)/home');
     } catch (e: any) {
       Alert.alert('Login failed', e?.message ?? 'Check email/password');
     } finally {
@@ -31,69 +31,64 @@ export default function Login() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>Sign in to continue to Trinket</Text>
-          </View>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <BrandHeader
+            style={styles.logoRow}
+            subtitle="YOUR PERSONAL ARCHIVE"
+            iconSize={26}
+            iconBackgroundColor="transparent"
+            iconBackgroundBorderColor="transparent"
+            iconBackgroundSize={54}
+            iconBackgroundRadius={18}
+            titleStyle={styles.logoTitle}
+            subtitleStyle={styles.logoSubtitle}
+          />
 
-          {/* Card */}
-          <View style={styles.card}>
-            {/* Email */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Email</Text>
+          {/* Title and subtitle */}
+          <Text style={styles.bigTitle}>Welcome back</Text>
+          <Text style={styles.subtitle}>Sign in to access your collection</Text>
+
+          {/* Form Card */}
+          <View style={styles.formCard}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>EMAIL</Text>
               <TextInput
-                placeholder="you@example.com"
+                placeholder="[email protected]"
                 autoCapitalize="none"
                 keyboardType="email-address"
                 value={email}
                 onChangeText={setEmail}
-                placeholderTextColor="#9CA3AF"
-                style={styles.input}
+                placeholderTextColor="#4A7A9B"
+                style={[styles.input, email && styles.inputActive]}
                 returnKeyType="next"
               />
             </View>
-
-            {/* Password */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={{ position: 'relative' }}>
-                <TextInput
-                  placeholder="Your password"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholderTextColor="#9CA3AF"
-                  style={[styles.input, { paddingRight: 56 }]}
-                />
-                <Pressable onPress={() => setShowPassword((s) => !s)} style={styles.showBtn}>
-                  <Text style={styles.showText}>{showPassword ? 'Hide' : 'Show'}</Text>
-                </Pressable>
-              </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>PASSWORD</Text>
+              <TextInput
+                placeholder="••••••••"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+                placeholderTextColor="#4A7A9B"
+                style={[styles.input, password && styles.inputActive]}
+              />
             </View>
-
-            {/* Actions */}
-            <Pressable
+            <TouchableOpacity onPress={() => router.push('/(auth)/forgot')} style={styles.forgotLinkWrap}>
+              <Text style={styles.forgotLink}>Forgot password?</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               onPress={onLogin}
               disabled={loading || !email || !password}
               style={[styles.primaryBtn, (loading || !email || !password) && styles.btnDisabled]}
             >
-              <Text style={styles.primaryBtnText}>{loading ? 'Logging in…' : 'Log in'}</Text>
-            </Pressable>
-
-            <View style={styles.linksRow}>
-              <Link href="/(auth)/forgot"><Text style={styles.link}>Forgot password?</Text></Link>
-              <Text style={styles.muted}>No account? <Text onPress={() => router.push('/(auth)/signup')} style={styles.link}>Sign up</Text></Text>
-            </View>
+              <Text style={styles.primaryBtnText}>{loading ? 'Logging in…' : 'Log In'}</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Footer note */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>By continuing, you agree to our Terms & Privacy.</Text>
+          {/* Signup link */}
+          <View style={styles.signupRow}>
+            <Text style={styles.signupText}>Don&apos;t have an account? <Text style={styles.signupLink} onPress={() => router.push('/(auth)/signup')}>Sign up</Text></Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -102,23 +97,25 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
+  safe: { flex: 1, backgroundColor: '#F7FAFB' },
   scroll: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 24 },
-  header: { marginTop: 32, marginBottom: 12 },
-  title: { fontSize: 28, fontWeight: '700', color: '#111827' },
-  subtitle: { marginTop: 4, color: '#6B7280' },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB', gap: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-  fieldGroup: { gap: 6 },
-  label: { color: '#111827', fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, color: '#111827' },
-  showBtn: { position: 'absolute', right: 6, top: '50%', marginTop: -18, paddingHorizontal: 10, paddingVertical: 6 },
-  showText: { color: '#2563EB', fontWeight: '600' },
-  primaryBtn: { backgroundColor: '#111827', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
-  primaryBtnText: { color: '#FFFFFF', fontWeight: '600' },
+  logoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 32, marginBottom: 18 },
+  logoCircle: { width: 54, height: 54, borderRadius: 18, backgroundColor: '#D8E6EE', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#D8E6EE' },
+  logoTitle: { fontSize: 22, fontWeight: '700', color: '#0C1620' },
+  logoSubtitle: { fontSize: 15, color: '#4A7A9B', fontWeight: '600', letterSpacing: 1, marginTop: 2 },
+  bigTitle: { fontSize: 32, fontWeight: '800', color: '#0C1620', marginBottom: 2, textAlign: 'left' },
+  subtitle: { color: '#4A7A9B', marginBottom: 18, fontSize: 16, textAlign: 'left' },
+  formCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#D8E6EE', marginBottom: 18, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  inputGroup: { marginBottom: 14 },
+  inputLabel: { color: '#4A7A9B', fontWeight: '700', fontSize: 15, marginBottom: 4, letterSpacing: 1 },
+  input: { backgroundColor: '#F7FAFB', borderWidth: 1, borderColor: '#D8E6EE', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, color: '#0C1620', fontSize: 17 },
+  inputActive: { borderColor: '#B8783A' },
+  forgotLinkWrap: { alignItems: 'flex-end', marginBottom: 12 },
+  forgotLink: { color: '#B8783A', fontWeight: '700', fontSize: 16 },
+  primaryBtn: { backgroundColor: '#B8783A', borderRadius: 18, paddingVertical: 16, alignItems: 'center', marginTop: 2, marginBottom: 2, shadowColor: '#B8783A', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  primaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 22, letterSpacing: 0.2 },
   btnDisabled: { opacity: 0.5 },
-  linksRow: { marginTop: 4, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  link: { color: '#2563EB', fontWeight: '600' },
-  muted: { color: '#6B7280' },
-  footer: { alignItems: 'center', marginTop: 16, marginBottom: 8 },
-  footerText: { color: '#9CA3AF', fontSize: 12 },
+  signupRow: { alignItems: 'center', marginBottom: 8 },
+  signupText: { color: '#4A7A9B', fontSize: 16 },
+  signupLink: { color: '#B8783A', fontWeight: '700', fontSize: 16 },
 });

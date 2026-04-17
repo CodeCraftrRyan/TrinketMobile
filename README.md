@@ -42,6 +42,46 @@ To learn more about developing your project with Expo, look at the following res
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
+## Stripe checkout (Supabase Edge Functions)
+
+To enable in-app upgrades, deploy the `create-checkout-session` function and set the required env vars.
+
+1. Deploy the function:
+
+   ```bash
+   supabase functions deploy create-checkout-session
+   ```
+
+2. Set function secrets (run once):
+
+   ```bash
+   supabase secrets set STRIPE_SECRET_KEY=... STRIPE_PRICE_PRO=... STRIPE_PRICE_PREMIUM=...
+   supabase secrets set SUCCESS_URL=trinketmobile://membership?checkout=success
+   supabase secrets set CANCEL_URL=trinketmobile://membership?checkout=cancel
+   ```
+
+3. Redeploy if you change any function code:
+
+   ```bash
+   supabase functions deploy create-checkout-session
+   ```
+
+## Stripe customer portal (Supabase Edge Function)
+
+Deploy the customer portal function to allow users to manage billing.
+
+1. Deploy the function:
+
+   ```bash
+   supabase functions deploy create-customer-portal
+   ```
+
+2. Set portal return URL (optional):
+
+   ```bash
+   supabase secrets set PORTAL_RETURN_URL=trinketmobile://membership?portal=return
+   ```
+
 ## Join the community
 
 Join our community of developers creating universal apps.

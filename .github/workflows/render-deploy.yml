@@ -1,0 +1,50 @@
+name: CI & Trigger Render Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  ci:
+    name: CI and Trigger Render
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Basic checks
+        run: |
+          node -v
+          npm -v
+
+      - name: Trigger Render deploy
+        if: ${{ success() }}
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
+            echo "RENDER_API_KEY and RENDER_SERVICE_ID must be set in repository secrets to trigger a deploy.";
+            exit 1;
+          fi
+
+          echo "Triggering a Render deploy for service $RENDER_SERVICE_ID"
+
+          # POST to Render's deploys endpoint. The API requires a Bearer token.
+          RESPONSE=$(curl -sS -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+
+          echo "Render API response: $RESPONSE"

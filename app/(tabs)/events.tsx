@@ -51,7 +51,8 @@ export default function EventsTab() {
     return () => {
       try {
         channel.unsubscribe();
-      } catch (e) {}
+      } catch {
+      }
     };
   }, []);
 
@@ -95,8 +96,8 @@ export default function EventsTab() {
       <View style={{ marginBottom: 12 }}>
         <Card>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ color: '#6B7280' }}>Search events…</Text>
-            <Text style={{ color: '#6B7280' }}>{events.length} events</Text>
+            <Text style={{ color: '#4A7A9B' }}>Search events…</Text>
+            <Text style={{ color: '#4A7A9B' }}>{events.length} events</Text>
           </View>
         </Card>
       </View>
@@ -125,12 +126,12 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 12, paddingBottom: 48 },
   column: { justifyContent: 'space-between', marginBottom: 12 },
   cardWrapper: { flex: 1, marginHorizontal: 6, minWidth: 160 },
-  imageWrap: { height: 140, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+  imageWrap: { height: 140, backgroundColor: '#D8E6EE', justifyContent: 'center', alignItems: 'center' },
   image: { width: '100%', height: '100%', resizeMode: 'cover' },
   placeholder: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
-  placeholderText: { color: '#9CA3AF' },
+  placeholderText: { color: '#4A7A9B' },
   cardBody: { padding: 12, backgroundColor: '#fff' },
   title: { fontSize: 16, fontWeight: '700' },
-  meta: { color: '#6B7280', fontSize: 13 },
-  desc: { marginTop: 8, color: '#374151', fontSize: 13 },
+  meta: { color: '#4A7A9B', fontSize: 13 },
+  desc: { marginTop: 8, color: '#0C1620', fontSize: 13 },
 });

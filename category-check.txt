@@ -1,0 +1,3 @@
+[dotenv@17.2.3] injecting env (12) from .env.local -- tip: ⚙️  suppress all logs with { quiet: true }
+Category counts from items:
+- (none): 8

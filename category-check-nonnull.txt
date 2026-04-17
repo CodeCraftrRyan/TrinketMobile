@@ -1,0 +1,3 @@
+[dotenv@17.2.3] injecting env (12) from .env.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+Items with category_id:
+[]

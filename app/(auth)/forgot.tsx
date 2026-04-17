@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { View, TextInput, Button, Text, Alert } from 'react-native';
 import { Link } from 'expo-router';
+import { useState } from 'react';
+import { Alert, Button, Text, TextInput, View } from 'react-native';
+import BrandHeader from '../../components/ui/BrandHeader';
 import { supabase } from '../../lib/supabase';
 
 export default function ForgotPassword() {
@@ -22,6 +23,7 @@ export default function ForgotPassword() {
 
   return (
     <View style={{ padding: 24, gap: 12 }}>
+      <BrandHeader style={{ marginBottom: 8 }} />
       <Text style={{ fontSize: 24, fontWeight: '600' }}>Reset password</Text>
       <TextInput
         placeholder="Email"
