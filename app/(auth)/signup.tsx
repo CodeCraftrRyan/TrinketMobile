@@ -1,5 +1,5 @@
 import { Picker } from '@react-native-picker/picker';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type CountryCode, getCountryCallingCode, parsePhoneNumberFromString } from 'libphonenumber-js';
 import { useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 
 export default function SignUp() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ step?: string; email?: string; phone?: string }>();
 
   const COUNTRY_OPTIONS: { code: CountryCode; label: string }[] = [
     { code: 'US', label: 'United States' },
@@ -21,12 +22,15 @@ export default function SignUp() {
   ];
 
   // Steps: 0 = Welcome, 1 = Name, 2 = Bio, 3 = People List
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState<number>(() => {
+    const s = parseInt(params.step ?? '0', 10);
+    return isNaN(s) ? 0 : s;
+  });
   const totalSteps = 4;
 
   // Form state
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState(params.email ?? '');
+  const [phoneNumber, setPhoneNumber] = useState(params.phone ?? '');
   const [phoneCountry, setPhoneCountry] = useState<CountryCode>('US');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -76,8 +80,11 @@ export default function SignUp() {
     });
     if (error) throw error;
     if (!data.session) {
-      Alert.alert('Check your email', 'Please confirm your email to finish setting up your account.');
-      router.replace('/(auth)/login');
+      // No immediate session returned; proceed to verification flow where the user
+      // can choose email or SMS to receive a confirmation code and finish setup.
+    const userId = data.user?.id ?? '';
+    const returnTo = `/(auth)/signup?step=1&email=${encodeURIComponent(trimmedEmail)}&phone=${encodeURIComponent(normalizedPhone)}`;
+    router.push(`/(auth)/verify?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(trimmedEmail)}&phone=${encodeURIComponent(normalizedPhone)}&returnTo=${encodeURIComponent(returnTo)}`);
       return false;
     }
     return true;
@@ -227,6 +234,10 @@ export default function SignUp() {
                 style={styles.input}
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry={!showPassword}
+                textContentType="newPassword"
+                autoComplete="password"
+                passwordRules="minlength: 8; required: lower; required: upper; required: digit; required: [-@#$%^&+=];"
+                importantForAutofill="yes"
               />
               <Text style={styles.fieldLabel}>Confirm password</Text>
               <TextInput
@@ -236,7 +247,21 @@ export default function SignUp() {
                 style={styles.input}
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry={!showPassword}
+                textContentType="password"
+                autoComplete="password"
+                importantForAutofill="yes"
               />
+              <Pressable onPress={() => {
+                // generate a strong random password and fill both fields
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+';
+                let generated = '';
+                for (let i = 0; i < 16; i++) generated += chars.charAt(Math.floor(Math.random() * chars.length));
+                setPassword(generated);
+                setConfirmPassword(generated);
+                Alert.alert('Suggested password filled', 'A strong password has been generated and filled for you. Consider saving it in your device password manager.');
+              }} style={[styles.secondaryBtn, { marginTop: 10 }]}> 
+                <Text style={styles.secondaryBtnText}>Suggest a strong password</Text>
+              </Pressable>
               <Pressable onPress={() => setShowPassword((prev) => !prev)}>
                 <Text style={styles.link}>{showPassword ? 'Hide password' : 'Show password'}</Text>
               </Pressable>
