@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+// Lazy-load expo-image-picker when needed so the app can start even if the
+// native module isn't present in the current development client build.
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, FlatList, Image, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -187,6 +188,7 @@ const styles = StyleSheet.create({
 
   async function pickAndSearch() {
     try {
+      const ImagePicker = await import('expo-image-picker');
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) return;
       const res = await ImagePicker.launchCameraAsync({ quality: 0.8 });

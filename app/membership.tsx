@@ -38,6 +38,7 @@ export default function Membership() {
       if (planParam) {
         setSelectedPlan(planParam);
       }
+      return plan;
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Could not load membership');
     } finally {
@@ -57,9 +58,16 @@ export default function Membership() {
         const checkout = parsed.searchParams.get('checkout');
         const sessionId = parsed.searchParams.get('session_id');
         if (checkout === 'success' || sessionId) {
-          setCheckoutStatus('success');
-          loadMembership();
-          router.replace('/membership-success');
+          (async () => {
+            setCheckoutStatus('success');
+            const plan = await loadMembership();
+            // if plan is upgraded, send user to home; otherwise show success page
+            if (plan && plan !== 'Free') {
+              router.replace('/(tabs)/home');
+            } else {
+              router.replace('/membership-success');
+            }
+          })();
           return;
         }
         if (checkout === 'cancel') {
