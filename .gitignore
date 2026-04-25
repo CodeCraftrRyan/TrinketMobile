@@ -1,4 +1,32 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+### Xcode ###
+# Xcode user data
+**/xcuserdata/
+**/xcshareddata/WorkspaceSettings.xcsettings
+*.xcuserstate
+
+# Xcode Workspace
+**/project.xcworkspace/xcuserdata/
+
+# Build products
+build/
+DerivedData/
+
+# CocoaPods
+Pods/
+
+### macOS ###
+.DS_Store
+
+# dotenv
+.env
+
+# Node
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
 node_modules/
