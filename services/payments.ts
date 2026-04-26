@@ -4,10 +4,10 @@ import { supabase } from '../lib/supabase';
 type CreateSessionResult = { url?: string; id?: string };
 type PortalSessionResult = { url?: string; id?: string };
 
-export async function createCheckoutSession(plan: 'pro' | 'premium', userId?: string, customerEmail?: string): Promise<CreateSessionResult> {
+export async function createCheckoutSession(plan: 'pro' | 'premium', userId?: string, customerEmail?: string, billingInterval?: 'monthly' | 'yearly'): Promise<CreateSessionResult> {
   // Use Supabase Edge Function `create-checkout-session` that we deploy to the project
   try {
-    const body = { plan, userId, customerEmail } as any;
+    const body = { plan, userId, customerEmail, billingInterval } as any;
     const res = await (supabase as any).functions.invoke('create-checkout-session', {
       body: JSON.stringify(body),
     });

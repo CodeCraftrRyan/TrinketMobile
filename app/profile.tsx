@@ -120,7 +120,7 @@ export default function Profile() {
               style={[styles.input, styles.textArea]}
               value={bio}
               onChangeText={setBio}
-              placeholder="Tell us about yourself"
+              placeholder="Short bio (optional)"
               placeholderTextColor="#4A7A9B"
               multiline
               numberOfLines={4}

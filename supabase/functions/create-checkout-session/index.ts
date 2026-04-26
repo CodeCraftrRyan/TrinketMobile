@@ -1,9 +1,12 @@
 // Create a Stripe Checkout Session for a recurring subscription.
-// Expects POST JSON: { plan: 'pro'|'premium' } OR { priceId: 'price_...' }, and optionally { userId, customerEmail }
+// Expects POST JSON: { plan: 'pro'|'premium', billingInterval?: 'monthly'|'yearly' } OR { priceId: 'price_...' }, and optionally { userId, customerEmail }
 // Environment variables required (set in your Supabase Edge Function settings):
 // - STRIPE_SECRET_KEY
-// - STRIPE_PRICE_PRO
-// - STRIPE_PRICE_PREMIUM
+// - STRIPE_PRICE_PRO (monthly)
+// - STRIPE_PRICE_PREMIUM (monthly)
+// Optional yearly price envs:
+// - STRIPE_PRICE_PRO_YEARLY
+// - STRIPE_PRICE_PREMIUM_YEARLY
 // - SUCCESS_URL
 // - CANCEL_URL
 
@@ -17,7 +20,8 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const plan = (body.plan as string) || null;
+  const plan = (body.plan as string) || null;
+  const billingInterval = (body.billingInterval as string) || 'monthly';
     const priceIdFromBody = (body.priceId as string) || null;
     const userId = (body.userId as string) || null;
     const customerEmail = (body.customerEmail as string) || null;
@@ -32,8 +36,14 @@ Deno.serve(async (req) => {
 
     let priceId = priceIdFromBody;
     if (!priceId) {
-      if (plan === 'pro') priceId = Deno.env.get('STRIPE_PRICE_PRO') || null;
-      if (plan === 'premium') priceId = Deno.env.get('STRIPE_PRICE_PREMIUM') || null;
+      if (plan === 'pro') {
+        if (billingInterval === 'yearly') priceId = Deno.env.get('STRIPE_PRICE_PRO_YEARLY') || null;
+        if (!priceId) priceId = Deno.env.get('STRIPE_PRICE_PRO') || null;
+      }
+      if (plan === 'premium') {
+        if (billingInterval === 'yearly') priceId = Deno.env.get('STRIPE_PRICE_PREMIUM_YEARLY') || null;
+        if (!priceId) priceId = Deno.env.get('STRIPE_PRICE_PREMIUM') || null;
+      }
     }
 
     if (!priceId) {

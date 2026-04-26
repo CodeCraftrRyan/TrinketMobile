@@ -40,16 +40,28 @@ export default function Account() {
   const [newPerson, setNewPerson] = useState('');
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [savingPerson, setSavingPerson] = useState(false);
+  const [openingPortal, setOpeningPortal] = useState(false);
   const { settings, setLargeText, setHighContrast } = useAccessibilitySettings();
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => {/* sign out logic */} },
+      { text: 'Sign Out', style: 'destructive', onPress: async () => {
+        try {
+          await supabase.auth.signOut();
+        } catch (e: any) {
+          Alert.alert('Sign out failed', e?.message ?? 'Please try again');
+          return;
+        }
+        // Replace the navigation stack with the login screen
+        router.replace('/(auth)/login');
+      } },
     ]);
   };
 
   async function handleManageSubscription() {
+    if (openingPortal) return;
+    setOpeningPortal(true);
     try {
       const { data, error } = await supabase.auth.getUser();
       if (error) throw error;
@@ -59,6 +71,8 @@ export default function Account() {
       await openCustomerPortal(session.url);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Could not open billing portal');
+    } finally {
+      setOpeningPortal(false);
     }
   }
 
@@ -261,7 +275,7 @@ export default function Account() {
           <View style={styles.divider} />
           <Row left="Lifetime Access" right={<Text style={styles.subPrice}>$49.99</Text>} onPress={() => router.push('/membership?plan=lifetime')} />
           <View style={styles.divider} />
-          <Row left="Manage Subscription" right="Billing" onPress={handleManageSubscription} />
+          <Row left="Manage Subscription" right={openingPortal ? <Text style={styles.rowRight}>Opening…</Text> : 'Billing'} onPress={openingPortal ? undefined : handleManageSubscription} />
         </Card>
 
         {/* Accessibility */}

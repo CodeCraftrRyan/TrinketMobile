@@ -4,6 +4,12 @@ import ReactAppDependencyProvider
 
 @UIApplicationMain
 public class AppDelegate: ExpoAppDelegate {
+  // Expose a window property to Objective-C so older RN/Pods code
+  // that calls `[AppDelegate window]` won't crash with
+  // "unrecognized selector". Marked @objc to ensure the selector
+  // is visible at runtime.
+  @objc public var window: UIWindow?
+
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
 

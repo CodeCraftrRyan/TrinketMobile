@@ -1,7 +1,7 @@
 import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Screen from '../components/Screen';
 import { supabase } from '../lib/supabase';
 import { createCheckoutSession, openCheckout } from '../services/payments';
@@ -12,10 +12,23 @@ export default function Membership() {
   const router = useRouter();
   const { plan } = useLocalSearchParams<{ plan?: string }>();
   const [currentPlan, setCurrentPlan] = useState<Plan>('Free');
-  const [selectedPlan, setSelectedPlan] = useState<Plan>('Free');
+  const [selectedPlan, setSelectedPlan] = useState<Plan>('Pro');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [checkoutStatus, setCheckoutStatus] = useState<'idle' | 'pending' | 'success' | 'cancel'>('idle');
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
+  // animated value for cross-fading prices (0 = monthly, 1 = yearly)
+  const priceAnim = useRef(new Animated.Value(billingInterval === 'monthly' ? 0 : 1)).current;
+
+  useEffect(() => {
+    Animated.timing(priceAnim, {
+      toValue: billingInterval === 'monthly' ? 0 : 1,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [billingInterval, priceAnim]);
+  const scaleAnim = priceAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] });
+  const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
   const planParam = (() => {
     if (!plan) return null;
     const normalized = String(plan).toLowerCase();
@@ -96,7 +109,8 @@ export default function Membership() {
         if (error) throw error;
         const user = data?.user;
         const checkoutPlan = selectedPlan === 'Pro' ? 'pro' : 'premium';
-        const session = await createCheckoutSession(checkoutPlan, user?.id, user?.email ?? undefined);
+        const interval = billingInterval;
+        const session = await createCheckoutSession(checkoutPlan, user?.id, user?.email ?? undefined, interval);
         if (!session?.url) throw new Error('Checkout session not available.');
         setCheckoutStatus('pending');
         await openCheckout(session.url);
@@ -146,7 +160,7 @@ export default function Membership() {
     {
       id: 'Pro' as Plan,
       name: 'Pro',
-      price: '$8/month',
+      price: '$9/month or $79/year',
       features: [
         'Up to 500 items',
         'Advanced search',
@@ -159,7 +173,7 @@ export default function Membership() {
     {
       id: 'Premium' as Plan,
       name: 'Premium',
-      price: '$15/month',
+      price: '$19/month or $79/year',
       features: [
         'Unlimited items',
         'AI-powered search',
@@ -172,19 +186,26 @@ export default function Membership() {
     },
   ];
 
+  function priceFor(planId: Plan, interval: 'monthly' | 'yearly') {
+    if (planId === 'Free') return 'Free';
+    if (planId === 'Pro') return interval === 'monthly' ? '$9 / month' : '$79 / year';
+    if (planId === 'Premium') return interval === 'monthly' ? '$19 / month' : '$169 / year';
+    return '';
+  }
+
   return (
     <Screen>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <View style={styles.header}>
+          <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
             <Text style={styles.cancelButton}>Cancel</Text>
-          </TouchableOpacity>
+          </Pressable>
           <Text style={styles.title}>Membership</Text>
-          <TouchableOpacity onPress={updateSubscription} disabled={saving}>
+          <Pressable onPress={updateSubscription} disabled={saving} accessibilityRole="button" accessibilityLabel="Save subscription">
             <Text style={[styles.saveButton, saving && styles.saveButtonDisabled]}>
               {saving ? 'Saving...' : 'Save'}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
@@ -209,21 +230,42 @@ export default function Membership() {
 
           <Text style={styles.sectionTitle}>Choose Your Plan</Text>
 
+          <View style={styles.intervalWrap}>
+              <View style={styles.intervalToggle}>
+              <Pressable onPress={() => setBillingInterval('monthly')} style={({ pressed }) => [styles.intervalOption, billingInterval === 'monthly' && styles.intervalSelected, pressed && styles.planCardPressed]} accessibilityRole="button" accessibilityLabel={`Set billing to monthly`}>
+                <Text style={[styles.intervalText, billingInterval === 'monthly' && styles.intervalTextSelected]}>Monthly</Text>
+              </Pressable>
+              <Pressable onPress={() => setBillingInterval('yearly')} style={({ pressed }) => [styles.intervalOption, billingInterval === 'yearly' && styles.intervalSelected, pressed && styles.planCardPressed]} accessibilityRole="button" accessibilityLabel={`Set billing to yearly`}>
+                <Text style={[styles.intervalText, billingInterval === 'yearly' && styles.intervalTextSelected]}>Yearly</Text>
+              </Pressable>
+            </View>
+          </View>
+
           {plans.map((plan) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={plan.id}
-              style={[
+              accessibilityRole="button"
+              accessibilityLabel={`Plan ${plan.name}. ${priceFor(plan.id, billingInterval)}${selectedPlan === plan.id ? ', selected' : ''}`}
+              android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
+              onPress={() => setSelectedPlan(plan.id)}
+              style={({ pressed }) => [
                 styles.planCard,
                 selectedPlan === plan.id && styles.planCardSelected,
+                pressed && styles.planCardPressed,
+                { transform: [{ scale: selectedPlan === plan.id ? scaleAnim : 1 }] },
               ]}
-              onPress={() => setSelectedPlan(plan.id)}
             >
+              {plan.id === 'Pro' && (
+                <View style={styles.mostPopularBadge}>
+                  <Text style={styles.mostPopularText}>Most popular</Text>
+                </View>
+              )}
               <View style={styles.planHeader}>
                 <View style={styles.planHeaderLeft}>
                   <Text style={styles.planIcon}>{plan.icon}</Text>
-                  <View>
+                  <View style={{ alignItems: 'center', minWidth: 90 }}>
                     <Text style={styles.planName}>{plan.name}</Text>
-                    <Text style={styles.planPrice}>{plan.price}</Text>
+                    <Text style={styles.planPrice}>{priceFor(plan.id, billingInterval)}</Text>
                   </View>
                 </View>
                 <View style={[
@@ -252,8 +294,17 @@ export default function Membership() {
                   <Text style={styles.currentBadgeText}>Current</Text>
                 </View>
               )}
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
+
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+            <Pressable onPress={() => setBillingInterval('monthly')} style={({ pressed }) => [styles.secondaryBtn, billingInterval === 'monthly' && { borderWidth: 2, borderColor: '#0C1620' }, pressed && styles.planCardPressed]} accessibilityRole="button" accessibilityLabel={`Set billing interval to monthly`}>
+              <Text style={styles.secondaryBtnText}>Monthly</Text>
+            </Pressable>
+            <Pressable onPress={() => setBillingInterval('yearly')} style={({ pressed }) => [styles.secondaryBtn, billingInterval === 'yearly' && { borderWidth: 2, borderColor: '#0C1620' }, pressed && styles.planCardPressed]} accessibilityRole="button" accessibilityLabel={`Set billing interval to yearly`}>
+              <Text style={styles.secondaryBtnText}>Yearly</Text>
+            </Pressable>
+          </View>
 
           <Text style={styles.disclaimer}>
             Plans are billed monthly and can be cancelled anytime. Changes take effect immediately.
@@ -314,14 +365,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#B8783A',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 24,
+    marginBottom: 29,
     alignItems: 'center',
   },
   checkoutBanner: {
     backgroundColor: '#F7FAFB',
     borderRadius: 12,
     padding: 14,
-    marginBottom: 16,
+    marginBottom: 19,
     borderWidth: 1,
     borderColor: '#D8E6EE',
   },
@@ -352,19 +403,26 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: '#0C1620',
-    marginBottom: 16,
+    marginBottom: 19,
   },
   planCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 20,
-    marginBottom: 16,
+    marginBottom: 31,
     borderWidth: 2,
-    borderColor: '#D8E6EE',
+    borderColor: '#0C1620',
   },
   planCardSelected: {
     borderColor: '#B8783A',
     backgroundColor: '#D8E6EE',
+    // Subtle shadow for selected card (iOS)
+    shadowColor: '#0C1620',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    // Elevation for Android
+    elevation: 6,
   },
   planHeader: {
     flexDirection: 'row',
@@ -384,12 +442,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: '#0C1620',
+    textAlign: 'center',
   },
   planPrice: {
     fontSize: 15,
     color: '#4A7A9B',
     marginTop: 2,
+    textAlign: 'center',
   },
+  mostPopularBadge: { position: 'absolute', left: 16, top: -12, backgroundColor: '#FFFFFF', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  mostPopularText: { fontSize: 12, fontWeight: '700', color: '#154406', fontStyle: 'italic' },
+  secondaryBtn: { backgroundColor: '#F7FAFB', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  secondaryBtnText: { color: '#0C1620', fontWeight: '600' },
   radioButton: {
     width: 24,
     height: 24,
@@ -448,8 +512,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4A7A9B',
     textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 32,
+    marginTop: 10,
+    marginBottom: 38,
     lineHeight: 18,
   },
+  intervalWrap: { alignItems: 'center', marginBottom: 12 },
+  intervalToggle: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 10, padding: 4, elevation: 1 },
+  intervalOption: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
+  intervalSelected: { backgroundColor: '#B8783A' },
+  intervalText: { color: '#0C1620', fontWeight: '600' },
+  intervalTextSelected: { color: '#FFFFFF' },
+  planCardPressed: { opacity: 0.85, transform: [{ scale: 0.998 }] },
 });

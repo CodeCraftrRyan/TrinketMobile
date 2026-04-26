@@ -5,7 +5,7 @@ import BrandHeader from '../../components/ui/BrandHeader';
 
 export default function Verify() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ userId?: string; email?: string; phone?: string; returnTo?: string }>();
+  const params = useLocalSearchParams<{ userId?: string; email?: string; phone?: string; returnTo?: string; devDummy?: string }>();
   const userId = params.userId ?? '';
   const email = params.email ?? '';
   const phone = params.phone ?? '';
@@ -16,23 +16,37 @@ export default function Verify() {
   const [sending, setSending] = useState(false);
   const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
+  // Known demo code when bypassing actual send
+  const DEMO_CODE = '111111';
+
+  const demoBypass = __DEV__ || params.devDummy === '1' || userId === 'dev-dummy-user';
 
   useEffect(() => {
     setDestination(method === 'email' ? email : phone);
   }, [method, email, phone]);
 
-  async function sendCode() {
+  async function sendCode(selectedMethod: 'email' | 'sms') {
     try {
       setSending(true);
+      setMethod(selectedMethod);
+      setDestination(selectedMethod === 'email' ? email : phone);
+      // Demo bypass: do not call backend, just show the code
+      if (demoBypass) {
+        setSent(true);
+        setCode(DEMO_CODE);
+        Alert.alert('Demo code', `Use ${DEMO_CODE} to verify (demo mode).`);
+        return;
+      }
+
       const resp = await fetch('/supabase/functions/account-verification/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, method, destination }),
+        body: JSON.stringify({ userId, method: selectedMethod, destination: selectedMethod === 'email' ? email : phone }),
       });
-  const json = await resp.json();
-  if (!resp.ok) throw new Error(json?.error || 'Failed to send code');
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json?.error || 'Failed to send code');
       setSent(true);
-      Alert.alert('Code sent', `A verification code was sent to your ${method}.`);
+      Alert.alert('Code sent', `A verification code was sent to your ${selectedMethod}.`);
     } catch (e: any) {
       Alert.alert('Send failed', e?.message ?? 'Please try again');
     } finally {
@@ -42,6 +56,21 @@ export default function Verify() {
 
   async function verify() {
     try {
+      // Demo bypass: accept the DEMO_CODE without backend check
+      if (demoBypass) {
+        if (code !== DEMO_CODE) {
+          Alert.alert('Invalid code', 'Please enter the demo code shown when sending.');
+          return;
+        }
+        Alert.alert('Verified', 'Demo verification succeeded.');
+        if (returnTo) {
+          router.replace(returnTo as unknown as any);
+        } else {
+          router.replace('/(auth)/login');
+        }
+        return;
+      }
+
       const resp = await fetch('/supabase/functions/account-verification/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -72,17 +101,13 @@ export default function Verify() {
         <Text style={styles.subtitle}>Choose how you'd like to receive a confirmation code.</Text>
 
         <View style={{ marginTop: 12 }}>
-          <Pressable onPress={() => setMethod('email')} style={[styles.option, method === 'email' && styles.optionActive]}>
-            <Text style={styles.optionText}>Email ({email || 'not provided'})</Text>
+          <Pressable onPress={() => sendCode('email')} disabled={!email || sending} style={[styles.primaryBtn, (!email || sending) && styles.btnDisabled]}>
+            <Text style={styles.primaryBtnText}>{sending ? 'Sending…' : `Send Email Code${email ? '' : ' (no email)'}`}</Text>
           </Pressable>
-          <Pressable onPress={() => setMethod('sms')} style={[styles.option, method === 'sms' && styles.optionActive]}>
-            <Text style={styles.optionText}>Text message ({phone || 'not provided'})</Text>
+          <Pressable onPress={() => sendCode('sms')} disabled={!phone || sending} style={[styles.primaryBtn, (!phone || sending) && styles.btnDisabled, { marginTop: 12 }]}>
+            <Text style={styles.primaryBtnText}>{sending ? 'Sending…' : `Send Text Code${phone ? '' : ' (no phone)'}`}</Text>
           </Pressable>
         </View>
-
-        <Pressable onPress={sendCode} disabled={sending} style={[styles.primaryBtn, sending && styles.btnDisabled]}>
-          <Text style={styles.primaryBtnText}>{sending ? 'Sending…' : 'Send code'}</Text>
-        </Pressable>
 
         {sent && (
           <>
