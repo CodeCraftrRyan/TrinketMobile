@@ -73,11 +73,34 @@ export default function Membership() {
         if (checkout === 'success' || sessionId) {
           (async () => {
             setCheckoutStatus('success');
-            const plan = await loadMembership();
-            // if plan is upgraded, send user to home; otherwise show success page
-            if (plan && plan !== 'Free') {
+
+            // Poll the user's Supabase metadata for the subscription change.
+            // Stripe webhook may update Supabase shortly after redirect, so retry
+            // for a short period before giving up.
+            const desiredPlan = selectedPlan;
+            const maxAttempts = 15; // ~30 seconds (15 * 2s)
+            let attempt = 0;
+            let upgraded = false;
+
+            while (attempt < maxAttempts && !upgraded) {
+              try {
+                const plan = await loadMembership();
+                if (plan && plan !== 'Free' && plan === desiredPlan) {
+                  upgraded = true;
+                  break;
+                }
+              } catch (_) {
+                // ignore and retry
+              }
+              // wait 2s before retrying
+              await new Promise((res) => setTimeout(res, 2000));
+              attempt += 1;
+            }
+
+            if (upgraded) {
               router.replace('/(tabs)/home');
             } else {
+              // fallback: still show success page but user may need a refresh later
               router.replace('/membership-success');
             }
           })();
@@ -94,7 +117,7 @@ export default function Membership() {
     Linking.getInitialURL().then(handleCheckoutUrl);
     const subscription = Linking.addEventListener('url', (event) => handleCheckoutUrl(event.url));
     return () => subscription.remove();
-  }, [loadMembership, router]);
+  }, [loadMembership, router, selectedPlan]);
 
   async function updateSubscription() {
     if (selectedPlan === currentPlan) {

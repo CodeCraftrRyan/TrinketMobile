@@ -47,9 +47,7 @@ export default function ChooseIcon() {
         <TouchableOpacity style={styles.nextBtn}>
           <Text style={styles.nextText}>Next  →</Text>
         </TouchableOpacity>
-  <TouchableOpacity style={styles.previewBtn} onPress={() => router.replace('/(tabs)/home')}>
-          <Text style={styles.previewText}>Preview Logged In</Text>
-        </TouchableOpacity>
+        {/* Preview Logged In button removed */}
       </View>
     </SafeAreaView>
   );

@@ -50,16 +50,7 @@ export default function Welcome() {
 
           {/* Preview logged-in button removed per request */}
 
-          {/* Dev-only: create a dummy account to exercise onboarding UI */}
-          {__DEV__ && (
-            <TouchableOpacity
-              style={{ backgroundColor: '#E6EEF2', borderRadius: 18, paddingVertical: 16, width: '88%', alignItems: 'center', marginBottom: 18, borderWidth: 1, borderColor: '#D1E6EE' }}
-              onPress={() => router.push('/(auth)/signup?devDummy=1')}
-              accessibilityLabel="Create dummy account for testing"
-            >
-              <Text style={{ color: '#0C1620', fontWeight: '600', fontSize: 16, letterSpacing: 0.1, fontFamily: 'DMSans_500Medium' }}>Create dummy account (dev)</Text>
-            </TouchableOpacity>
-          )}
+          {/* Dev-only dummy button removed */}
 
           {/* Footer Links - muted, spaced */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 18 }}>

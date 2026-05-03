@@ -53,8 +53,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const successUrl = Deno.env.get('SUCCESS_URL') || 'trinketmobile://membership?checkout=success';
-    const cancelUrl = Deno.env.get('CANCEL_URL') || 'trinketmobile://membership?checkout=cancel';
+  const successUrlBase = Deno.env.get('SUCCESS_URL') || 'trinketmobile://membership';
+  const cancelUrlBase = Deno.env.get('CANCEL_URL') || 'trinketmobile://membership';
+  // Ensure we append parameters with the correct separator
+  const successUrl = `${successUrlBase}${successUrlBase.includes('?') ? '&' : '?'}checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+  const cancelUrl = `${cancelUrlBase}${cancelUrlBase.includes('?') ? '&' : '?'}checkout=cancel`;
 
     // Build form-encoded body expected by Stripe API
     const params = new URLSearchParams();
