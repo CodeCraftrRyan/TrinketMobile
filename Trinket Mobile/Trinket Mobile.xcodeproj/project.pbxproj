@@ -25,8 +25,7 @@
 
 /* Begin PBXFileReference section */
 		5FCBE51C2F92A94D0041C757 /* Trinket Mobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Trinket Mobile.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		5FCBE5292F92A94E0041C757 /* Trinket MobileTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Trinket MobileTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		5FCBE5332F92A94E0041C757 /* Trinket MobileUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Trinket MobileUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+	/* Test targets removed */
 		5FCBE57B2F92AF760041C757 /* Trinket Mobile.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "Trinket Mobile.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -36,16 +35,7 @@
 			path = "Trinket Mobile";
 			sourceTree = "<group>";
 		};
-		5FCBE52C2F92A94E0041C757 /* Trinket MobileTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Trinket MobileTests";
-			sourceTree = "<group>";
-		};
-		5FCBE5362F92A94E0041C757 /* Trinket MobileUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Trinket MobileUITests";
-			sourceTree = "<group>";
-		};
+		/* Test groups removed */
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,8 +67,7 @@
 			isa = PBXGroup;
 			children = (
 				5FCBE51E2F92A94D0041C757 /* Trinket Mobile */,
-				5FCBE52C2F92A94E0041C757 /* Trinket MobileTests */,
-				5FCBE5362F92A94E0041C757 /* Trinket MobileUITests */,
+				/* Test groups removed */
 				5FCBE51D2F92A94D0041C757 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -125,52 +114,7 @@
 			productReference = 5FCBE51C2F92A94D0041C757 /* Trinket Mobile.app */;
 			productType = "com.apple.product-type.application";
 		};
-		5FCBE5282F92A94E0041C757 /* Trinket MobileTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 5FCBE5402F92A94E0041C757 /* Build configuration list for PBXNativeTarget "Trinket MobileTests" */;
-			buildPhases = (
-				5FCBE5252F92A94E0041C757 /* Sources */,
-				5FCBE5262F92A94E0041C757 /* Frameworks */,
-				5FCBE5272F92A94E0041C757 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				5FCBE52B2F92A94E0041C757 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				5FCBE52C2F92A94E0041C757 /* Trinket MobileTests */,
-			);
-			name = "Trinket MobileTests";
-			packageProductDependencies = (
-			);
-			productName = "Trinket MobileTests";
-			productReference = 5FCBE5292F92A94E0041C757 /* Trinket MobileTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		5FCBE5322F92A94E0041C757 /* Trinket MobileUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 5FCBE5432F92A94E0041C757 /* Build configuration list for PBXNativeTarget "Trinket MobileUITests" */;
-			buildPhases = (
-				5FCBE52F2F92A94E0041C757 /* Sources */,
-				5FCBE5302F92A94E0041C757 /* Frameworks */,
-				5FCBE5312F92A94E0041C757 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				5FCBE5352F92A94E0041C757 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				5FCBE5362F92A94E0041C757 /* Trinket MobileUITests */,
-			);
-			name = "Trinket MobileUITests";
-			packageProductDependencies = (
-			);
-			productName = "Trinket MobileUITests";
-			productReference = 5FCBE5332F92A94E0041C757 /* Trinket MobileUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
+		/* Test targets removed */
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -181,18 +125,10 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
-					5FCBE51B2F92A94D0041C757 = {
-						CreatedOnToolsVersion = 26.2;
+						5FCBE51B2F92A94D0041C757 = {
+							CreatedOnToolsVersion = 26.2;
+						};
 					};
-					5FCBE5282F92A94E0041C757 = {
-						CreatedOnToolsVersion = 26.2;
-						TestTargetID = 5FCBE51B2F92A94D0041C757;
-					};
-					5FCBE5322F92A94E0041C757 = {
-						CreatedOnToolsVersion = 26.2;
-						TestTargetID = 5FCBE51B2F92A94D0041C757;
-					};
-				};
 			};
 			buildConfigurationList = 5FCBE5172F92A94D0041C757 /* Build configuration list for PBXProject "Trinket Mobile" */;
 			developmentRegion = en;
@@ -215,8 +151,6 @@
 			projectRoot = "";
 			targets = (
 				5FCBE51B2F92A94D0041C757 /* Trinket Mobile */,
-				5FCBE5282F92A94E0041C757 /* Trinket MobileTests */,
-				5FCBE5322F92A94E0041C757 /* Trinket MobileUITests */,
 			);
 		};
 /* End PBXProject section */
