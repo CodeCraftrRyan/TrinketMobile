@@ -1,0 +1,7 @@
+platform :ios, '13.0'
+use_frameworks!
+
+# CocoaPods target must match the Xcode target name (it is 'Trinket Mobile' with a space)
+target 'Trinket Mobile' do
+  # Pods for Trinket Mobile
+end

@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
+// router removed (unused) per lint cleanup
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +16,6 @@ const colors = [
 export default function ChooseIcon() {
   const [selectedIcon, setSelectedIcon] = useState<(typeof icons)[number]>(icons[0]);
   const [selectedColor, setSelectedColor] = useState(colors[0]);
-  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.safe}>

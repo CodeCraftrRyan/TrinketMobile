@@ -89,8 +89,9 @@ export default function Membership() {
                   upgraded = true;
                   break;
                 }
-              } catch (_) {
-                // ignore and retry
+              } catch (err) {
+                // ignore and retry (err captured to satisfy linter)
+                void err;
               }
               // wait 2s before retrying
               await new Promise((res) => setTimeout(res, 2000));

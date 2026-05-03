@@ -1,18 +1,5 @@
-### Xcode ###
-# Xcode user data
-**/xcuserdata/
-**/xcshareddata/WorkspaceSettings.xcsettings
-*.xcuserstate
-
-# Xcode Workspace
-**/project.xcworkspace/xcuserdata/
-
-# Build products
-build/
-DerivedData/
-
-# CocoaPods
-Pods/
+### Removed Xcode files ###
+### (Xcode project files removed per user request) ###
 
 ### macOS ###
 .DS_Store

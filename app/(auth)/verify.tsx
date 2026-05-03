@@ -12,7 +12,6 @@ export default function Verify() {
   const returnTo = params.returnTo ?? '';
 
   const [method, setMethod] = useState<'email' | 'sms'>(email ? 'email' : (phone ? 'sms' : 'email'));
-  const [destination, setDestination] = useState(method === 'email' ? email : phone);
   const [sending, setSending] = useState(false);
   const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
@@ -22,14 +21,14 @@ export default function Verify() {
   const demoBypass = __DEV__ || params.devDummy === '1' || userId === 'dev-dummy-user';
 
   useEffect(() => {
-    setDestination(method === 'email' ? email : phone);
+    // keep method in sync with supplied params
+    // destination state was unused and removed to satisfy lint rules
   }, [method, email, phone]);
 
   async function sendCode(selectedMethod: 'email' | 'sms') {
     try {
-      setSending(true);
-      setMethod(selectedMethod);
-      setDestination(selectedMethod === 'email' ? email : phone);
+  setSending(true);
+  setMethod(selectedMethod);
       // Demo bypass: do not call backend, just show the code
       if (demoBypass) {
         setSent(true);
@@ -98,7 +97,7 @@ export default function Verify() {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <BrandHeader layout="row" align="center" />
         <Text style={styles.title}>Verify your account</Text>
-        <Text style={styles.subtitle}>Choose how you'd like to receive a confirmation code.</Text>
+  <Text style={styles.subtitle}>Choose how you would like to receive a confirmation code.</Text>
 
         <View style={{ marginTop: 12 }}>
           <Pressable onPress={() => sendCode('email')} disabled={!email || sending} style={[styles.primaryBtn, (!email || sending) && styles.btnDisabled]}>

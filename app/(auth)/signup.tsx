@@ -43,8 +43,6 @@ export default function SignUp() {
   const [saving, setSaving] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'premium' | null>('pro');
   const [purchasing, setPurchasing] = useState(false);
-  const [waitingForPayment, setWaitingForPayment] = useState(false);
-  const [paymentAttempts, setPaymentAttempts] = useState(0);
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
 
   // animated value for cross-fading monthly/yearly prices (0 = monthly, 1 = yearly)
@@ -164,15 +162,13 @@ export default function SignUp() {
         const session = await (await import('../../services/payments')).createCheckoutSession(plan, undefined, email || undefined, billingInterval);
       if (!session?.url) throw new Error('Could not create checkout session');
       await (await import('../../services/payments')).openCheckout(session.url);
-        // After opening checkout, show waiting UI and poll for webhook confirmation
-        setWaitingForPayment(true);
-        setPaymentAttempts(0);
+  // After opening checkout, poll for webhook confirmation
         // Polling loop
         const maxAttempts = 60; // ~5 minutes at 5s interval
         const intervalMs = 5000;
         for (let i = 0; i < maxAttempts; i++) {
           await new Promise((res) => setTimeout(res, intervalMs));
-          setPaymentAttempts(i + 1);
+          // track attempts locally (not stored in component state)
           try {
             const { data, error } = await supabase.auth.getUser();
             if (!error && data?.user) {
@@ -180,16 +176,15 @@ export default function SignUp() {
               const status = String(meta.subscription_status || '').toLowerCase();
               const planMeta = String(meta.subscription_plan || '').toLowerCase();
               if ((status === 'active' || status === 'paid' || planMeta === plan) && planMeta) {
-                setWaitingForPayment(false);
                 setStep(3);
                 break;
               }
             }
-          } catch (e) {
-            // ignore transient errors during polling
+          } catch (err) {
+            // ignore transient errors during polling (capture err to satisfy linter)
+            void err;
           }
           if (i === maxAttempts - 1) {
-            setWaitingForPayment(false);
             Alert.alert('Payment not confirmed', 'We did not detect a confirmed payment yet. If you completed payment, please wait a moment and try "Check status" or return to the membership screen.');
           }
         }
