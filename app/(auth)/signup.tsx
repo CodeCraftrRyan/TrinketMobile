@@ -95,25 +95,48 @@ export default function SignUp() {
     if (!isPhoneValidValue) {
       throw new Error('Please enter a valid phone number for 2FA, including country code.');
     }
-    if (password.length < 6) {
-      throw new Error('Password must be at least 6 characters.');
+    if (password.length < 8) {
+      throw new Error('Password must be at least 8 characters.');
+    }
+    // Basic strength check: require letters + numbers (simple heuristic)
+    const hasLetter = /[A-Za-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    if (!hasLetter || !hasNumber) {
+      throw new Error('Password must include both letters and numbers.');
     }
     if (password !== confirmPassword) {
       throw new Error('Passwords do not match.');
     }
-    const { data, error } = await supabase.auth.signUp({
-      email: trimmedEmail,
-      password,
-      options: {
-        data: {
-          full_name: `${firstName} ${lastName}`.trim(),
-          phone_number: normalizedPhone,
-          phone_country: phoneCountry,
+    let resultData: any = null;
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password,
+        options: {
+          data: {
+            full_name: `${firstName} ${lastName}`.trim(),
+            phone_number: normalizedPhone,
+            phone_country: phoneCountry,
+          },
         },
-      },
-    });
-    if (error) throw error;
-    if (!data.session) {
+      });
+      if (error) {
+        // Surface Supabase error message to the user where possible
+        const msg = (error?.message) || JSON.stringify(error);
+        throw new Error(msg);
+      }
+      // proceed using data below
+      resultData = data;
+    } catch (err: any) {
+      // Handle network/server errors explicitly
+      if (err?.status === 504 || (err?.message || '').toLowerCase().includes('timeout')) {
+        throw new Error('Network timeout: could not reach authentication server. Please try again.');
+      }
+      // If Supabase returned a structured error (like weak_password), pass that through
+      throw err;
+    }
+  const data = resultData as any;
+  if (!data?.session) {
       // No immediate session returned; proceed to verification flow where the user
       // can choose email or SMS to receive a confirmation code and finish setup.
     const userId = data.user?.id ?? '';
