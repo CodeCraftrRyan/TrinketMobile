@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -29,6 +30,12 @@ export default function Verify() {
     try {
   setSending(true);
   setMethod(selectedMethod);
+      // Build absolute Supabase Edge Function URL to work in TestFlight/native builds
+      const extra = (Constants?.expoConfig?.extra ?? {}) as Record<string, string | undefined>;
+      const SUPABASE_URL = (process.env.EXPO_PUBLIC_SUPABASE_URL || extra.EXPO_PUBLIC_SUPABASE_URL || '').trim();
+      if (!SUPABASE_URL) throw new Error('Missing Supabase URL configuration');
+      const base = SUPABASE_URL.replace(/\/$/, '');
+      const sendUrl = `${base}/functions/v1/account-verification/send`;
       // Demo bypass: do not call backend, just show the code
       if (demoBypass) {
         setSent(true);
@@ -37,17 +44,23 @@ export default function Verify() {
         return;
       }
 
-      const resp = await fetch('/supabase/functions/account-verification/send', {
+      const payload = { userId, method: selectedMethod, destination: selectedMethod === 'email' ? email : phone };
+      console.log('[verify] sendCode -> url:', sendUrl, 'payload:', payload);
+      const resp = await fetch(sendUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, method: selectedMethod, destination: selectedMethod === 'email' ? email : phone }),
+        body: JSON.stringify(payload),
       });
-      const json = await resp.json();
-      if (!resp.ok) throw new Error(json?.error || 'Failed to send code');
+      const text = await resp.text();
+      let json: any = null;
+      try { json = text ? JSON.parse(text) : null; } catch (e) { /* non-json response */ }
+      console.log('[verify] sendCode response:', resp.status, text);
+      if (!resp.ok) throw new Error((json?.error) || json?.msg || text || 'Failed to send code');
       setSent(true);
       Alert.alert('Code sent', `A verification code was sent to your ${selectedMethod}.`);
-    } catch (e: any) {
-      Alert.alert('Send failed', e?.message ?? 'Please try again');
+    } catch (err: any) {
+      void err;
+      Alert.alert('Send failed', err?.message ?? 'Please try again');
     } finally {
       setSending(false);
     }
@@ -70,14 +83,26 @@ export default function Verify() {
         return;
       }
 
-      const resp = await fetch('/supabase/functions/account-verification/verify', {
+  const extra = (Constants?.expoConfig?.extra ?? {}) as Record<string, string | undefined>;
+  // Previously this accidentally fell back to the ANON_KEY which produced an invalid base URL.
+  const SUPABASE_URL = (process.env.EXPO_PUBLIC_SUPABASE_URL || extra.EXPO_PUBLIC_SUPABASE_URL || '').trim();
+      if (!SUPABASE_URL) throw new Error('Missing Supabase URL configuration');
+      const base = SUPABASE_URL.replace(/\/$/, '');
+      const verifyUrl = `${base}/functions/v1/account-verification/verify`;
+
+      const payload = { userId, code };
+      console.log('[verify] verify -> url:', verifyUrl, 'payload:', payload);
+      const resp = await fetch(verifyUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, code }),
+        body: JSON.stringify(payload),
       });
-      const json = await resp.json();
-      if (!json.ok) {
-        Alert.alert('Invalid code', 'Please check the code and try again.');
+      const text = await resp.text();
+      let json: any = null;
+      try { json = text ? JSON.parse(text) : null; } catch (e) { /* non-json response */ }
+      console.log('[verify] verify response:', resp.status, text);
+      if (!resp.ok || (json && json.ok === false)) {
+        Alert.alert('Invalid code', json?.error || json?.msg || 'Please check the code and try again.');
         return;
       }
       Alert.alert('Verified', 'Your account is confirmed.');
@@ -87,8 +112,9 @@ export default function Verify() {
       } else {
         router.replace('/(auth)/login');
       }
-    } catch (e: any) {
-      Alert.alert('Verification failed', e?.message ?? 'Please try again');
+    } catch (err: any) {
+      void err;
+      Alert.alert('Verification failed', err?.message ?? 'Please try again');
     }
   }
 
