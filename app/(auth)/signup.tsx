@@ -199,8 +199,20 @@ export default function SignUp() {
               const status = String(meta.subscription_status || '').toLowerCase();
               const planMeta = String(meta.subscription_plan || '').toLowerCase();
               if ((status === 'active' || status === 'paid' || planMeta === plan) && planMeta) {
-                setStep(3);
-                break;
+                // Payment confirmed. Finish onboarding and send the user to home.
+                try {
+                  // Save name (if filled) and people list as a best-effort before redirecting
+                  // These functions are no-ops in dev when they fail, so it's safe to await them.
+                  // saveName/savePeopleAndFinish are defined in this component above.
+                  // If they throw, we still navigate to home.
+                  await saveName();
+                  // savePeopleAndFinish will call router.replace('/(tabs)/home') when done
+                  await savePeopleAndFinish();
+                } catch (e) {
+                  console.warn('post-payment onboarding save failed, navigating to home anyway', e);
+                  router.replace('/(tabs)/home');
+                }
+                return;
               }
             }
           } catch (err) {

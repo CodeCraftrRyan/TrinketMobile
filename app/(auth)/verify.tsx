@@ -53,7 +53,7 @@ export default function Verify() {
       });
       const text = await resp.text();
       let json: any = null;
-      try { json = text ? JSON.parse(text) : null; } catch (e) { /* non-json response */ }
+  try { json = text ? JSON.parse(text) : null; } catch { /* non-json response */ }
       console.log('[verify] sendCode response:', resp.status, text);
       if (!resp.ok) throw new Error((json?.error) || json?.msg || text || 'Failed to send code');
       setSent(true);
@@ -99,7 +99,7 @@ export default function Verify() {
       });
       const text = await resp.text();
       let json: any = null;
-      try { json = text ? JSON.parse(text) : null; } catch (e) { /* non-json response */ }
+  try { json = text ? JSON.parse(text) : null; } catch { /* non-json response */ }
       console.log('[verify] verify response:', resp.status, text);
       if (!resp.ok || (json && json.ok === false)) {
         Alert.alert('Invalid code', json?.error || json?.msg || 'Please check the code and try again.');
