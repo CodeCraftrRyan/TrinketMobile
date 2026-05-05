@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
 
   const successUrlBase = Deno.env.get('SUCCESS_URL') || 'trinketmobile://membership';
   const cancelUrlBase = Deno.env.get('CANCEL_URL') || 'trinketmobile://membership';
-  // Ensure we append parameters with the correct separator
+  // Ensure we append parameters with the correct separator. Stripe replaces {CHECKOUT_SESSION_ID}
   const successUrl = `${successUrlBase}${successUrlBase.includes('?') ? '&' : '?'}checkout=success&session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${cancelUrlBase}${cancelUrlBase.includes('?') ? '&' : '?'}checkout=cancel`;
 
@@ -64,7 +64,8 @@ Deno.serve(async (req) => {
     params.append('mode', 'subscription');
     params.append('line_items[0][price]', priceId);
     params.append('line_items[0][quantity]', '1');
-    params.append('success_url', successUrl + '?session_id={CHECKOUT_SESSION_ID}');
+  // Stripe will replace {CHECKOUT_SESSION_ID} token in the success_url
+  params.append('success_url', successUrl);
     params.append('cancel_url', cancelUrl);
     params.append('payment_method_types[]', 'card');
     params.append('allow_promotion_codes', 'true');

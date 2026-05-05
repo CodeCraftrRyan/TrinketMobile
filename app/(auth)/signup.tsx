@@ -182,7 +182,10 @@ export default function SignUp() {
     try {
       setPurchasing(true);
       // Attempt to create a Stripe Checkout session via the backend
-        const session = await (await import('../../services/payments')).createCheckoutSession(plan, undefined, email || undefined, billingInterval);
+        // Include the current authenticated user id (if any) so Stripe session metadata can map back to our user
+        const { data: currentUserData } = await supabase.auth.getUser();
+        const currentUserId = currentUserData?.user?.id;
+        const session = await (await import('../../services/payments')).createCheckoutSession(plan, currentUserId ?? undefined, email || undefined, billingInterval);
       if (!session?.url) throw new Error('Could not create checkout session');
       await (await import('../../services/payments')).openCheckout(session.url);
   // After opening checkout, poll for webhook confirmation
