@@ -40,6 +40,7 @@ export default function Membership() {
 
   const loadMembership = useCallback(async () => {
     try {
+      await supabase.auth.refreshSession();
       const { data, error } = await supabase.auth.getUser();
       if (error) throw error;
       const user = data?.user;

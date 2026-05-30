@@ -1,0 +1,16 @@
+# Supabase functions gateway configuration
+# This file sets per-function gateway options such as JWT verification.
+#
+# The project in this repository has a functions directory with a webhook
+# handler at `supabase/functions/webhook`. The Supabase gateway may also
+# reference this function by a different slug (for example `stripe-webhook`).
+#
+# Set `verify_jwt = false` for these function routes so the gateway does not
+# require a Supabase JWT for incoming requests (useful for third-party webhooks).
+
+[functions.webhook]
+verify_jwt = false
+
+# Alias name if your deployed function slug is `stripe-webhook` instead
+[functions.stripe-webhook]
+verify_jwt = false

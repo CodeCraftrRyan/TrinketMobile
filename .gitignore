@@ -53,3 +53,4 @@ yarn-error.*
 
 app-example
 .env
+supabase/functions/.env
