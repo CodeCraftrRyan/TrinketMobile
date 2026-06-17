@@ -287,6 +287,7 @@ export default function AddTab() {
   async function syncItemPeople(itemId: string | number) {
     const { data: userData, error } = await supabase.auth.getUser();
     if (error) throw error;
+    console.warn('AUTH CHECK — user:', userData?.user?.id ?? 'NO USER', 'error:', error?.message ?? 'none');
     const userId = userData?.user?.id;
     if (!userId) return;
 
@@ -378,7 +379,7 @@ export default function AddTab() {
       date_purchased: date.trim() || null,
       acquisition_method: acquired?.label ?? null,
       location: room?.label ?? null,
-      item_category: category?.label ?? categoryLabel ?? null,
+      category_id: category?.id ?? null,
       event_id: eventId ?? null,
       user_id: userId,
       photo_url: photo ?? null,
@@ -389,6 +390,9 @@ export default function AddTab() {
       .select('id')
       .maybeSingle();
     if (insertError) throw insertError;
+    if (!data?.id) {
+      console.warn('INSERT RETURNED NO ROW — sent user_id:', row.user_id, 'full row:', JSON.stringify(row));
+    }
     if (data?.id) {
       await syncItemPeople(data.id);
       await syncItemCollection(data.id);
@@ -460,12 +464,13 @@ export default function AddTab() {
         }
 
 
-        const categoryValue = data.item_category ?? data.category ?? null;
+        const categoryValue = data.category_id ?? null;
         if (categoryValue) {
-          const label = String(categoryValue);
-          setCategoryLabel(label);
-          const foundCategory = categoryOptions.find(option => option.label.toLowerCase() === label.toLowerCase());
-          if (foundCategory) setCategory(foundCategory);
+          const foundCategory = categoryOptions.find(option => option.id === categoryValue);
+          if (foundCategory) {
+            setCategory(foundCategory);
+            setCategoryLabel(foundCategory.label);
+          }
         }
 
         const roomLabel = data.location ?? data.room ?? null;
@@ -528,10 +533,10 @@ export default function AddTab() {
   useEffect(() => {
     if (!categoryLabel || categoryOptions.length === 0) return;
     const found = categoryOptions.find(option => option.label.toLowerCase() === categoryLabel.toLowerCase());
+    // Only adopt a matched option (which carries its id). Never replace the
+    // selection with an id-less object, or category_id saves as null.
     if (found) {
-      setCategory(found);
-    } else {
-      setCategory({ label: categoryLabel, icon: getCategoryIcon(categoryLabel) });
+      setCategory(prev => (prev?.id === found.id ? prev : found));
     }
   }, [categoryLabel, categoryOptions]);
 
@@ -1262,12 +1267,12 @@ export default function AddTab() {
               onPress={async () => {
                 try {
                   const newId = await createItem();
-                  Alert.alert('Saved', 'Item created.');
                   if (newId) {
+                    Alert.alert('Saved', 'Item created.');
                     router.replace({ pathname: '/(tabs)/items/[id]', params: { id: newId } } as any);
                     return;
                   }
-                  router.replace('/(tabs)/items');
+                  Alert.alert('Save failed', 'The item could not be created. Please try again.');
                 } catch (e: any) {
                   Alert.alert('Save failed', e?.message ?? 'Please try again');
                 }

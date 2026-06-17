@@ -29,7 +29,7 @@ export async function uploadItemImageAndQueueScan({
   }
 
   const { error: uploadError } = await supabase.storage
-    .from("item-images")
+    .from("item-image")
     .upload(filePath, uploadPayload, {
       contentType: "image/jpeg",
       upsert: false,

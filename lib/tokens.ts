@@ -1,22 +1,25 @@
+// tokens.ts — mobile's single source, values flow from shared tokens.js
+import { colors, radii } from './tokens.js'; // adjust path to the shared file
+
 export const tokens = {
   colors: {
-    bg: '#F7FAFB',
-    card: '#FFFFFF',
-    primary: '#4A7A9B',
-    text: '#0C1620',
-    muted: '#2E4A5E',
-    border: '#D8E6EE',
-    accent: '#B8783A',
-    surface: '#FFFFFF',
-    surfaceSoft: '#EEF5F8',
-    tint: '#E2EDF3',
-    borderStrong: '#C8DCE8',
-    ink: '#0C1620',
-    inkMid: '#2E4A5E',
-    inkLight: '#5E7E94',
-    inkGhost: '#9BBCD1',
-    accentWarm: '#B8783A',
-    accentCool: '#4A7A9B',
+    bg: colors.frost,
+    card: colors.white,
+    primary: colors.steel,      // steel = primary/interactive (per guide)
+    text: colors.ink,
+    muted: colors.inkMid,
+    border: colors.mist,
+    accent: colors.bronze,      // bronze = CTA
+    surface: colors.white,
+    surfaceSoft: colors.blush,
+    tint: colors.ice,
+    borderStrong: colors.sage,
+    ink: colors.ink,
+    inkMid: colors.inkMid,
+    inkLight: colors.inkLight,
+    inkGhost: colors.inkGhost,
+    accentWarm: colors.bronze,
+    accentCool: colors.steel,
   },
-  radius: { md: 12 },
+  radius: { md: radii.md },
 };

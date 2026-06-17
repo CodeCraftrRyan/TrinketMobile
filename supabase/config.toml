@@ -14,3 +14,5 @@ verify_jwt = false
 # Alias name if your deployed function slug is `stripe-webhook` instead
 [functions.stripe-webhook]
 verify_jwt = false
+[functions.account-verification]
+verify_jwt = false

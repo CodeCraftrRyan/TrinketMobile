@@ -1,4 +1,3 @@
-
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 
@@ -8,7 +7,6 @@ import Screen from '../../components/Screen';
 import { useAccessibilitySettings } from '../../lib/accessibility';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
-import { createCustomerPortalSession, openCustomerPortal } from '../../services/payments';
 
 export default function Account() {
   const router = useRouter();
@@ -40,8 +38,36 @@ export default function Account() {
   const [newPerson, setNewPerson] = useState('');
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [savingPerson, setSavingPerson] = useState(false);
-  const [openingPortal, setOpeningPortal] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState<'Free' | 'Pro' | 'Premium'>('Free');
   const { settings, setLargeText, setHighContrast } = useAccessibilitySettings();
+
+  // Read the user's real plan from subscriptions -> subscription_plans (same
+  // source of truth as web and the membership screen). Display only — all
+  // purchasing/management happens on the web.
+  useEffect(() => {
+    if (!userId) return;
+    let mounted = true;
+    (async () => {
+      try {
+        const { data: sub, error } = await supabase
+          .from('subscriptions')
+          .select('plan_id, subscription_plans ( name )')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        const join = sub?.subscription_plans as { name?: string } | { name?: string }[] | null | undefined;
+        const row = Array.isArray(join) ? join[0] : join;
+        const name = row?.name ?? 'Free';
+        const resolved = (['Free', 'Pro', 'Premium'].includes(name) ? name : 'Free') as 'Free' | 'Pro' | 'Premium';
+        if (mounted) setCurrentPlan(resolved);
+      } catch (e: any) {
+        console.warn('Failed to load plan', e?.message ?? e);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [userId]);
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -58,23 +84,6 @@ export default function Account() {
       } },
     ]);
   };
-
-  async function handleManageSubscription() {
-    if (openingPortal) return;
-    setOpeningPortal(true);
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) throw error;
-      const user = data?.user;
-      const session = await createCustomerPortalSession(undefined, user?.email ?? undefined);
-      if (!session?.url) throw new Error('Portal session not available.');
-      await openCustomerPortal(session.url);
-    } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Could not open billing portal');
-    } finally {
-      setOpeningPortal(false);
-    }
-  }
 
   useEffect(() => {
     let mounted = true;
@@ -269,13 +278,11 @@ export default function Account() {
         {/* Subscription */}
         <SectionHeader>SUBSCRIPTION</SectionHeader>
         <Card>
-          <Row left="Current Plan" right={<Text style={styles.freeBadge}>Free</Text>} chevron={false} />
-          <View style={styles.divider} />
-          <Row left="Upgrade to Pro" right={<Text style={styles.subPrice}>$2.99 / mo</Text>} onPress={() => router.push('/membership?plan=pro')} />
-          <View style={styles.divider} />
-          <Row left="Lifetime Access" right={<Text style={styles.subPrice}>$49.99</Text>} onPress={() => router.push('/membership?plan=lifetime')} />
-          <View style={styles.divider} />
-          <Row left="Manage Subscription" right={openingPortal ? <Text style={styles.rowRight}>Opening…</Text> : 'Billing'} onPress={openingPortal ? undefined : handleManageSubscription} />
+          <Row
+            left="Current Plan"
+            right={<Text style={styles.freeBadge}>{currentPlan}</Text>}
+            onPress={() => router.push('/membership')}
+          />
         </Card>
 
         {/* Accessibility */}

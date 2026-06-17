@@ -2,6 +2,8 @@
 // Minimal, single serve() entrypoint and no duplicated blocks.
 
 // @ts-nocheck
+
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
@@ -9,20 +11,13 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "
 const VERIFICATION_HMAC_SECRET = Deno.env.get("VERIFICATION_HMAC_SECRET") || "";
 const DEV_RETURN_CODES = !!Deno.env.get("DEV_RETURN_CODES");
 
-// Clean account-verification Edge Function (single-file Deno function)
-// Minimal, single serve() entrypoint and no duplicated blocks.
-
-// @ts-nocheck
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-const VERIFICATION_HMAC_SECRET = Deno.env.get("VERIFICATION_HMAC_SECRET") || "";
-const DEV_RETURN_CODES = !!Deno.env.get("DEV_RETURN_CODES");
-
 const SENDGRID_API_KEY = Deno.env.get("SENDGRID_API_KEY");
-const TWILIO_SID = Deno.env.get("TWILIO_SID");
-const TWILIO_TOKEN = Deno.env.get("TWILIO_TOKEN");
-const TWILIO_FROM = Deno.env.get("TWILIO_FROM");
+
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 function genCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -40,7 +35,6 @@ async function hmacHex(message: string) {
     const sig = await globalThis.crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
     return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
   }
-  // fallback (not cryptographically secure) for environments without subtle
   return btoa(message + VERIFICATION_HMAC_SECRET);
 }
 
@@ -62,14 +56,15 @@ async function insertHashedCode(userId: string, method: string, destination: str
     const txt = await res.text();
     throw new Error(`insertHashedCode failed: ${res.status} ${txt}`);
   }
-  return { code };
+  const data = await res.json();
+  return { code, row: Array.isArray(data) ? data[0] : data };
 }
 
 async function sendWithSendGrid(destination: string, subject: string, text: string) {
   if (!SENDGRID_API_KEY) throw new Error("SENDGRID_API_KEY not configured");
   const payload = {
     personalizations: [{ to: [{ email: destination }] }],
-    from: { email: "no-reply@trinketmobile.app" },
+    from: { email: "admin@yourtrinkets.com" },
     subject,
     content: [{ type: "text/plain", value: text }],
   };
@@ -84,27 +79,8 @@ async function sendWithSendGrid(destination: string, subject: string, text: stri
   }
 }
 
-async function sendWithTwilio(destination: string, bodyText: string) {
-  if (!TWILIO_SID || !TWILIO_TOKEN || !TWILIO_FROM) throw new Error("Twilio config missing");
-  const auth = btoa(`${TWILIO_SID}:${TWILIO_TOKEN}`);
-  const params = new URLSearchParams();
-  params.append("To", destination);
-  params.append("From", TWILIO_FROM);
-  params.append("Body", bodyText);
-  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
-    method: "POST",
-    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" },
-    body: params.toString(),
-  });
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Twilio send failed: ${res.status} ${txt}`);
-  }
-}
-
-async function dispatchCode(method: string, destination: string, code: string) {
+async function dispatchCode(destination: string, code: string) {
   const text = `Your Trinket verification code is: ${code}`;
-  if (method === "sms") return sendWithTwilio(destination, text);
   return sendWithSendGrid(destination, "Your Trinket verification code", text);
 }
 
@@ -118,36 +94,75 @@ async function findLatestRow(userId: string) {
 
 serve(async (req: Request) => {
   try {
+    if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+
     const url = new URL(req.url);
 
     if (req.method === "POST" && url.pathname.endsWith("/send")) {
       const body = await req.json();
       const userId = body.userId ?? body.user_id ?? "";
-      const method = body.method;
-      const destination = body.destination ?? body.email ?? body.phone ?? "";
-      if (!userId || !method || !destination) {
-        return new Response(JSON.stringify({ ok: false, error: "missing" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      // enforce email-only verification
+      const destination = body.destination ?? body.email ?? "";
+      if (!userId || !destination) {
+        return new Response(JSON.stringify({ ok: false, error: "missing userId or email" }), { status: 400, headers: { "Content-Type": "application/json", ...cors } });
       }
-      const { code } = await insertHashedCode(userId, method, destination);
-      try {
-        await dispatchCode(method, destination, code);
-      } catch (sendErr) {
-        if (DEV_RETURN_CODES) return new Response(JSON.stringify({ ok: true, dev_code: code }), { headers: { "Content-Type": "application/json" } });
-        console.error("send failed", sendErr);
-        return new Response(JSON.stringify({ ok: false, error: "send_failed" }), { status: 500, headers: { "Content-Type": "application/json" } });
-      }
-      return new Response(JSON.stringify({ ok: true, dev_code: DEV_RETURN_CODES ? code : undefined }), { headers: { "Content-Type": "application/json" } });
+      const method = 'email';
+      const { code, row } = await insertHashedCode(userId, method, destination);
+
+      const earlyResp = new Response(JSON.stringify({ ok: true, dev_code: DEV_RETURN_CODES ? code : undefined }), { headers: { "Content-Type": "application/json", ...cors } });
+
+      (async () => {
+        const maxRetries = 2;
+        const baseDelay = 500;
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+              try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 8000);
+                try {
+                  await Promise.race([dispatchCode(destination, code), new Promise((_, rej) => controller.signal.addEventListener('abort', () => rej(new Error('timeout'))))]);
+                } finally {
+                  clearTimeout(timeout);
+                }
+                break;
+              } catch (err) {
+            console.error(`dispatch attempt ${attempt} failed`, err?.message ?? err);
+            if (attempt < maxRetries) {
+              await new Promise((res) => setTimeout(res, baseDelay * (attempt + 1)));
+              continue;
+            }
+            try {
+              if (row && row.id) {
+                await fetch(`${SUPABASE_URL}/rest/v1/account_verification_codes?id=eq.${encodeURIComponent(row.id)}`, {
+                  method: "PATCH",
+                  headers: { Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, apikey: SUPABASE_SERVICE_ROLE_KEY, "Content-Type": "application/json" },
+                  body: JSON.stringify({ send_failed: true }),
+                });
+              } else {
+                await fetch(`${SUPABASE_URL}/rest/v1/account_verification_codes?user_id=eq.${encodeURIComponent(userId)}`, {
+                  method: "PATCH",
+                  headers: { Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, apikey: SUPABASE_SERVICE_ROLE_KEY, "Content-Type": "application/json" },
+                  body: JSON.stringify({ send_failed: true }),
+                });
+              }
+            } catch (patchErr) {
+              console.error('failed to mark send_failed on row', patchErr);
+            }
+          }
+        }
+      })();
+
+      return earlyResp;
     }
 
     if (req.method === "POST" && url.pathname.endsWith("/verify")) {
       const body = await req.json();
       const userId = body.userId ?? body.user_id ?? "";
       const code = body.code ?? "";
-      if (!userId || !code) return new Response(JSON.stringify({ ok: false, error: "missing" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      if (!userId || !code) return new Response(JSON.stringify({ ok: false, error: "missing" }), { status: 400, headers: { "Content-Type": "application/json", ...cors } });
       const row = await findLatestRow(userId);
-      if (!row) return new Response(JSON.stringify({ ok: false, reason: "no-code" }), { status: 400, headers: { "Content-Type": "application/json" } });
-      if (row.locked) return new Response(JSON.stringify({ ok: false, reason: "locked" }), { status: 423, headers: { "Content-Type": "application/json" } });
-      if (row.used) return new Response(JSON.stringify({ ok: false, reason: "used" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      if (!row) return new Response(JSON.stringify({ ok: false, reason: "no-code" }), { status: 400, headers: { "Content-Type": "application/json", ...cors } });
+      if (row.locked) return new Response(JSON.stringify({ ok: false, reason: "locked" }), { status: 423, headers: { "Content-Type": "application/json", ...cors } });
+      if (row.used) return new Response(JSON.stringify({ ok: false, reason: "used" }), { status: 400, headers: { "Content-Type": "application/json", ...cors } });
       const hashed = await hmacHex(code);
       if (hashed !== row.hashed_code) {
         await fetch(`${SUPABASE_URL}/rest/v1/account_verification_codes?id=eq.${row.id}`, {
@@ -155,19 +170,26 @@ serve(async (req: Request) => {
           headers: { Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, apikey: SUPABASE_SERVICE_ROLE_KEY, "Content-Type": "application/json" },
           body: JSON.stringify({ attempts: (row.attempts || 0) + 1 }),
         });
-        return new Response(JSON.stringify({ ok: false, reason: "bad" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ ok: false, reason: "bad" }), { status: 400, headers: { "Content-Type": "application/json", ...cors } });
       }
+      // Mark the code used.
       await fetch(`${SUPABASE_URL}/rest/v1/account_verification_codes?id=eq.${row.id}`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, apikey: SUPABASE_SERVICE_ROLE_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({ used: true }),
       });
-      return new Response(JSON.stringify({ ok: true }), { headers: { "Content-Type": "application/json" } });
+      // Stamp the user as verified so the apps know access is allowed.
+      await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, apikey: SUPABASE_SERVICE_ROLE_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ user_metadata: { account_verified: true } }),
+      });
+      return new Response(JSON.stringify({ ok: true }), { headers: { "Content-Type": "application/json", ...cors } });
     }
 
-    return new Response("Not found", { status: 404 });
+    return new Response("Not found", { status: 404, headers: cors });
   } catch (e) {
     console.error("verification function error", e);
-    return new Response(JSON.stringify({ ok: false, error: e?.message ?? String(e) }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: false, error: e?.message ?? String(e) }), { status: 500, headers: { "Content-Type": "application/json", ...cors } });
   }
 });

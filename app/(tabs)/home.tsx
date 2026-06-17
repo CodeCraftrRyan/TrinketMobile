@@ -184,7 +184,7 @@ export default function Home() {
             </Text>
           </View>
           <TouchableOpacity
-            onPress={() => router.push({ pathname: '/(tabs)/search', params: { openCamera: 'true' } })}
+            onPress={() => router.push('/visual-search')}
             style={{ marginLeft: 8, backgroundColor: '#D8E6EE', borderRadius: 8, padding: 6 }}
             accessibilityLabel="Image Search"
           >
