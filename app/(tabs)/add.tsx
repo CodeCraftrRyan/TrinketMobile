@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 // the module). The module will be dynamically imported when the user attempts
 // to pick or take a photo.
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BrandHeader from '../../components/ui/BrandHeader';
 import { supabase } from '../../lib/supabase';
@@ -50,7 +50,7 @@ const ACQUIRED_OPTIONS = [
 
 export default function AddTab() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, incomingPhoto } = useLocalSearchParams<{ id?: string; incomingPhoto?: string }>();
   const isEditing = Boolean(id);
   const today = new Date().toISOString().split('T')[0];
   const [focusedField, setFocusedField] = useState('');
@@ -86,6 +86,17 @@ export default function AddTab() {
   const [newCollectionName, setNewCollectionName] = useState('');
   const [collectionsUserId, setCollectionsUserId] = useState<string | null>(null);
   const [photo, setPhoto] = useState(null);
+  // When arriving from visual search with a photo, pre-load it for a new item.
+  // Guarded to new items only (no id) so it never overwrites an edit-mode photo.
+  const incomingPhotoApplied = useRef(false);
+  useEffect(() => {
+    if (incomingPhotoApplied.current) return;
+    if (isEditing) return;
+    if (incomingPhoto && typeof incomingPhoto === 'string' && incomingPhoto.length > 0) {
+      incomingPhotoApplied.current = true;
+      setPhoto(incomingPhoto as any);
+    }
+  }, [incomingPhoto, isEditing]);
 
   const filteredEvents = events.filter((row) => row.name.toLowerCase().includes(eventsFilter.toLowerCase()));
   const filteredCollections = collections.filter((row) => row.toLowerCase().includes(collectionsFilter.toLowerCase()));
