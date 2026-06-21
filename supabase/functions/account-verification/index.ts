@@ -165,12 +165,14 @@ serve(async (req: Request) => {
       if (row.used) return new Response(JSON.stringify({ ok: false, reason: "used" }), { status: 400, headers: { "Content-Type": "application/json", ...cors } });
       const hashed = await hmacHex(code);
       if (hashed !== row.hashed_code) {
+        const newAttempts = (row.attempts || 0) + 1;
+        const nowLocked = newAttempts >= 5;
         await fetch(`${SUPABASE_URL}/rest/v1/account_verification_codes?id=eq.${row.id}`, {
           method: "PATCH",
           headers: { Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, apikey: SUPABASE_SERVICE_ROLE_KEY, "Content-Type": "application/json" },
-          body: JSON.stringify({ attempts: (row.attempts || 0) + 1 }),
+          body: JSON.stringify({ attempts: newAttempts, locked: nowLocked }),
         });
-        return new Response(JSON.stringify({ ok: false, reason: "bad" }), { status: 400, headers: { "Content-Type": "application/json", ...cors } });
+        return new Response(JSON.stringify({ ok: false, reason: nowLocked ? "locked" : "bad" }), { status: nowLocked ? 423 : 400, headers: { "Content-Type": "application/json", ...cors } });
       }
       // Mark the code used.
       await fetch(`${SUPABASE_URL}/rest/v1/account_verification_codes?id=eq.${row.id}`, {
