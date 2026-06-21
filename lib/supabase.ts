@@ -30,3 +30,19 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: false,
   },
 });
+
+
+// --- Token auto-refresh tied to app foreground/background ---
+// Without this, the access token can go stale while the app is backgrounded
+// (e.g. when the camera UI takes over during visual search), causing the next
+// auth check to fail and eject the user to login. Supabase recommends driving
+// startAutoRefresh/stopAutoRefresh from AppState in React Native.
+import { AppState } from 'react-native';
+
+AppState.addEventListener('change', (state) => {
+  if (state === 'active') {
+    supabase.auth.startAutoRefresh();
+  } else {
+    supabase.auth.stopAutoRefresh();
+  }
+});

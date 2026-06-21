@@ -14,17 +14,41 @@ export default function TabsLayout() {
     let mounted = true;
     async function verifySubscription() {
       try {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) throw error;
-        const user = data?.user;
+        // Read the session locally first. getSession() does not make a blocking
+        // network call the way getUser() does, so a stale token right after the
+        // app returns from the background (e.g. the camera during visual search)
+        // no longer ejects the user to login.
+        const { data: sessionData } = await supabase.auth.getSession();
+        const user = sessionData?.session?.user;
         if (!user) {
           router.replace('/(auth)/login');
           return;
         }
-        const meta = user.user_metadata || {};
-        const plan = String(meta.subscription_plan || 'free').toLowerCase();
-        const status = String(meta.subscription_status || '').toLowerCase();
-        // If subscription is missing, not a paid plan, or in a bad status, route to support
+        // Plan comes from subscriptions -> subscription_plans (the source of
+        // truth the Stripe webhook writes to), NOT user_metadata, which the
+        // webhook never touches. Mirrors account.tsx / membership.tsx.
+        const { data: sub, error: subError } = await supabase
+          .from('subscriptions')
+          .select('status, plan_id, subscription_plans ( name, slug )')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        // Fail open on a transient read error: don't eject a paying user just
+        // because the subscription query blipped on resume. RLS still protects data.
+        if (subError) {
+          if (mounted) setChecking(false);
+          return;
+        }
+        const planJoin = sub?.subscription_plans as
+          | { name?: string; slug?: string }
+          | { name?: string; slug?: string }[]
+          | null
+          | undefined;
+        const planRow = Array.isArray(planJoin) ? planJoin[0] : planJoin;
+        const plan = String(planRow?.slug || 'free').toLowerCase();
+        const status = String(sub?.status || '').toLowerCase();
+        // Only paid plans in good standing reach the tabs.
         if (!paidPlans.has(plan) || status === 'past_due' || status === 'canceled' || status === 'deleted') {
           router.replace('/support' as any);
           return;
