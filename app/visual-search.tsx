@@ -181,7 +181,13 @@ export default function VisualSearchScreen() {
               <View style={{ alignItems: 'center', paddingVertical: 20 }}>
                 <Ionicons name="search-outline" size={48} color="#D8E6EE" />
                 <Text style={{ fontSize: 16, fontWeight: '600', marginTop: 12, marginBottom: 4 }}>No similar items found</Text>
-                <Text style={{ color: '#4A7A9B', textAlign: 'center' }}>Try taking another photo from a different angle</Text>
+                <Text style={{ color: '#4A7A9B', textAlign: 'center', marginBottom: 20 }}>This item isn't in your archive yet. Want to add it?</Text>
+                <View style={{ width: '100%', paddingHorizontal: 8 }}>
+                  <Button title="Create new item" onPress={() => router.push('/(tabs)/add')} />
+                  <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 14, alignItems: 'center' }}>
+                    <Text style={{ color: '#4A7A9B', fontWeight: '600' }}>Back</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </Card>
           ) : null}
