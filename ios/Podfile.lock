@@ -42,6 +42,9 @@ PODS:
   - ExpoHead (6.0.22):
     - ExpoModulesCore
     - RNScreens
+  - ExpoIap (4.3.1):
+    - ExpoModulesCore
+    - openiap (= 2.2.1)
   - ExpoImagePicker (14.7.1):
     - ExpoModulesCore
   - ExpoKeepAwake (15.0.8):
@@ -83,6 +86,7 @@ PODS:
   - hermes-engine (0.81.4):
     - hermes-engine/Pre-built (= 0.81.4)
   - hermes-engine/Pre-built (0.81.4)
+  - openiap (2.2.1)
   - RCTDeprecation (0.81.4)
   - RCTRequired (0.81.4)
   - RCTTypeSafety (0.81.4):
@@ -2118,6 +2122,7 @@ DEPENDENCIES:
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios`)
   - ExpoFont (from `../node_modules/expo-font/ios`)
   - ExpoHead (from `../node_modules/expo-router/ios`)
+  - ExpoIap (from `../node_modules/expo-iap/ios`)
   - ExpoImagePicker (from `../node_modules/expo-image-picker/ios`)
   - ExpoKeepAwake (from `../node_modules/expo-keep-awake/ios`)
   - ExpoLinearGradient (from `../node_modules/expo-linear-gradient/ios`)
@@ -2204,6 +2209,10 @@ DEPENDENCIES:
   - RNWorklets (from `../node_modules/react-native-worklets`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
+SPEC REPOS:
+  trunk:
+    - openiap
+
 EXTERNAL SOURCES:
   EXApplication:
     :path: "../node_modules/expo-auth-session/node_modules/expo-application/ios"
@@ -2223,6 +2232,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-font/ios"
   ExpoHead:
     :path: "../node_modules/expo-router/ios"
+  ExpoIap:
+    :path: "../node_modules/expo-iap/ios"
   ExpoImagePicker:
     :path: "../node_modules/expo-image-picker/ios"
   ExpoKeepAwake:
@@ -2403,6 +2414,7 @@ SPEC CHECKSUMS:
   ExpoFileSystem: 858a44267a3e6e9057e0888ad7c7cfbf55d52063
   ExpoFont: f543ce20a228dd702813668b1a07b46f51878d47
   ExpoHead: 4425246bc93411f0fe7f6945f95f698e91db8780
+  ExpoIap: 1fefb7f5e5037394d42244cd08bbae39831f98e4
   ExpoImagePicker: d06822d74f1f0e7fe7cb070ece0fff6e678fa3eb
   ExpoKeepAwake: 55f75eca6499bb9e4231ebad6f3e9cb8f99c0296
   ExpoLinearGradient: a464898cb95153125e3b81894fd479bcb1c7dd27
@@ -2413,6 +2425,7 @@ SPEC CHECKSUMS:
   ExpoWebBrowser: 17b064c621789e41d4816c95c93f429b84971f52
   FBLazyVector: 9e0cd874afd81d9a4d36679daca991b58b260d42
   hermes-engine: 35c763d57c9832d0eef764316ca1c4d043581394
+  openiap: 4910f61869070601855431ba15cd4f3a116001f7
   RCTDeprecation: 7487d6dda857ccd4cb3dd6ecfccdc3170e85dcbc
   RCTRequired: 54128b7df8be566881d48c7234724a78cb9b6157
   RCTTypeSafety: d2b07797a79e45d7b19e1cd2f53c79ab419fe217
@@ -2488,6 +2501,6 @@ SPEC CHECKSUMS:
   RNWorklets: 76fce72926e28e304afb44f0da23b2d24f2c1fa0
   Yoga: 051f086b5ccf465ff2ed38a2cf5a558ae01aaaa1
 
-PODFILE CHECKSUM: f84e3d2f1b639c51b671bbff2c547e1f0a9cc88d
+PODFILE CHECKSUM: 9e457bbf6b924a808aa08d39e914e3b4bb01a183
 
 COCOAPODS: 1.16.2

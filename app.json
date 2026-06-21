@@ -37,7 +37,8 @@
           "backgroundColor": "#0C1620"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-iap"
     ],
     "experiments": {
       "typedRoutes": true
