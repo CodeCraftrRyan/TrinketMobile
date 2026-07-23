@@ -3,7 +3,7 @@ PODS:
     - ExpoModulesCore
   - EXConstants (18.0.13):
     - ExpoModulesCore
-  - EXImageLoader (4.6.0):
+  - EXImageLoader (6.0.0):
     - ExpoModulesCore
     - React-Core
   - Expo (54.0.32):
@@ -43,7 +43,7 @@ PODS:
   - ExpoIap (4.3.1):
     - ExpoModulesCore
     - openiap (= 2.2.1)
-  - ExpoImagePicker (14.7.1):
+  - ExpoImagePicker (17.0.11):
     - ExpoModulesCore
   - ExpoKeepAwake (15.0.8):
     - ExpoModulesCore
@@ -2402,14 +2402,14 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   EXApplication: 1e98d4b1dccdf30627f92917f4b2c5a53c330e5f
   EXConstants: fce59a631a06c4151602843667f7cfe35f81e271
-  EXImageLoader: ba2506b443b9656e93167c104406a2c265924823
+  EXImageLoader: 189e3476581efe3ad4d1d3fb4735b7179eb26f05
   Expo: 4e503a041c59c4e34c8be262a135848ad5cd3710
   ExpoAsset: f867e55ceb428aab99e1e8c082b5aee7c159ea18
   ExpoCrypto: b6105ebaa15d6b38a811e71e43b52cd934945322
   ExpoFont: f543ce20a228dd702813668b1a07b46f51878d47
   ExpoHead: 4425246bc93411f0fe7f6945f95f698e91db8780
   ExpoIap: 1fefb7f5e5037394d42244cd08bbae39831f98e4
-  ExpoImagePicker: d06822d74f1f0e7fe7cb070ece0fff6e678fa3eb
+  ExpoImagePicker: ade85e148f735fc7e6f27dfe3eef28eb3887e90a
   ExpoKeepAwake: 55f75eca6499bb9e4231ebad6f3e9cb8f99c0296
   ExpoLinearGradient: a464898cb95153125e3b81894fd479bcb1c7dd27
   ExpoLinking: 8f0aaf69aa56f832913030503b6263dc6f647f37
