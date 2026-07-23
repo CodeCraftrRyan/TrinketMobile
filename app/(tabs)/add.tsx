@@ -6,8 +6,22 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+// SDK 54 moved readAsStringAsync to the legacy entry point.
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
 import BrandHeader from '../../components/ui/BrandHeader';
 import { supabase } from '../../lib/supabase';
+
+const PHOTO_BUCKET = 'item-photos';
+
+type PhotoEntry = {
+  key: string;          // local-only unique key for React + removal
+  localUri?: string;    // newly picked, not yet uploaded
+  storagePath?: string; // already in the bucket (existing photo)
+  displayUri: string;   // what we render (local uri or signed url)
+};
+
+const genKey = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
 
 const CATEGORY_ICON_MAP: Record<string, string> = {
@@ -66,6 +80,7 @@ export default function AddTab() {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(today);
   const [acquired, setAcquired] = useState(ACQUIRED_OPTIONS[0]);
+  const [acquiredModalVisible, setAcquiredModalVisible] = useState(false);
   const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
   const [peopleOptions, setPeopleOptions] = useState<string[]>([]);
   const [peopleModalVisible, setPeopleModalVisible] = useState(false);
@@ -85,7 +100,13 @@ export default function AddTab() {
   const [collectionsFilter, setCollectionsFilter] = useState('');
   const [newCollectionName, setNewCollectionName] = useState('');
   const [collectionsUserId, setCollectionsUserId] = useState<string | null>(null);
-  const [photo, setPhoto] = useState(null);
+
+  // --- Photos (multi-image, plan-gated) ---
+  const [photos, setPhotos] = useState<PhotoEntry[]>([]);
+  const [removedStoragePaths, setRemovedStoragePaths] = useState<string[]>([]);
+  const [maxPhotos, setMaxPhotos] = useState(1); // Free fallback
+  const [savingPhotos, setSavingPhotos] = useState(false);
+
   // When arriving from visual search with a photo, pre-load it for a new item.
   // Guarded to new items only (no id) so it never overwrites an edit-mode photo.
   const incomingPhotoApplied = useRef(false);
@@ -94,12 +115,41 @@ export default function AddTab() {
     if (isEditing) return;
     if (incomingPhoto && typeof incomingPhoto === 'string' && incomingPhoto.length > 0) {
       incomingPhotoApplied.current = true;
-      setPhoto(incomingPhoto as any);
+      setPhotos([{ key: genKey(), localUri: incomingPhoto, displayUri: incomingPhoto }]);
     }
   }, [incomingPhoto, isEditing]);
 
   const filteredEvents = events.filter((row) => row.name.toLowerCase().includes(eventsFilter.toLowerCase()));
   const filteredCollections = collections.filter((row) => row.toLowerCase().includes(collectionsFilter.toLowerCase()));
+
+  // Read the user's photo cap from subscriptions -> subscription_plans.
+  // NOTE: this query mirrors the session gate's read; if your gate filters by
+  // status or uses a different join, align these few lines. The DB trigger
+  // enforces the true limit regardless, so a wrong read only affects UX.
+  useEffect(() => {
+    let mounted = true;
+    async function loadCap() {
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData?.user?.id;
+        if (!userId) return;
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .select('subscription_plans(max_photos_per_item)')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        const cap = (data as any)?.subscription_plans?.max_photos_per_item;
+        if (mounted && Number.isFinite(cap) && cap > 0) setMaxPhotos(cap);
+      } catch (e) {
+        console.warn('Failed to load photo cap; defaulting to 1', e);
+      }
+    }
+    loadCap();
+    return () => { mounted = false; };
+  }, []);
 
   async function fetchPeopleOptions() {
     const { data, error } = await supabase.auth.getUser();
@@ -121,7 +171,29 @@ export default function AddTab() {
     return unique;
   }
 
+  function addLocalPhoto(uri: string) {
+    if (photos.length >= maxPhotos) {
+      Alert.alert('Photo limit reached', `Your plan allows up to ${maxPhotos} photo${maxPhotos > 1 ? 's' : ''} per item.`);
+      return;
+    }
+    setPhotos((prev) => [...prev, { key: genKey(), localUri: uri, displayUri: uri }]);
+  }
+
+  function removePhoto(key: string) {
+    setPhotos((prev) => {
+      const target = prev.find((p) => p.key === key);
+      if (target?.storagePath) {
+        setRemovedStoragePaths((r) => [...r, target.storagePath as string]);
+      }
+      return prev.filter((p) => p.key !== key);
+    });
+  }
+
   async function pickFromLibrary() {
+    if (photos.length >= maxPhotos) {
+      Alert.alert('Photo limit reached', `Your plan allows up to ${maxPhotos} photo${maxPhotos > 1 ? 's' : ''} per item.`);
+      return;
+    }
     try {
       const ImagePicker = await import('expo-image-picker');
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -135,7 +207,7 @@ export default function AddTab() {
         quality: 0.8,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setPhoto(result.assets[0].uri);
+        addLocalPhoto(result.assets[0].uri);
       }
     } catch (e) {
       console.warn('Failed to load image picker', e);
@@ -144,6 +216,10 @@ export default function AddTab() {
   }
 
   async function takePhoto() {
+    if (photos.length >= maxPhotos) {
+      Alert.alert('Photo limit reached', `Your plan allows up to ${maxPhotos} photo${maxPhotos > 1 ? 's' : ''} per item.`);
+      return;
+    }
     try {
       const ImagePicker = await import('expo-image-picker');
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -157,7 +233,7 @@ export default function AddTab() {
         quality: 0.8,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setPhoto(result.assets[0].uri);
+        addLocalPhoto(result.assets[0].uri);
       }
     } catch (e) {
       console.warn('Failed to load image picker', e);
@@ -166,12 +242,17 @@ export default function AddTab() {
   }
 
   async function handlePhotoUpload() {
+    if (photos.length >= maxPhotos) {
+      Alert.alert('Photo limit reached', `Your plan allows up to ${maxPhotos} photo${maxPhotos > 1 ? 's' : ''} per item.`);
+      return;
+    }
     Alert.alert('Add Photo', 'Choose a source', [
       { text: 'Take Photo', onPress: takePhoto },
       { text: 'Choose from Library', onPress: pickFromLibrary },
       { text: 'Cancel', style: 'cancel' },
     ]);
   }
+
   const handleCategorySelect = (item: { label: string; icon: string }) => {
     setCategory(item);
     setCategoryLabel(item.label);
@@ -188,10 +269,79 @@ export default function AddTab() {
   };
 
   const handleAcquiredPress = () => {
-    const currentIndex = ACQUIRED_OPTIONS.findIndex(opt => opt.label === acquired.label);
-    const nextIndex = (currentIndex + 1) % ACQUIRED_OPTIONS.length;
-    setAcquired(ACQUIRED_OPTIONS[nextIndex]);
+    setAcquiredModalVisible(true);
   };
+
+  const handleAcquiredSelect = (item: { label: string; icon: string }) => {
+    setAcquired(item);
+    setAcquiredModalVisible(false);
+  };
+
+  // Upload one local file into item-photos/<uid>/<itemId>/<file> and return the path.
+  async function uploadPhoto(localUri: string, userId: string, itemId: string | number, index: number) {
+    const ext = (localUri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+    const fileName = `${Date.now()}-${index}.${ext}`;
+    const path = `${userId}/${itemId}/${fileName}`;
+    const base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+    const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    const { error } = await supabase.storage
+      .from(PHOTO_BUCKET)
+      .upload(path, decode(base64), { contentType, upsert: false });
+    if (error) throw error;
+    return path;
+  }
+
+  // Used on create: upload every (local) photo, write item_photos rows, set cover.
+  async function persistNewPhotos(itemId: string | number, userId: string) {
+    let coverPath: string | null = null;
+    for (let i = 0; i < photos.length; i++) {
+      const p = photos[i];
+      if (!p.localUri) continue;
+      const path = await uploadPhoto(p.localUri, userId, itemId, i);
+      const { error } = await supabase
+        .from('item_photos')
+        .insert({ item_id: itemId, user_id: userId, storage_path: path, sort_order: i });
+      if (error) throw error;
+      if (i === 0) coverPath = path;
+    }
+    if (coverPath) {
+      await supabase.from('items').update({ photo_url: coverPath }).eq('id', itemId);
+    }
+  }
+
+  // Used on edit save: delete removed files, upload new ones, rewrite rows in order, set cover.
+  async function syncItemPhotos(itemId: string | number) {
+    const { data: userData, error } = await supabase.auth.getUser();
+    if (error) throw error;
+    const userId = userData?.user?.id;
+    if (!userId) return;
+
+    if (removedStoragePaths.length) {
+      await supabase.storage.from(PHOTO_BUCKET).remove(removedStoragePaths);
+    }
+
+    const finalPaths: string[] = [];
+    for (let i = 0; i < photos.length; i++) {
+      const p = photos[i];
+      let path = p.storagePath;
+      if (!path && p.localUri) {
+        path = await uploadPhoto(p.localUri, userId, itemId, i);
+      }
+      if (path) finalPaths.push(path);
+    }
+
+    // Rewrite rows so sort_order matches the current on-screen order.
+    const { error: delError } = await supabase.from('item_photos').delete().eq('item_id', itemId);
+    if (delError) throw delError;
+    if (finalPaths.length) {
+      const rows = finalPaths.map((sp, idx) => ({ item_id: itemId, user_id: userId, storage_path: sp, sort_order: idx }));
+      const { error: insError } = await supabase.from('item_photos').insert(rows);
+      if (insError) throw insError;
+    }
+
+    await supabase.from('items').update({ photo_url: finalPaths[0] ?? null }).eq('id', itemId);
+    setRemovedStoragePaths([]);
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -393,7 +543,7 @@ export default function AddTab() {
       category_id: category?.id ?? null,
       event_id: eventId ?? null,
       user_id: userId,
-      photo_url: photo ?? null,
+      photo_url: null, // set to cover storage_path after photos upload
     };
     const { data, error: insertError } = await supabase
       .from('items')
@@ -407,6 +557,7 @@ export default function AddTab() {
     if (data?.id) {
       await syncItemPeople(data.id);
       await syncItemCollection(data.id);
+      if (userId) await persistNewPhotos(data.id, userId);
       return String(data.id);
     }
     return null;
@@ -496,14 +647,27 @@ export default function AddTab() {
           if (foundAcquired) setAcquired(foundAcquired);
         }
 
-        const image = Array.isArray(data.images) && data.images.length > 0
-          ? data.images[0]
-          : Array.isArray(data.image_urls) && data.image_urls.length > 0
-            ? data.image_urls[0]
-            : typeof data.image_urls === 'string'
-              ? data.image_urls.split(',')[0]
-              : data.image_url ?? data.photo_url ?? data.cover_photo_url ?? null;
-        if (image) setPhoto(image);
+        // Load multi-photos from item_photos, signing each path for display.
+        try {
+          const { data: photoRows, error: photoError } = await supabase
+            .from('item_photos')
+            .select('id,storage_path,sort_order')
+            .eq('item_id', id)
+            .order('sort_order', { ascending: true });
+          if (photoError) throw photoError;
+          const entries: PhotoEntry[] = [];
+          for (const prow of photoRows ?? []) {
+            const sp = (prow as any)?.storage_path;
+            if (!sp) continue;
+            const { data: signed } = await supabase.storage
+              .from(PHOTO_BUCKET)
+              .createSignedUrl(sp, 60 * 60);
+            entries.push({ key: genKey(), storagePath: sp, displayUri: signed?.signedUrl ?? '' });
+          }
+          if (mounted && entries.length) setPhotos(entries);
+        } catch (e) {
+          console.warn('Failed to load item photos', e);
+        }
       } catch (e) {
         console.warn('Failed to load item for edit', e);
       }
@@ -566,27 +730,46 @@ export default function AddTab() {
           textColor="#FFFFFF"
           subtitleColor="#9BBCD1"
         />
-        {/* Photo Upload */}
-        <View style={{ alignItems: 'center', marginBottom: 18 }}>
-          <TouchableOpacity
-            style={{ backgroundColor: '#F7FAFB', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#D8E6EE', alignItems: 'center', justifyContent: 'center', width: 120, height: 120 }}
-            onPress={handlePhotoUpload}
-            activeOpacity={0.8}
-          >
-            {photo ? (
-              <Image source={{ uri: photo }} style={{ width: 101, height: 101, borderRadius: 12, resizeMode: 'cover' }} />
-            ) : (
-              <View style={{ alignItems: 'center', gap: 8 }}>
-                <Ionicons name="camera" size={36} color="#4A7A9B" />
-                <Text style={{ color: '#4A7A9B', fontWeight: '700', fontSize: 12, textAlign: 'center' }} numberOfLines={1}>
-                  Upload Photo
-                </Text>
+        {/* Photos (multi-image, plan-gated) */}
+        <View style={{ marginBottom: 18 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 14, fontFamily: 'DMSans_500Medium' }}>Photos</Text>
+            <Text style={{ color: '#9BBCD1', fontSize: 12, fontWeight: '600' }}>{photos.length} / {maxPhotos}</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 2, paddingRight: 8 }}>
+            {photos.map((p) => (
+              <View key={p.key} style={{ width: 100, height: 100 }}>
+                {p.displayUri ? (
+                  <Image source={{ uri: p.displayUri }} style={{ width: 100, height: 100, borderRadius: 12, resizeMode: 'cover' }} />
+                ) : (
+                  <View style={{ width: 100, height: 100, borderRadius: 12, backgroundColor: '#F7FAFB', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="image" size={28} color="#9BBCD1" />
+                  </View>
+                )}
+                <TouchableOpacity
+                  onPress={() => removePhoto(p.key)}
+                  style={{ position: 'absolute', top: -6, right: -6, backgroundColor: '#0C1620', borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="close" size={14} color="#fff" />
+                </TouchableOpacity>
               </View>
+            ))}
+            {photos.length < maxPhotos && (
+              <TouchableOpacity
+                onPress={handlePhotoUpload}
+                activeOpacity={0.8}
+                style={{ width: 100, height: 100, backgroundColor: '#F7FAFB', borderRadius: 12, borderWidth: 1, borderColor: '#D8E6EE', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name="camera" size={28} color="#4A7A9B" />
+                <Text style={{ color: '#4A7A9B', fontSize: 11, fontWeight: '700', marginTop: 4 }}>Add Photo</Text>
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
-          <Text style={{ color: '#4A7A9B', marginTop: 8, fontWeight: '600' }}>
-            {photo ? 'Change Photo' : 'Click to upload'}
-          </Text>
+          </ScrollView>
+          {photos.length >= maxPhotos && (
+            <Text style={{ color: '#9BBCD1', fontSize: 11, marginTop: 8 }}>
+              Photo limit reached for your plan. Upgrade to add more.
+            </Text>
+          )}
         </View>
         <View style={{
           flexDirection: 'row',
@@ -902,7 +1085,7 @@ export default function AddTab() {
           </View>
         </Modal>
 
-        {/* Date */}
+        {/* Date Acquired */}
         <TouchableOpacity
           style={{
             flexDirection: 'row',
@@ -920,7 +1103,7 @@ export default function AddTab() {
           onPress={() => setFocusedField('date')}
           activeOpacity={0.8}
         >
-          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Date</Text>
+          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Date Acquired</Text>
           <TextInput
             style={{ flex: 2, color: '#4A7A9B', fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}
             value={date}
@@ -962,6 +1145,37 @@ export default function AddTab() {
           </View>
           <Ionicons name="chevron-forward" size={16} color="#4A7A9B" />
         </TouchableOpacity>
+
+        {/* Acquired Modal */}
+        <Modal
+          visible={acquiredModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setAcquiredModalVisible(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'rgba(12,22,32,0.2)', justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 18, width: '80%', maxHeight: 320, padding: 12 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10, color: '#0C1620', textAlign: 'center' }}>How was this acquired?</Text>
+              <FlatList
+                data={ACQUIRED_OPTIONS}
+                keyExtractor={item => item.label}
+                renderItem={({ item }) => (
+                  <Pressable
+                    onPress={() => handleAcquiredSelect(item)}
+                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: '#F7FAFB' }}
+                  >
+                    <Ionicons name={item.icon as any} size={18} color="#B8783A" style={{ marginRight: 10 }} />
+                    <Text style={{ fontSize: 15, color: '#0C1620', fontWeight: item.label === acquired.label ? 'bold' : '600' }}>{item.label}</Text>
+                  </Pressable>
+                )}
+                showsVerticalScrollIndicator={false}
+              />
+              <TouchableOpacity onPress={() => setAcquiredModalVisible(false)} style={{ marginTop: 10, alignSelf: 'center' }}>
+                <Text style={{ color: '#B8783A', fontWeight: '700', fontSize: 15 }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
         {/* Event Lookup */}
         <TouchableOpacity
@@ -1210,16 +1424,21 @@ export default function AddTab() {
           <View style={{ gap: 12, marginTop: 12 }}>
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <TouchableOpacity
+                disabled={savingPhotos}
                 onPress={async () => {
                   try {
+                    setSavingPhotos(true);
                     if (id) {
                       await syncItemPeople(id);
                       await syncItemCollection(id);
+                      await syncItemPhotos(id);
                     }
                     Alert.alert('Saved', 'Item changes saved.');
                   } catch (e: any) {
                     Alert.alert('Save failed', e?.message ?? 'Please try again');
                     return;
+                  } finally {
+                    setSavingPhotos(false);
                   }
                   if (id) {
                     router.replace({ pathname: '/(tabs)/items/[id]', params: { id } } as any);
@@ -1227,9 +1446,9 @@ export default function AddTab() {
                   }
                   router.back();
                 }}
-                style={{ flex: 1, backgroundColor: '#B8783A', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
+                style={{ flex: 1, backgroundColor: '#B8783A', paddingVertical: 14, borderRadius: 12, alignItems: 'center', opacity: savingPhotos ? 0.6 : 1 }}
               >
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Save</Text>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{savingPhotos ? 'Saving…' : 'Save'}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -1254,6 +1473,20 @@ export default function AddTab() {
                     style: 'destructive',
                     onPress: async () => {
                       try {
+                        // Remove stored photo files + rows first.
+                        try {
+                          const { data: photoRows } = await supabase
+                            .from('item_photos')
+                            .select('storage_path')
+                            .eq('item_id', id);
+                          const paths = (photoRows ?? [])
+                            .map((r: { storage_path?: string | null }) => r.storage_path)
+                            .filter((v): v is string => Boolean(v));
+                          if (paths.length) await supabase.storage.from(PHOTO_BUCKET).remove(paths);
+                          await supabase.from('item_photos').delete().eq('item_id', id);
+                        } catch (e) {
+                          console.warn('Failed to clean item photos on delete', e);
+                        }
                         await supabase.from('item_people').delete().eq('item_id', id);
                         await supabase.from('collection_items').delete().eq('item_id', id);
                         const { error } = await supabase.from('items').delete().eq('id', id);
@@ -1275,8 +1508,10 @@ export default function AddTab() {
         {!isEditing && (
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
             <TouchableOpacity
+              disabled={savingPhotos}
               onPress={async () => {
                 try {
+                  setSavingPhotos(true);
                   const newId = await createItem();
                   if (newId) {
                     Alert.alert('Saved', 'Item created.');
@@ -1286,11 +1521,13 @@ export default function AddTab() {
                   Alert.alert('Save failed', 'The item could not be created. Please try again.');
                 } catch (e: any) {
                   Alert.alert('Save failed', e?.message ?? 'Please try again');
+                } finally {
+                  setSavingPhotos(false);
                 }
               }}
-              style={{ flex: 1, backgroundColor: '#B8783A', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
+              style={{ flex: 1, backgroundColor: '#B8783A', paddingVertical: 14, borderRadius: 12, alignItems: 'center', opacity: savingPhotos ? 0.6 : 1 }}
             >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Save</Text>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{savingPhotos ? 'Saving…' : 'Save'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.back()}
@@ -1306,19 +1543,4 @@ export default function AddTab() {
     </ScrollView>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -1,10 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Screen from '../../../components/Screen';
 import { addRecentlyViewed } from '../../../lib/recent';
 import { supabase } from '../../../lib/supabase';
+
+const PHOTO_BUCKET = 'item-photos';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -13,19 +16,8 @@ export default function ItemDetail() {
   const [item, setItem] = useState<any | null>(null);
   const [categoryName, setCategoryName] = useState<string | null>(null);
   const [peopleNames, setPeopleNames] = useState<string[]>([]);
-
-  function imagesForItem() {
-    if (!item) return [] as string[];
-    if (Array.isArray(item.images) && item.images.length > 0) return item.images as string[];
-    if (Array.isArray(item.image_urls) && item.image_urls.length > 0) return item.image_urls as string[];
-    if (typeof item.image_urls === 'string' && item.image_urls.trim().length > 0) {
-      return item.image_urls.split(',').map((entry: string) => entry.trim()).filter(Boolean);
-    }
-    if (item.image_url) return [item.image_url];
-    if (item.photo_url) return [item.photo_url];
-    if (item.cover_photo_url) return [item.cover_photo_url];
-    return [] as string[];
-  }
+  const [photos, setPhotos] = useState<string[]>([]); // signed URLs from item_photos
+  const [activePhoto, setActivePhoto] = useState(0);
 
   function peopleForItem() {
     return peopleNames;
@@ -42,6 +34,29 @@ export default function ItemDetail() {
         if (!mounted) return;
         setItem(data ?? null);
         setPeopleNames([]);
+
+        // Load photos from item_photos as signed URLs (private bucket)
+        try {
+          const { data: photoRows, error: photoError } = await supabase
+            .from('item_photos')
+            .select('storage_path,sort_order')
+            .eq('item_id', id)
+            .order('sort_order', { ascending: true });
+          if (photoError) throw photoError;
+          const urls: string[] = [];
+          for (const prow of photoRows ?? []) {
+            const sp = (prow as any)?.storage_path;
+            if (!sp) continue;
+            const { data: signed } = await supabase.storage
+              .from(PHOTO_BUCKET)
+              .createSignedUrl(sp, 60 * 60);
+            if (signed?.signedUrl) urls.push(signed.signedUrl);
+          }
+          if (mounted && urls.length) setPhotos(urls);
+        } catch (e) {
+          console.warn('Failed to load item photos', e);
+        }
+
         if (data?.id) {
           try {
             const { data: linkRows, error: linkError } = await supabase
@@ -117,20 +132,41 @@ export default function ItemDetail() {
     );
   }
 
-  const imageList = imagesForItem();
-  const mainImage = imageList[0];
-  const imageCountLabel = imageList.length > 0 ? `1 of ${imageList.length}` : '0 of 0';
+  const hasPhotos = photos.length > 0;
+  const imageCountLabel = hasPhotos ? `${activePhoto + 1} of ${photos.length}` : '0 of 0';
+
+  const onPhotoScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const x = e.nativeEvent.contentOffset.x;
+    const idx = Math.round(x / SCREEN_WIDTH);
+    if (idx !== activePhoto) setActivePhoto(idx);
+  };
+
   const purchaseYear = item.date_purchased
     ? new Date(item.date_purchased).getFullYear()
     : item.year || item.purchase_year;
-  const purchaseLabel = purchaseYear ? `Purchased ${purchaseYear}` : null;
+  const purchaseLabel = purchaseYear ? `Acquired ${purchaseYear}` : null;
 
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ paddingBottom: 28, backgroundColor: '#F7FAFB' }}>
         <View style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden', backgroundColor: '#0C1620' }}>
-          {mainImage ? (
-            <Image source={{ uri: mainImage }} style={{ width: '100%', height: 300 }} resizeMode="cover" />
+          {hasPhotos ? (
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={onPhotoScroll}
+              scrollEventThrottle={16}
+            >
+              {photos.map((uri, idx) => (
+                <Image
+                  key={idx}
+                  source={{ uri }}
+                  style={{ width: SCREEN_WIDTH, height: 300 }}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
           ) : (
             <View style={{ height: 300, backgroundColor: '#0C1620', alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: '#4A7A9B' }}>No image</Text>
@@ -146,16 +182,26 @@ export default function ItemDetail() {
             </TouchableOpacity>
           </View>
 
-          <View style={{ position: 'absolute', bottom: 14, left: 16, right: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              {[0, 1, 2].map((dot) => (
-                <View key={dot} style={{ width: dot === 0 ? 24 : 8, height: 8, borderRadius: 999, backgroundColor: dot === 0 ? '#fff' : 'rgba(255,255,255,0.4)' }} />
-              ))}
+          {hasPhotos && (
+            <View style={{ position: 'absolute', bottom: 14, left: 16, right: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                {photos.map((_, dot) => (
+                  <View
+                    key={dot}
+                    style={{
+                      width: dot === activePhoto ? 24 : 8,
+                      height: 8,
+                      borderRadius: 999,
+                      backgroundColor: dot === activePhoto ? '#fff' : 'rgba(255,255,255,0.4)',
+                    }}
+                  />
+                ))}
+              </View>
+              <View style={{ backgroundColor: 'rgba(15,23,42,0.7)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>{imageCountLabel}</Text>
+              </View>
             </View>
-            <View style={{ backgroundColor: 'rgba(15,23,42,0.7)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>{imageCountLabel}</Text>
-            </View>
-          </View>
+          )}
         </View>
 
         <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
@@ -286,7 +332,7 @@ export default function ItemDetail() {
               )}
               {item.date_purchased && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Purchased</Text>
+                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Acquired</Text>
                   <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.date_purchased}</Text>
                 </View>
               )}
@@ -315,4 +361,3 @@ export default function ItemDetail() {
     </Screen>
   );
 }
-

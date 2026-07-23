@@ -11,11 +11,19 @@
 // - CANCEL_URL
 
 Deno.serve(async (req) => {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { status: 200, headers: corsHeaders });
+  }
   try {
     if (req.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -30,7 +38,7 @@ Deno.serve(async (req) => {
     if (!STRIPE_SECRET_KEY) {
       return new Response(JSON.stringify({ error: 'Server misconfiguration: missing STRIPE_SECRET_KEY' }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -49,7 +57,7 @@ Deno.serve(async (req) => {
     if (!priceId) {
       return new Response(JSON.stringify({ error: 'Missing priceId or unsupported plan' }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -90,18 +98,18 @@ Deno.serve(async (req) => {
       console.error('Stripe create session error', data);
       return new Response(
         JSON.stringify({ error: 'Stripe error creating session', details: data, stripeStatus: resp.status }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } },
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
     // Return the session URL for the client to redirect to (mobile: open in WebView or external browser)
-    return new Response(JSON.stringify({ url: data.url, id: data.id }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ url: data.url, id: data.id }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (err) {
     console.error('create-checkout-session error', err);
     const message = err instanceof Error ? err.message : String(err);
     return new Response(JSON.stringify({ error: 'internal', details: message }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
