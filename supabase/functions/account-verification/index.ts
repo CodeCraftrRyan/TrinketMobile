@@ -107,6 +107,13 @@ serve(async (req: Request) => {
         return new Response(JSON.stringify({ ok: false, error: "missing userId or email" }), { status: 400, headers: { "Content-Type": "application/json", ...cors } });
       }
       const method = 'email';
+      // Cooldown: if a code was issued in the last 60s, don't create another.
+      // (Verify checks only the newest row, so stacking codes silently
+      // invalidates earlier ones and confuses testers with multiple emails.)
+      const recent = await findLatestRow(userId);
+      if (recent && !recent.used && recent.created_at && (Date.now() - new Date(recent.created_at).getTime()) < 60_000) {
+        return new Response(JSON.stringify({ ok: true, cooldown: true }), { headers: { "Content-Type": "application/json", ...cors } });
+      }
       const { code, row } = await insertHashedCode(userId, method, destination);
 
       const earlyResp = new Response(JSON.stringify({ ok: true, dev_code: DEV_RETURN_CODES ? code : undefined }), { headers: { "Content-Type": "application/json", ...cors } });
