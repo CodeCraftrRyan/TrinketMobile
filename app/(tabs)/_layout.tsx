@@ -48,8 +48,11 @@ export default function TabsLayout() {
         const planRow = Array.isArray(planJoin) ? planJoin[0] : planJoin;
         const plan = String(planRow?.slug || 'free').toLowerCase();
         const status = String(sub?.status || '').toLowerCase();
-        // Only paid plans in good standing reach the tabs.
-        if (!paidPlans.has(plan) || status === 'past_due' || status === 'canceled' || status === 'deleted') {
+        // Free accounts are welcome; only eject subscriptions in bad standing.
+        // (A canceled/past-due row means a paid plan lapsed — send them to
+        // support/billing. No row or free plan = normal free-tier access.)
+        const badStanding = status === 'past_due' || status === 'canceled' || status === 'deleted';
+        if (paidPlans.has(plan) && badStanding) {
           router.replace('/support' as any);
           return;
         }

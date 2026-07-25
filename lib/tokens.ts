@@ -1,5 +1,5 @@
 // tokens.ts — mobile's single source, values flow from shared tokens.js
-import { colors, radii } from './tokens.js'; // adjust path to the shared file
+import { colors, radii } from './tokens-base.js'; // adjust path to the shared file
 
 export const tokens = {
   colors: {
