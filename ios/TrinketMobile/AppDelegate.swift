@@ -4,6 +4,8 @@ import ReactAppDependencyProvider
 
 @UIApplicationMain
 public class AppDelegate: ExpoAppDelegate {
+  var window: UIWindow?
+
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
 
@@ -19,15 +21,15 @@ public class AppDelegate: ExpoAppDelegate {
     reactNativeFactory = factory
     bindReactNativeFactory(factory)
 
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-  }
+#if os(iOS) || os(tvOS)
+    window = UIWindow(frame: UIScreen.main.bounds)
+    factory.startReactNative(
+      withModuleName: "main",
+      in: window,
+      launchOptions: launchOptions)
+#endif
 
-  // UIScene configuration to adopt scene-based lifecycle
-  @available(iOS 13.0, *)
-  public func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
-    let config = UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
-    config.delegateClass = SceneDelegate.self
-    return config
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
   // Linking API
@@ -60,13 +62,7 @@ class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
 
   override func bundleURL() -> URL? {
 #if DEBUG
-    let provider = RCTBundleURLProvider.sharedSettings()
-    if let url = provider.jsBundleURL(forBundleRoot: ".expo/.virtual-metro-entry", fallbackExtension: "jsbundle") {
-      return url
-    } else {
-      NSLog("React Native: No script URL provided. Start Metro (e.g. `npx expo start` or `npx react-native start`) or embed a JS bundle named 'main.jsbundle'.")
-      return nil
-    }
+    return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: ".expo/.virtual-metro-entry")
 #else
     return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
 #endif

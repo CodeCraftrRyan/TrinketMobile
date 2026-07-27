@@ -1,5 +1,4 @@
 import { CormorantGaramond_300Light, CormorantGaramond_300Light_Italic, CormorantGaramond_400Regular, CormorantGaramond_500Medium, useFonts as useCormorantFonts } from '@expo-google-fonts/cormorant-garamond';
-import { DMMono_300Light, DMMono_400Regular, useFonts as useDMMonoFonts } from '@expo-google-fonts/dm-mono';
 import { DMSans_300Light, DMSans_400Regular, DMSans_500Medium, DMSans_700Bold, useFonts as useDMSansFonts } from '@expo-google-fonts/dm-sans';
 import { Stack } from "expo-router";
 import { StatusBar, Text, TextInput } from 'react-native';
@@ -17,41 +16,51 @@ const baseThemeColors = { ...theme };
 function AccessibilityTextDefaults() {
   const { settings } = useAccessibilitySettings();
   const scale = settings.largeText ? 1.2 : 1;
-  const fontSize = 15 * scale;
+  const fontSize = 16 * scale;
   const textColor = settings.highContrast ? tokens.colors.ink : tokens.colors.inkMid;
 
   if (settings.highContrast) {
+    // High contrast strengthens the theme rather than discarding it: the
+    // ground goes white, every ink becomes Navy (15.9:1), rules darken, and
+    // the accent steps to Bronze Deep. Pure black would gain nothing a reader
+    // can perceive and would cost the archive its character.
     tokens.colors.bg = '#FFFFFF';
     tokens.colors.card = '#FFFFFF';
-    tokens.colors.text = '#000000';
-    tokens.colors.ink = '#000000';
-    tokens.colors.inkMid = '#000000';
-    tokens.colors.inkLight = '#000000';
-    tokens.colors.inkGhost = '#000000';
-    tokens.colors.primary = '#000000';
-    tokens.colors.border = '#000000';
-    tokens.colors.borderStrong = '#000000';
-    tokens.colors.accent = '#000000';
+    tokens.colors.text = '#0C1620';
+    tokens.colors.ink = '#0C1620';
+    tokens.colors.inkMid = '#0C1620';
+    tokens.colors.inkLight = '#0C1620';
+    tokens.colors.inkGhost = '#2C4F66';
+    tokens.colors.primary = '#0C1620';
+    tokens.colors.border = '#2C4F66';
+    tokens.colors.borderStrong = '#0C1620';
+    tokens.colors.accent = '#8F5B23';
     tokens.colors.surface = '#FFFFFF';
     tokens.colors.surfaceSoft = '#FFFFFF';
     tokens.colors.tint = '#FFFFFF';
-    tokens.colors.accentCool = '#000000';
-    tokens.colors.accentWarm = '#000000';
+    tokens.colors.accentCool = '#2C4F66';
+    tokens.colors.accentWarm = '#8F5B23';
+    tokens.colors.inkBody = '#0C1620';
+    tokens.colors.inkLabel = '#0C1620';
+    tokens.colors.inkFact = '#8F5B23';
+    tokens.colors.link = '#0C1620';
+    tokens.colors.ruleSoft = '#2C4F66';
+    tokens.colors.ruleStrong = '#0C1620';
 
     theme.background = '#FFFFFF';
     theme.card = '#FFFFFF';
-    theme.primary = '#000000';
-    theme.muted = '#000000';
-    theme.accent = '#000000';
-    theme.list = '#000000';
+    theme.primary = '#0C1620';
+    theme.muted = '#0C1620';
+    theme.accent = '#8F5B23';
+    theme.list = '#0C1620';
     theme.softBlue = '#FFFFFF';
-    theme.gold = '#000000';
+    theme.gold = '#8F5B23';
     theme.offWhite = '#FFFFFF';
-    theme.border = '#000000';
-    theme.borderStrong = '#000000';
-    theme.inkLight = '#000000';
-    theme.inkGhost = '#000000';
-    theme.accentCool = '#000000';
+    theme.border = '#2C4F66';
+    theme.borderStrong = '#0C1620';
+    theme.inkLight = '#0C1620';
+    theme.inkGhost = '#2C4F66';
+    theme.accentCool = '#2C4F66';
   } else {
     Object.assign(tokens.colors, baseTokenColors);
     Object.assign(theme, baseThemeColors);
@@ -62,7 +71,7 @@ function AccessibilityTextDefaults() {
   const baseTextStyle = Array.isArray(initialTextStyle) ? initialTextStyle : initialTextStyle ? [initialTextStyle] : [];
   textDefaults.style = [
     ...baseTextStyle,
-    { fontFamily: 'DMSans_300Light', color: textColor, fontSize, transform: [{ scale }], lineHeight: Math.round(22 * scale) },
+    { fontFamily: 'DMSans_400Regular', color: textColor, fontSize, transform: [{ scale }], lineHeight: Math.round(22 * scale) },
   ];
   textDefaults.allowFontScaling = false;
   textDefaults.maxFontSizeMultiplier = 1;
@@ -72,7 +81,7 @@ function AccessibilityTextDefaults() {
   const baseInputStyle = Array.isArray(initialInputStyle) ? initialInputStyle : initialInputStyle ? [initialInputStyle] : [];
   inputDefaults.style = [
     ...baseInputStyle,
-    { fontFamily: 'DMSans_300Light', color: textColor, fontSize, transform: [{ scale }], lineHeight: Math.round(22 * scale) },
+    { fontFamily: 'DMSans_400Regular', color: textColor, fontSize, transform: [{ scale }], lineHeight: Math.round(22 * scale) },
   ];
   inputDefaults.allowFontScaling = false;
   inputDefaults.maxFontSizeMultiplier = 1;
@@ -105,12 +114,8 @@ export default function RootLayout() {
     DMSans_500Medium,
     DMSans_700Bold,
   });
-  const [dmMonoLoaded] = useDMMonoFonts({
-    DMMono_300Light,
-    DMMono_400Regular,
-  });
 
-  if (!cormorantLoaded || !dmSansLoaded || !dmMonoLoaded) {
+  if (!cormorantLoaded || !dmSansLoaded) {
     return null;
   }
 
