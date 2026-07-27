@@ -1,11 +1,14 @@
+/* TK_THEME */
 import { Pressable, StyleSheet, Text } from "react-native";
 import { tokens } from "../../lib/tokens";
 
+/* An outline on nothing. There is no filled button in this theme. */
 export function Button({ title, onPress, disabled, variant = 'primary' }: { title:string; onPress:() => void; disabled?:boolean; variant?: 'primary' | 'soft' | 'ghost' }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
       style={[variant === 'primary' ? styles.button : variant === 'soft' ? styles.soft : styles.ghost, disabled && styles.disabled]}
     >
       <Text style={[variant === 'primary' ? styles.text : variant === 'soft' ? styles.softText : styles.ghostText]}>{title}</Text>
@@ -13,56 +16,46 @@ export function Button({ title, onPress, disabled, variant = 'primary' }: { titl
   );
 }
 
+const base = {
+  minHeight: tokens.minTarget,
+  paddingVertical: 12,
+  paddingHorizontal: 20,
+  borderRadius: tokens.radius.md,
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+  borderWidth: 1,
+};
+
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: tokens.colors.ink,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: tokens.colors.ink,
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
+    ...base,
+    backgroundColor: 'transparent',
+    borderColor: tokens.colors.accent,
   },
   soft: {
-    backgroundColor: tokens.colors.surfaceSoft,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
+    ...base,
+    backgroundColor: 'transparent',
     borderColor: tokens.colors.border,
   },
   ghost: {
+    ...base,
     backgroundColor: 'transparent',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: tokens.colors.inkGhost,
+    borderColor: 'transparent',
+    paddingHorizontal: 8,
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.45,
   },
   text: {
-    color: tokens.colors.surface,
-    fontWeight: '500',
-    fontFamily: 'DMSans_500Medium',
+    ...tokens.type.button,
+    color: tokens.colors.ink,
   },
   softText: {
-    color: tokens.colors.ink,
-    fontWeight: '500',
-    fontFamily: 'DMSans_500Medium',
+    ...tokens.type.button,
+    color: tokens.colors.inkLabel,
   },
   ghostText: {
-    color: tokens.colors.ink,
-    fontWeight: '500',
-    fontFamily: 'DMSans_500Medium',
+    ...tokens.type.button,
+    color: tokens.colors.link,
   },
 });

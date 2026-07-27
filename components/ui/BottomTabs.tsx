@@ -1,90 +1,75 @@
+/* TK_THEME */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '../../lib/tokens';
 
+const SLOTS: { name: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { name: 'home',   label: 'Home',    icon: 'home-outline' },
+  { name: 'items',  label: 'Objects', icon: 'albums-outline' },
+  { name: 'events', label: 'Events',  icon: 'calendar-outline' },
+  { name: 'account', label: 'You',    icon: 'person-outline' },
+];
+
 export default function BottomTabs(props: BottomTabBarProps) {
   const { state, navigation } = props;
   const insets = useSafeAreaInsets();
-  const BAR_HEIGHT = 56;
+  const BAR_HEIGHT = 60;
+
+  const go = (name: string, key?: string, isFocused?: boolean) => {
+    if (key) {
+      const event = navigation.emit({ type: 'tabPress', target: key, canPreventDefault: true });
+      if (isFocused || event.defaultPrevented) return;
+    }
+    navigation.navigate(name as never);
+  };
+
+  const Slot = ({ name, label, icon }: { name: string; label: string; icon: keyof typeof Ionicons.glyphMap }) => {
+    const index = state.routes.findIndex((r) => r.name === name);
+    if (index === -1) return <View style={styles.tabItem} />;
+    const route = state.routes[index];
+    const isFocused = state.index === index;
+    const tint = isFocused ? tokens.colors.onDarkFact : tokens.colors.onDarkBody;
+    return (
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityState={isFocused ? { selected: true } : {}}
+        onPress={() => go(name, route.key, isFocused)}
+        style={styles.tabItem}
+      >
+        <Ionicons name={icon} size={23} color={tint} />
+        <Text style={{ ...tokens.type.tab, color: tint, marginTop: 3 }}>{label}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.wrapper} pointerEvents="box-none">
-      <View style={[styles.pill, { paddingBottom: insets.bottom, height: BAR_HEIGHT + insets.bottom }]}> 
-        {/* Left tab(s) */}
-        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
-          {state.routes.filter((r) => r.name === 'home').map((route) => {
-            const index = state.routes.findIndex((r) => r.key === route.key);
-            const isFocused = state.index === index;
-            const onPress = () => {
-              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name as never);
-            };
-            return (
-              <TouchableOpacity key={route.key} accessibilityRole="button" accessibilityState={isFocused ? { selected: true } : {}} onPress={onPress} style={styles.tabItem}>
-                <Ionicons name="home-outline" size={28} color={isFocused ? tokens.colors.surface : tokens.colors.inkGhost} />
-                <Text style={{ color: isFocused ? tokens.colors.surface : tokens.colors.inkGhost, fontSize: 12, marginTop: 2 }}>Home</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        {/* Center floating button */}
-        <View style={{ width: 80, alignItems: 'center', marginBottom: 24 }} pointerEvents="box-none">
+      <View style={[styles.bar, { paddingBottom: insets.bottom, height: BAR_HEIGHT + insets.bottom }]}>
+        <Slot {...SLOTS[0]} />
+        <Slot {...SLOTS[1]} />
+
+        {/* Add — a bronze-stroked square, never a filled circle */}
+        <View style={styles.addWrap} pointerEvents="box-none">
           <TouchableOpacity
-            style={styles.fab}
-            onPress={() => {
-              const addRoute = state.routes.find((r) => r.name === 'add');
-              if (addRoute) navigation.navigate(addRoute.name as never);
-            }}
             accessibilityRole="button"
+            accessibilityLabel="Add an object"
+            onPress={() => go('add')}
+            style={styles.add}
           >
-            <View style={{
-              width: 64,
-              height: 64,
-              borderRadius: 32,
-              backgroundColor: tokens.colors.accentWarm,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: tokens.colors.ink,
-              shadowOpacity: 0.18,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 8,
-            }}>
-              <Ionicons name="add" size={40} color={tokens.colors.surface} />
-            </View>
+            <Ionicons name="add" size={26} color={tokens.colors.onDark} />
           </TouchableOpacity>
         </View>
-        {/* Right tab(s) */}
-        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }}>
-          {state.routes.filter((r) => r.name === 'items').map((route) => {
-            const index = state.routes.findIndex((r) => r.key === route.key);
-            const isFocused = state.index === index;
-            const onPress = () => {
-              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name as never);
-            };
-            return (
-              <TouchableOpacity key={route.key} accessibilityRole="button" accessibilityState={isFocused ? { selected: true } : {}} onPress={onPress} style={styles.tabItem}>
-                <Ionicons name="albums-outline" size={28} color={isFocused ? tokens.colors.surface : tokens.colors.inkGhost} />
-                <Text style={{ color: isFocused ? tokens.colors.surface : tokens.colors.inkGhost, fontSize: 12, marginTop: 2 }}>Collection</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+
+        <Slot {...SLOTS[2]} />
+        <Slot {...SLOTS[3]} />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  fab: {
-    marginTop: -32,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   wrapper: {
     position: 'absolute',
     left: 0,
@@ -93,41 +78,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 30,
   },
-  pill: {
+  bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: tokens.colors.ink,
-    borderRadius: 0,
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-    width: '100%',
     justifyContent: 'space-around',
-  shadowColor: tokens.colors.ink,
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 6,
+    width: '100%',
+    backgroundColor: tokens.colors.surfaceDark,
   },
   tabItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 0,
+    flex: 1,
+    minHeight: tokens.minTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  addWrap: {
+    width: 64,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  searchButton: {
-    marginLeft: 8,
-  },
-  searchInner: {
-    width: 44,
-    height: 44,
-    borderRadius: 6,
+  add: {
+    width: tokens.minTarget,
+    height: tokens.minTarget,
+    borderRadius: tokens.radius.mark,
+    borderWidth: 1,
+    borderColor: tokens.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    borderColor: 'transparent',
-  },
-  searchInnerActive: {
-  backgroundColor: tokens.colors.ink,
-  borderColor: tokens.colors.ink,
   },
 });

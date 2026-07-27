@@ -1,3 +1,4 @@
+/* TK_THEME */
 import { useRouter } from 'expo-router';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import BrandHeader from '../components/ui/BrandHeader';
@@ -5,63 +6,81 @@ import { tokens } from '../lib/tokens';
 
 export default function Welcome() {
   const router = useRouter();
+
+  /* Buttons on the dark ground: bronze stroke, never a fill. */
+  const btn = {
+    width: '88%' as const,
+    minHeight: tokens.minTarget,
+    paddingVertical: 15,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    borderWidth: 1,
+    marginBottom: 12,
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: tokens.colors.ink }}>
+    <View style={{ flex: 1, backgroundColor: tokens.colors.surfaceDark }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, paddingTop: 60 }}>
+        <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, paddingTop: 60, paddingBottom: 40 }}>
           <BrandHeader
             layout="column"
             align="center"
             iconSize={42}
             iconBackgroundSize={28}
-            iconBackgroundRadius={28}
-            textColor={tokens.colors.card}
-            subtitle="YOUR PERSONAL ARCHIVE"
-            subtitleColor={tokens.colors.accentCool}
-            style={{ marginBottom: 20 }}
-            titleStyle={{ fontSize: 46, fontFamily: 'CormorantGaramond_400Regular', letterSpacing: 0.5 }}
-            subtitleStyle={{ fontSize: 20, fontFamily: 'DMSans_500Medium', letterSpacing: 1.2 }}
+            iconBackgroundRadius={tokens.radius.mark}
+            textColor={tokens.colors.onDark}
+            subtitle="Your personal archive"
+            subtitleColor={tokens.colors.onDarkLabel}
+            style={{ marginBottom: 24 }}
+            titleStyle={{ fontSize: 46, fontFamily: tokens.fonts.display, letterSpacing: -0.5 }}
+            subtitleStyle={{ ...tokens.type.label, color: tokens.colors.onDarkLabel }}
           />
-          <Text style={{ fontSize: 20, color: tokens.colors.accentCool, fontWeight: '600', marginBottom: 32, textAlign: 'center', letterSpacing: 0.2, fontFamily: 'DMSans_500Medium' }}>
-            Start Preserving Your{"\n"}Memories Today
+
+          <Text
+            style={{
+              ...tokens.type.lead,
+              color: tokens.colors.onDarkBody,
+              textAlign: 'center',
+              marginBottom: 36,
+              paddingHorizontal: 32,
+            }}
+          >
+            The things you own, and where each of them came from.
           </Text>
 
-          {/* Create Collection Button - prominent, rounded */}
           <TouchableOpacity
-            style={{ backgroundColor: tokens.colors.accent, borderRadius: 22, paddingVertical: 18, paddingHorizontal: 12, width: '88%', alignItems: 'center', marginBottom: 18, shadowColor: tokens.colors.accent, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 }}
+            style={{ ...btn, borderColor: tokens.colors.accent }}
             onPress={() => router.push('/(auth)/signup')}
+            accessibilityRole="button"
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'nowrap' }}>
-              <Text
-                style={{ color: '#fff', fontWeight: '400', fontSize: 18, letterSpacing: 0.2, fontFamily: 'DMSans_500Medium', flexShrink: 1 }}
-                numberOfLines={1}
-              >
-                Start Your Collection →
-              </Text>
-            </View>
+            <Text style={{ ...tokens.type.button, color: tokens.colors.onDark }}>Start your archive</Text>
           </TouchableOpacity>
 
-          {/* Already have account button - outlined, rounded */}
           <TouchableOpacity
-            style={{ backgroundColor: tokens.colors.bg, borderRadius: 18, paddingVertical: 16, width: '88%', alignItems: 'center', marginBottom: 18, borderWidth: 2, borderColor: tokens.colors.border }}
+            style={{ ...btn, borderColor: tokens.colors.ruleDark }}
             onPress={() => router.push('/(auth)/login')}
+            accessibilityRole="button"
           >
-            <Text style={{ color: tokens.colors.accentCool, fontWeight: '500', fontSize: 18, letterSpacing: 0.1, fontFamily: 'DMSans_500Medium' }}>I already have an account</Text>
+            <Text style={{ ...tokens.type.button, color: tokens.colors.onDarkBody }}>I already have one</Text>
           </TouchableOpacity>
 
-          {/* Preview logged-in button */}
-          <TouchableOpacity
-            style={{ backgroundColor: 'transparent', borderRadius: 18, paddingVertical: 16, width: '88%', alignItems: 'center', marginBottom: 18, borderWidth: 2, borderColor: tokens.colors.accentCool }}
-            onPress={() => router.push('/(tabs)/items')}
-          >
-            <Text style={{ color: tokens.colors.accentCool, fontWeight: '500', fontSize: 18, letterSpacing: 0.1, fontFamily: 'DMSans_500Medium' }}>Preview logged in</Text>
-          </TouchableOpacity>
+          {/* Development affordance: walks past authentication. */}
+          {__DEV__ && (
+            <TouchableOpacity
+              style={{ ...btn, borderColor: 'transparent' }}
+              onPress={() => router.push('/(tabs)/items')}
+              accessibilityRole="button"
+            >
+              <Text style={{ ...tokens.type.button, color: tokens.colors.onDarkLabel }}>Preview logged in</Text>
+            </TouchableOpacity>
+          )}
 
-          {/* Footer Links - muted, spaced */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 18 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 24, flexWrap: 'wrap' }}>
             {['Terms of Use', 'Privacy Policy', 'Subscription Terms'].map((txt, i) => (
-              <TouchableOpacity key={txt} onPress={() => {}}>
-                <Text style={{ color: tokens.colors.accentCool, fontSize: 14, marginHorizontal: 4, fontFamily: 'DMSans_400Regular' }}>{txt}{i < 2 ? ' ·' : ''}</Text>
+              <TouchableOpacity key={txt} onPress={() => {}} accessibilityRole="link">
+                <Text style={{ ...tokens.type.ui, fontSize: 14, color: tokens.colors.onDarkLabel, marginHorizontal: 4 }}>
+                  {txt}{i < 2 ? ' ·' : ''}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
