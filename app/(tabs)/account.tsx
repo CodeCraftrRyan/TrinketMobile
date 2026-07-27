@@ -153,7 +153,7 @@ export default function Account() {
         {leftContent}
         <View style={styles.rowRightWrap}>
           {rightContent}
-          {chevron && <Ionicons name="chevron-forward" size={16} color={danger ? '#B8783A' : '#4A7A9B'} />}
+          {chevron && <Ionicons name="chevron-forward" size={16} color={danger ? tokens.colors.accent : tokens.colors.accentCool} />}
         </View>
       </TouchableOpacity>
     );
@@ -166,9 +166,9 @@ export default function Account() {
         style={[styles.toggleSwitch, settings.largeText && styles.toggleSwitchLargeText]}
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: '#D8E6EE', true: '#B8783A' }}
-        thumbColor={value ? '#FFFFFF' : '#FFFFFF'}
-        ios_backgroundColor="#D8E6EE"
+        trackColor={{ false: tokens.colors.border, true: tokens.colors.accent }}
+        thumbColor={value ? tokens.colors.card : tokens.colors.card}
+        ios_backgroundColor=tokens.colors.border
         accessibilityLabel={label}
       />
     </View>
@@ -177,7 +177,7 @@ export default function Account() {
   return (
     <Screen>
       <ScrollView
-        style={{ flex: 1, backgroundColor: settings.highContrast ? '#FFFFFF' : tokens.colors.bg }}
+        style={{ flex: 1, backgroundColor: settings.highContrast ? tokens.colors.card : tokens.colors.bg }}
         contentContainerStyle={{ padding: 0, paddingBottom: 24 }}
       >
         {/* Profile Card */}
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#B8783A',
+    backgroundColor: tokens.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 18,
@@ -327,17 +327,17 @@ const styles = StyleSheet.create({
   profileName: {
     fontWeight: '700',
     fontSize: 19,
-    color: '#0C1620',
+    color: tokens.colors.ink,
     marginBottom: 2,
   },
   profileEmail: {
-    color: '#B8783A',
+    color: tokens.colors.accent,
     fontSize: 15,
     fontWeight: '500',
     textDecorationLine: 'underline',
   },
   sectionHeader: {
-    color: '#4A7A9B',
+    color: tokens.colors.accentCool,
     fontWeight: '700',
     fontSize: 13.5,
     letterSpacing: 1.1,
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   rowLeft: {
     fontWeight: '700',
     fontSize: 15.5,
-    color: '#0C1620',
+    color: tokens.colors.ink,
     flex: 1,
     flexWrap: 'wrap',
     paddingRight: 12,
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
   rowRight: {
     fontWeight: '600',
     fontSize: 15.5,
-    color: '#4A7A9B',
+    color: tokens.colors.accentCool,
     marginRight: 2,
     textAlign: 'right',
     flexShrink: 1,
@@ -397,14 +397,14 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#D8E6EE',
+    backgroundColor: tokens.colors.border,
     marginLeft: 18,
   },
   dangerRow: {
     backgroundColor: 'transparent',
   },
   dangerText: {
-    color: '#B8783A',
+    color: tokens.colors.accent,
     fontWeight: '700',
   },
   addPersonBtn: {
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   addPersonText: {
-    color: '#B8783A',
+    color: tokens.colors.accent,
     fontWeight: '700',
     fontSize: 15.5,
     paddingVertical: 4,
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginHorizontal: 14,
     marginBottom: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.card,
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -439,20 +439,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: '#0C1620',
+    color: tokens.colors.ink,
     fontSize: 15.5,
   },
   inlineAddButton: {
-    backgroundColor: '#B8783A',
+    backgroundColor: tokens.colors.accent,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
   inlineAddButtonDisabled: {
-    backgroundColor: '#D8E6EE',
+    backgroundColor: tokens.colors.border,
   },
   inlineAddButtonText: {
-    color: '#FFFFFF',
+    color: tokens.colors.card,
     fontWeight: '700',
     fontSize: 14.5,
   },
@@ -468,8 +468,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   freeBadge: {
-    backgroundColor: '#D8E6EE',
-    color: '#B8783A',
+    backgroundColor: tokens.colors.border,
+    color: tokens.colors.accent,
     fontWeight: '700',
     fontSize: 14.5,
     borderRadius: 10,
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   subPrice: {
-    color: '#4A7A9B',
+    color: tokens.colors.accentCool,
     fontWeight: '700',
     fontSize: 15.5,
   },

@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { supabase } from "../lib/supabase";
+import { tokens } from '../lib/tokens';
 
 // Helper to get current user id from Supabase auth
 async function getUserId() {
@@ -58,68 +59,68 @@ export default function CreateEvent() {
       {/* Header */}
       <View style={{ marginTop: 8, marginBottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8 }}>
         <View>
-          <Text style={{ fontSize: 34, fontWeight: '300', color: '#0C1620', fontFamily: 'CormorantGaramond_300Light' }}>Create New Event</Text>
-          <Text style={{ color: '#4A7A9B', fontSize: 18, marginTop: 2 }}>Add details for your event</Text>
+          <Text style={{ fontSize: 34, fontWeight: '300', color: tokens.colors.ink, fontFamily: 'CormorantGaramond_300Light' }}>Create New Event</Text>
+          <Text style={{ color: tokens.colors.accentCool, fontSize: 18, marginTop: 2 }}>Add details for your event</Text>
         </View>
       </View>
 
       {/* Form */}
-  <View style={{ backgroundColor: '#fff', borderRadius: 24, paddingHorizontal: 18, paddingVertical: 18, marginTop: 18, marginBottom: 16, borderWidth: 1, borderColor: '#D8E6EE', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 }}>
+  <View style={{ backgroundColor: '#fff', borderRadius: 24, paddingHorizontal: 18, paddingVertical: 18, marginTop: 18, marginBottom: 16, borderWidth: 1, borderColor: tokens.colors.border, shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 }}>
         <TextInput
-          style={{ ...styles.input, fontSize: 18, fontFamily: 'DMSans_400Regular', color: '#0C1620', backgroundColor: 'transparent' }}
+          style={{ ...styles.input, fontSize: 18, fontFamily: 'DMSans_400Regular', color: tokens.colors.ink, backgroundColor: 'transparent' }}
           placeholder="Event Name*"
           value={name}
           onChangeText={setName}
-          placeholderTextColor="#4A7A9B"
+          placeholderTextColor=tokens.colors.accentCool
         />
         <TextInput
-          style={{ ...styles.input, fontSize: 18, fontFamily: 'DMSans_400Regular', color: '#0C1620', backgroundColor: 'transparent' }}
+          style={{ ...styles.input, fontSize: 18, fontFamily: 'DMSans_400Regular', color: tokens.colors.ink, backgroundColor: 'transparent' }}
           placeholder="Event Date (YYYY-MM-DD)*"
           value={eventDate}
           onChangeText={setEventDate}
-          placeholderTextColor="#4A7A9B"
+          placeholderTextColor=tokens.colors.accentCool
         />
         <TextInput
-          style={{ ...styles.input, fontSize: 16, color: '#0C1620', backgroundColor: 'transparent' }}
+          style={{ ...styles.input, fontSize: 16, color: tokens.colors.ink, backgroundColor: 'transparent' }}
           placeholder="Start Date (YYYY-MM-DD, optional)"
           value={startDate}
           onChangeText={setStartDate}
-          placeholderTextColor="#4A7A9B"
+          placeholderTextColor=tokens.colors.accentCool
         />
         <TextInput
-          style={{ ...styles.input, fontSize: 16, color: '#0C1620', backgroundColor: 'transparent' }}
+          style={{ ...styles.input, fontSize: 16, color: tokens.colors.ink, backgroundColor: 'transparent' }}
           placeholder="End Date (YYYY-MM-DD, optional)"
           value={endDate}
           onChangeText={setEndDate}
-          placeholderTextColor="#4A7A9B"
+          placeholderTextColor=tokens.colors.accentCool
         />
         <TextInput
-          style={{ ...styles.input, fontSize: 16, color: '#0C1620', backgroundColor: 'transparent' }}
+          style={{ ...styles.input, fontSize: 16, color: tokens.colors.ink, backgroundColor: 'transparent' }}
           placeholder="Cover Photo URL (optional)"
           value={coverPhotoUrl}
           onChangeText={setCoverPhotoUrl}
-          placeholderTextColor="#4A7A9B"
+          placeholderTextColor=tokens.colors.accentCool
         />
         <TextInput
-          style={{ ...styles.input, fontSize: 16, color: '#0C1620', backgroundColor: 'transparent' }}
+          style={{ ...styles.input, fontSize: 16, color: tokens.colors.ink, backgroundColor: 'transparent' }}
           placeholder="People (comma separated, optional)"
           value={peopleList}
           onChangeText={setPeopleList}
-          placeholderTextColor="#4A7A9B"
+          placeholderTextColor=tokens.colors.accentCool
         />
         <TextInput
-          style={[styles.input, { height: 120, textAlignVertical: "top", paddingTop: 12, fontSize: 16, color: '#0C1620', backgroundColor: 'transparent' }]}
+          style={[styles.input, { height: 120, textAlignVertical: "top", paddingTop: 12, fontSize: 16, color: tokens.colors.ink, backgroundColor: 'transparent' }]}
           placeholder="Description (optional)"
           value={description}
           onChangeText={setDescription}
-          placeholderTextColor="#4A7A9B"
+          placeholderTextColor=tokens.colors.accentCool
           multiline
         />
-  <TouchableOpacity style={{ backgroundColor: '#B8783A', borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 6, shadowColor: '#B8783A', shadowOpacity: 0.12, shadowRadius: 8 }} onPress={save} disabled={saving}>
+  <TouchableOpacity style={{ backgroundColor: tokens.colors.accent, borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 6, shadowColor: tokens.colors.accent, shadowOpacity: 0.12, shadowRadius: 8 }} onPress={save} disabled={saving}>
           <Text style={{ color: '#fff', fontWeight: '500', fontSize: 18, fontFamily: 'DMSans_500Medium' }}>{saving ? "Saving…" : "Save Event"}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.back()} style={{ alignItems: 'center', marginTop: 10 }}>
-          <Text style={{ color: '#B8783A', fontWeight: '600', fontSize: 16, fontFamily: 'DMSans_500Medium' }}>← Cancel</Text>
+          <Text style={{ color: tokens.colors.accent, fontWeight: '600', fontSize: 16, fontFamily: 'DMSans_500Medium' }}>← Cancel</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -127,11 +128,11 @@ export default function CreateEvent() {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: "#F7FAFB", padding: 16 },
-  h1: { fontSize: 24, fontWeight: "800", color: "#0C1620", marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: "#D8E6EE", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, color: "#0C1620", marginBottom: 10 },
-  primaryBtn: { backgroundColor: "#B8783A", borderRadius: 10, paddingVertical: 14, alignItems: "center", marginTop: 6 },
+  page: { flex: 1, backgroundColor: tokens.colors.bg, padding: 16 },
+  h1: { fontSize: 24, fontWeight: "800", color: tokens.colors.ink, marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: tokens.colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, color: tokens.colors.ink, marginBottom: 10 },
+  primaryBtn: { backgroundColor: tokens.colors.accent, borderRadius: 10, paddingVertical: 14, alignItems: "center", marginTop: 6 },
   primaryBtnText: { color: "#fff", fontWeight: "700" },
   linkBtn: { alignItems: "center", marginTop: 10 },
-  linkText: { color: "#B8783A", fontWeight: "600" },
+  linkText: { color: tokens.colors.accent, fontWeight: "600" },
 });

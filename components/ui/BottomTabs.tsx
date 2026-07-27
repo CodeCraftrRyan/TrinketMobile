@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   searchInnerActive: {
-  backgroundColor: '#0C1620',
-  borderColor: '#0C1620',
+  backgroundColor: tokens.colors.ink,
+  borderColor: tokens.colors.ink,
   },
 });

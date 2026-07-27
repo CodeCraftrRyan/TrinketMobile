@@ -5,6 +5,7 @@ import { Image, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-
 import Screen from '../../components/Screen';
 import { supabase } from '../../lib/supabase';
 import { theme } from '../../lib/theme';
+import { tokens } from '../../lib/tokens';
 // Helper to format time ago
 function timeAgo(dateString: string): string {
   const now = new Date();
@@ -144,7 +145,7 @@ export default function Home() {
               </View>
               <TouchableOpacity
                 onPress={() => router.push({ pathname: '/(tabs)/account' })}
-                style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12, backgroundColor: '#F7FAFB', borderWidth: 1, borderColor: '#D8E6EE' }}
+                style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12, backgroundColor: tokens.colors.bg, borderWidth: 1, borderColor: tokens.colors.border }}
                 accessibilityLabel="Settings"
               >
                 <Ionicons name="settings-outline" size={18} color={theme.primary} />
@@ -163,29 +164,29 @@ export default function Home() {
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: tokens.colors.card,
           borderRadius: 16.94,
           paddingHorizontal: 18,
           paddingVertical: 13,
           marginBottom: 35,
           marginHorizontal: 13,
           borderWidth: 1,
-          borderColor: '#D8E6EE',
+          borderColor: tokens.colors.border,
           shadowColor: '#000',
           shadowOpacity: 0.03,
           shadowRadius: 6.6,
           shadowOffset: { width: 0, height: 2.2 },
           elevation: 1,
         }}>
-          <Ionicons name="search-outline" size={20} color="#4A7A9B" style={{ marginRight: 8 }} />
+          <Ionicons name="search-outline" size={20} color=tokens.colors.accentCool style={{ marginRight: 8 }} />
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#4A7A9B', fontSize: 17.6 }}>
+            <Text style={{ color: tokens.colors.accentCool, fontSize: 17.6 }}>
               Search your memories...
             </Text>
           </View>
           <TouchableOpacity
             onPress={() => router.push({ pathname: '/(tabs)/search', params: { openCamera: 'true' } })}
-            style={{ marginLeft: 8, backgroundColor: '#D8E6EE', borderRadius: 8, padding: 6 }}
+            style={{ marginLeft: 8, backgroundColor: tokens.colors.border, borderRadius: 8, padding: 6 }}
             accessibilityLabel="Image Search"
           >
             <Ionicons name="camera-outline" size={20} color={theme.primary} />
@@ -194,14 +195,14 @@ export default function Home() {
 
         {/* Recent Memory header with See all */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13, marginTop: 9, paddingHorizontal: 18 }}>
-          <Text style={{ fontSize: 26.4, fontWeight: '300', color: '#0C1620', fontFamily: 'CormorantGaramond_300Light' }}>Recent Memory</Text>
+          <Text style={{ fontSize: 26.4, fontWeight: '300', color: tokens.colors.ink, fontFamily: 'CormorantGaramond_300Light' }}>Recent Memory</Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/items')}>
-            <Text style={{ color: '#B8783A', fontSize: 18.7, fontWeight: '600' }}>See all <Ionicons name="arrow-forward-outline" size={17.6} color="#B8783A" /></Text>
+            <Text style={{ color: tokens.colors.accent, fontSize: 18.7, fontWeight: '600' }}>See all <Ionicons name="arrow-forward-outline" size={17.6} color=tokens.colors.accent /></Text>
           </TouchableOpacity>
         </View>
         {/* Preview of Last Uploaded Item */}
         <View style={{
-          backgroundColor: '#F7FAFB',
+          backgroundColor: tokens.colors.bg,
           borderRadius: 19.8,
           flexDirection: 'row',
           alignItems: 'center',
@@ -243,7 +244,7 @@ export default function Home() {
 
         {/* Blog section */}
         <View style={{ marginBottom: 10, paddingHorizontal: 18 }}>
-          <Text style={{ fontSize: 26.4, fontWeight: '300', color: '#0C1620', fontFamily: 'CormorantGaramond_300Light' }}>From the Blog</Text>
+          <Text style={{ fontSize: 26.4, fontWeight: '300', color: tokens.colors.ink, fontFamily: 'CormorantGaramond_300Light' }}>From the Blog</Text>
           <Text style={{ color: theme.muted, fontSize: 16.5, marginTop: 4 }}>Latest tips and stories from Trinket.</Text>
         </View>
         <View style={{ gap: 14, marginBottom: 28, paddingHorizontal: 18 }}>
@@ -252,12 +253,12 @@ export default function Home() {
               key={post.url}
               onPress={() => Linking.openURL(post.url)}
               style={{
-                backgroundColor: '#FFFFFF',
+                backgroundColor: tokens.colors.card,
                 borderRadius: 16,
                 paddingVertical: 16,
                 paddingHorizontal: 16,
                 borderWidth: 1,
-                borderColor: '#D8E6EE',
+                borderColor: tokens.colors.border,
                 shadowColor: '#000',
                 shadowOpacity: 0.03,
                 shadowRadius: 6,

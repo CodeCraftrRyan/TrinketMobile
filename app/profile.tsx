@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Screen from '../components/Screen';
 import { supabase } from '../lib/supabase';
+import { tokens } from '../lib/tokens';
 
 export default function Profile() {
   const router = useRouter();
@@ -59,7 +60,7 @@ export default function Profile() {
     return (
       <Screen>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#B8783A" />
+          <ActivityIndicator size="large" color=tokens.colors.accent />
         </View>
       </Screen>
     );
@@ -88,7 +89,7 @@ export default function Profile() {
               value={firstName}
               onChangeText={setFirstName}
               placeholder="Enter first name"
-              placeholderTextColor="#4A7A9B"
+              placeholderTextColor=tokens.colors.accentCool
             />
           </View>
 
@@ -99,7 +100,7 @@ export default function Profile() {
               value={lastName}
               onChangeText={setLastName}
               placeholder="Enter last name"
-              placeholderTextColor="#4A7A9B"
+              placeholderTextColor=tokens.colors.accentCool
             />
           </View>
 
@@ -109,7 +110,7 @@ export default function Profile() {
               style={[styles.input, styles.disabledInput]}
               value={email}
               editable={false}
-              placeholderTextColor="#4A7A9B"
+              placeholderTextColor=tokens.colors.accentCool
             />
             <Text style={styles.helperText}>Email cannot be changed here</Text>
           </View>
@@ -121,7 +122,7 @@ export default function Profile() {
               value={bio}
               onChangeText={setBio}
               placeholder="Tell us about yourself"
-              placeholderTextColor="#4A7A9B"
+              placeholderTextColor=tokens.colors.accentCool
               multiline
               numberOfLines={4}
               textAlignVertical="top"
@@ -136,7 +137,7 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  backgroundColor: '#F7FAFB',
+  backgroundColor: tokens.colors.bg,
   },
   loadingContainer: {
     flex: 1,
@@ -149,29 +150,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
-  backgroundColor: '#FFFFFF',
+  backgroundColor: tokens.colors.card,
   borderBottomWidth: 1,
-  borderBottomColor: '#D8E6EE',
+  borderBottomColor: tokens.colors.border,
   },
   cancelButton: {
-  color: '#B8783A',
+  color: tokens.colors.accent,
     fontSize: 17,
     width: 70,
   },
   title: {
     fontSize: 17,
     fontWeight: '600',
-  color: '#0C1620',
+  color: tokens.colors.ink,
   },
   saveButton: {
-  color: '#B8783A',
+  color: tokens.colors.accent,
     fontSize: 17,
     fontWeight: '600',
     width: 70,
     textAlign: 'right',
   },
   saveButtonDisabled: {
-  color: '#4A7A9B',
+  color: tokens.colors.accentCool,
   },
   form: {
     marginTop: 20,
@@ -183,22 +184,22 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 15,
     fontWeight: '600',
-  color: '#0C1620',
+  color: tokens.colors.ink,
     marginBottom: 8,
   },
   input: {
-  backgroundColor: '#FFFFFF',
+  backgroundColor: tokens.colors.card,
   borderWidth: 1,
-  borderColor: '#D8E6EE',
+  borderColor: tokens.colors.border,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 17,
-  color: '#0C1620',
+  color: tokens.colors.ink,
   },
   disabledInput: {
-  backgroundColor: '#D8E6EE',
-  color: '#4A7A9B',
+  backgroundColor: tokens.colors.border,
+  color: tokens.colors.accentCool,
   },
   textArea: {
     height: 100,
@@ -206,7 +207,7 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 13,
-  color: '#4A7A9B',
+  color: tokens.colors.accentCool,
     marginTop: 6,
   },
 });

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TouchableOpacity } from 'react-native';
 import Screen from '../components/Screen';
 import { supabase } from '../lib/supabase';
+import { tokens } from '../lib/tokens';
 
 export default function EventDetail() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function EventDetail() {
       <Screen>
         <Text style={{ color: '#6B7280' }}>Event not found.</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 12 }}>
-          <Text style={{ color: '#2563EB', fontWeight: '600' }}>← Back</Text>
+          <Text style={{ color: tokens.colors.accentCool, fontWeight: '600' }}>← Back</Text>
         </TouchableOpacity>
       </Screen>
     );
@@ -51,7 +52,7 @@ export default function EventDetail() {
       <Text style={{ color: '#6B7280', marginTop: 6, fontFamily: 'DMSans_400Regular' }}>{event.event_date || event.start_date || ''}</Text>
       {event.description ? <Text style={{ color: '#374151', marginTop: 12, fontFamily: 'DMSans_400Regular' }}>{event.description}</Text> : null}
       <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
-        <Text style={{ color: '#2563EB', fontWeight: '600', fontFamily: 'DMSans_500Medium' }}>← Back</Text>
+        <Text style={{ color: tokens.colors.accentCool, fontWeight: '600', fontFamily: 'DMSans_500Medium' }}>← Back</Text>
       </TouchableOpacity>
     </Screen>
   );

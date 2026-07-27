@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BrandHeader from '../../components/ui/BrandHeader';
 import { supabase } from '../../lib/supabase';
+import { tokens } from '../../lib/tokens';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -58,7 +59,7 @@ export default function Login() {
                 keyboardType="email-address"
                 value={email}
                 onChangeText={setEmail}
-                placeholderTextColor="#4A7A9B"
+                placeholderTextColor=tokens.colors.accentCool
                 style={[styles.input, email && styles.inputActive]}
                 returnKeyType="next"
               />
@@ -70,7 +71,7 @@ export default function Login() {
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
-                placeholderTextColor="#4A7A9B"
+                placeholderTextColor=tokens.colors.accentCool
                 style={[styles.input, password && styles.inputActive]}
               />
             </View>
@@ -97,25 +98,25 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F7FAFB' },
+  safe: { flex: 1, backgroundColor: tokens.colors.bg },
   scroll: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 24 },
   logoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 32, marginBottom: 18 },
-  logoCircle: { width: 54, height: 54, borderRadius: 18, backgroundColor: '#D8E6EE', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#D8E6EE' },
-  logoTitle: { fontSize: 22, fontWeight: '700', color: '#0C1620' },
-  logoSubtitle: { fontSize: 15, color: '#4A7A9B', fontWeight: '600', letterSpacing: 1, marginTop: 2 },
-  bigTitle: { fontSize: 32, fontWeight: '800', color: '#0C1620', marginBottom: 2, textAlign: 'left' },
-  subtitle: { color: '#4A7A9B', marginBottom: 18, fontSize: 16, textAlign: 'left' },
-  formCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#D8E6EE', marginBottom: 18, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  logoCircle: { width: 54, height: 54, borderRadius: 18, backgroundColor: tokens.colors.border, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: tokens.colors.border },
+  logoTitle: { fontSize: 22, fontWeight: '700', color: tokens.colors.ink },
+  logoSubtitle: { fontSize: 15, color: tokens.colors.accentCool, fontWeight: '600', letterSpacing: 1, marginTop: 2 },
+  bigTitle: { fontSize: 32, fontWeight: '800', color: tokens.colors.ink, marginBottom: 2, textAlign: 'left' },
+  subtitle: { color: tokens.colors.accentCool, marginBottom: 18, fontSize: 16, textAlign: 'left' },
+  formCard: { backgroundColor: tokens.colors.card, borderRadius: 16, padding: 18, borderWidth: 1, borderColor: tokens.colors.border, marginBottom: 18, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
   inputGroup: { marginBottom: 14 },
-  inputLabel: { color: '#4A7A9B', fontWeight: '700', fontSize: 15, marginBottom: 4, letterSpacing: 1 },
-  input: { backgroundColor: '#F7FAFB', borderWidth: 1, borderColor: '#D8E6EE', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, color: '#0C1620', fontSize: 17 },
-  inputActive: { borderColor: '#B8783A' },
+  inputLabel: { color: tokens.colors.accentCool, fontWeight: '700', fontSize: 15, marginBottom: 4, letterSpacing: 1 },
+  input: { backgroundColor: tokens.colors.bg, borderWidth: 1, borderColor: tokens.colors.border, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, color: tokens.colors.ink, fontSize: 17 },
+  inputActive: { borderColor: tokens.colors.accent },
   forgotLinkWrap: { alignItems: 'flex-end', marginBottom: 12 },
-  forgotLink: { color: '#B8783A', fontWeight: '700', fontSize: 16 },
-  primaryBtn: { backgroundColor: '#B8783A', borderRadius: 18, paddingVertical: 16, alignItems: 'center', marginTop: 2, marginBottom: 2, shadowColor: '#B8783A', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  forgotLink: { color: tokens.colors.accent, fontWeight: '700', fontSize: 16 },
+  primaryBtn: { backgroundColor: tokens.colors.accent, borderRadius: 18, paddingVertical: 16, alignItems: 'center', marginTop: 2, marginBottom: 2, shadowColor: tokens.colors.accent, shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   primaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 22, letterSpacing: 0.2 },
   btnDisabled: { opacity: 0.5 },
   signupRow: { alignItems: 'center', marginBottom: 8 },
-  signupText: { color: '#4A7A9B', fontSize: 16 },
-  signupLink: { color: '#B8783A', fontWeight: '700', fontSize: 16 },
+  signupText: { color: tokens.colors.accentCool, fontSize: 16 },
+  signupLink: { color: tokens.colors.accent, fontWeight: '700', fontSize: 16 },
 });

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Screen from '../components/Screen';
+import { tokens } from '../lib/tokens';
 
 export default function Contact() {
   const router = useRouter();
@@ -90,7 +91,7 @@ export default function Contact() {
                 value={name}
                 onChangeText={setName}
                 placeholder="Your name"
-                placeholderTextColor="#4A7A9B"
+                placeholderTextColor=tokens.colors.accentCool
                 editable={!sending}
               />
             </View>
@@ -102,7 +103,7 @@ export default function Contact() {
                 value={email}
                 onChangeText={setEmail}
                 placeholder="your.email@example.com"
-                placeholderTextColor="#4A7A9B"
+                placeholderTextColor=tokens.colors.accentCool
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -117,7 +118,7 @@ export default function Contact() {
                 value={subject}
                 onChangeText={setSubject}
                 placeholder="What is this about?"
-                placeholderTextColor="#4A7A9B"
+                placeholderTextColor=tokens.colors.accentCool
                 editable={!sending}
               />
             </View>
@@ -129,7 +130,7 @@ export default function Contact() {
                 value={message}
                 onChangeText={setMessage}
                 placeholder="Tell us more..."
-                placeholderTextColor="#4A7A9B"
+                placeholderTextColor=tokens.colors.accentCool
                 multiline
                 numberOfLines={6}
                 textAlignVertical="top"
@@ -143,7 +144,7 @@ export default function Contact() {
               disabled={sending}
             >
               {sending ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color=tokens.colors.card />
               ) : (
                 <Text style={styles.submitButtonText}>Send Message</Text>
               )}
@@ -170,7 +171,7 @@ export default function Contact() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  backgroundColor: '#F7FAFB',
+  backgroundColor: tokens.colors.bg,
   },
   header: {
     flexDirection: 'row',
@@ -178,19 +179,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
-  backgroundColor: '#FFFFFF',
+  backgroundColor: tokens.colors.card,
   borderBottomWidth: 1,
-  borderBottomColor: '#D8E6EE',
+  borderBottomColor: tokens.colors.border,
   },
   backButton: {
-  color: '#B8783A',
+  color: tokens.colors.accent,
     fontSize: 17,
     width: 70,
   },
   title: {
     fontSize: 17,
     fontWeight: '600',
-  color: '#0C1620',
+  color: tokens.colors.ink,
   },
   scrollView: {
     flex: 1,
@@ -205,16 +206,16 @@ const styles = StyleSheet.create({
   introTitle: {
     fontSize: 24,
     fontWeight: '700',
-  color: '#0C1620',
+  color: tokens.colors.ink,
     marginBottom: 8,
   },
   introText: {
     fontSize: 15,
-  color: '#4A7A9B',
+  color: tokens.colors.accentCool,
     lineHeight: 22,
   },
   form: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.card,
     borderRadius: 12,
     padding: 20,
     marginBottom: 24,
@@ -225,47 +226,47 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 15,
     fontWeight: '600',
-  color: '#0C1620',
+  color: tokens.colors.ink,
     marginBottom: 8,
   },
   input: {
-  backgroundColor: '#D8E6EE',
+  backgroundColor: tokens.colors.border,
   borderWidth: 1,
-  borderColor: '#D8E6EE',
+  borderColor: tokens.colors.border,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 17,
-  color: '#0C1620',
+  color: tokens.colors.ink,
   },
   textArea: {
     height: 120,
     paddingTop: 12,
   },
   submitButton: {
-  backgroundColor: '#B8783A',
+  backgroundColor: tokens.colors.accent,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
   },
   submitButtonDisabled: {
-  backgroundColor: '#D8E6EE',
+  backgroundColor: tokens.colors.border,
   },
   submitButtonText: {
-    color: '#FFFFFF',
+    color: tokens.colors.card,
     fontSize: 17,
     fontWeight: '600',
   },
   contactInfo: {
-  backgroundColor: '#FFFFFF',
+  backgroundColor: tokens.colors.card,
     borderRadius: 12,
     padding: 20,
   },
   contactInfoTitle: {
     fontSize: 17,
     fontWeight: '600',
-  color: '#0C1620',
+  color: tokens.colors.ink,
     marginBottom: 16,
   },
   contactItem: {
@@ -273,11 +274,11 @@ const styles = StyleSheet.create({
   },
   contactLabel: {
     fontSize: 13,
-  color: '#4A7A9B',
+  color: tokens.colors.accentCool,
     marginBottom: 2,
   },
   contactValue: {
     fontSize: 15,
-  color: '#0C1620',
+  color: tokens.colors.ink,
   },
 });

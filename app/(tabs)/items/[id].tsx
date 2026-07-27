@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, Vi
 import Screen from '../../../components/Screen';
 import { addRecentlyViewed } from '../../../lib/recent';
 import { supabase } from '../../../lib/supabase';
+import { tokens } from '../../../lib/tokens';
 
 export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -111,7 +112,7 @@ export default function ItemDetail() {
       <Screen>
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ marginBottom: 12 }}>Item not found.</Text>
-          <Text onPress={() => router.back()} style={{ color: '#B8783A' }}>Go back</Text>
+          <Text onPress={() => router.back()} style={{ color: tokens.colors.accent }}>Go back</Text>
         </View>
       </Screen>
     );
@@ -127,13 +128,13 @@ export default function ItemDetail() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={{ paddingBottom: 28, backgroundColor: '#F7FAFB' }}>
-        <View style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden', backgroundColor: '#0C1620' }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 28, backgroundColor: tokens.colors.bg }}>
+        <View style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden', backgroundColor: tokens.colors.ink }}>
           {mainImage ? (
             <Image source={{ uri: mainImage }} style={{ width: '100%', height: 300 }} resizeMode="cover" />
           ) : (
-            <View style={{ height: 300, backgroundColor: '#0C1620', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#4A7A9B' }}>No image</Text>
+            <View style={{ height: 300, backgroundColor: tokens.colors.ink, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: tokens.colors.accentCool }}>No image</Text>
             </View>
           )}
 
@@ -159,34 +160,34 @@ export default function ItemDetail() {
         </View>
 
         <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 18, borderWidth: 1, borderColor: '#D8E6EE', shadowColor: '#0C1620', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }}>
-            <Text style={{ color: '#B8783A', fontWeight: '700', letterSpacing: 2, fontSize: 12, marginBottom: 6 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 18, borderWidth: 1, borderColor: tokens.colors.border, shadowColor: tokens.colors.ink, shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }}>
+            <Text style={{ color: tokens.colors.accent, fontWeight: '700', letterSpacing: 2, fontSize: 12, marginBottom: 6 }}>
               {(categoryName || item.item_category || item.category || item.category_id || 'Category').toString().toUpperCase()}
             </Text>
-            <Text style={{ fontSize: 24, fontWeight: '800', color: '#0C1620' }}>{item.name || item.title}</Text>
+            <Text style={{ fontSize: 24, fontWeight: '800', color: tokens.colors.ink }}>{item.name || item.title}</Text>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
               {purchaseLabel && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#D8E6EE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
-                  <Ionicons name="calendar-outline" size={16} color="#4A7A9B" style={{ marginRight: 6 }} />
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>{purchaseLabel}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.border, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
+                  <Ionicons name="calendar-outline" size={16} color=tokens.colors.accentCool style={{ marginRight: 6 }} />
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>{purchaseLabel}</Text>
                 </View>
               )}
               {item.location && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#D8E6EE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
-                  <Ionicons name="location-outline" size={16} color="#4A7A9B" style={{ marginRight: 6 }} />
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>{item.location}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.border, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
+                  <Ionicons name="location-outline" size={16} color=tokens.colors.accentCool style={{ marginRight: 6 }} />
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>{item.location}</Text>
                 </View>
               )}
               {item.event && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#D8E6EE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
-                  <Ionicons name="calendar-outline" size={16} color="#4A7A9B" style={{ marginRight: 6 }} />
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>{item.event}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.border, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
+                  <Ionicons name="calendar-outline" size={16} color=tokens.colors.accentCool style={{ marginRight: 6 }} />
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>{item.event}</Text>
                 </View>
               )}
               {(item.estimated_value || item.price) && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#D8E6EE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>💰 ${item.estimated_value || item.price}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.border, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>💰 ${item.estimated_value || item.price}</Text>
                 </View>
               )}
             </View>
@@ -194,72 +195,72 @@ export default function ItemDetail() {
         </View>
 
         <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 18, borderWidth: 1, borderColor: '#D8E6EE' }}>
-            <Text style={{ color: '#4A7A9B', fontWeight: '700', letterSpacing: 2, fontSize: 12, marginBottom: 8 }}>DESCRIPTION</Text>
-            <Text style={{ color: '#0C1620', fontSize: 15, lineHeight: 22 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 18, borderWidth: 1, borderColor: tokens.colors.border }}>
+            <Text style={{ color: tokens.colors.accentCool, fontWeight: '700', letterSpacing: 2, fontSize: 12, marginBottom: 8 }}>DESCRIPTION</Text>
+            <Text style={{ color: tokens.colors.ink, fontSize: 15, lineHeight: 22 }}>
               {item.description ?? item.notes ?? 'No description.'}
             </Text>
           </View>
         </View>
 
         <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: '#D8E6EE' }}>
-            <View style={{ paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#D8E6EE' }}>
-              <Text style={{ color: '#4A7A9B', fontWeight: '700', letterSpacing: 2, fontSize: 12 }}>ITEM DETAILS</Text>
+          <View style={{ backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: tokens.colors.border }}>
+            <View style={{ paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: tokens.colors.border }}>
+              <Text style={{ color: tokens.colors.accentCool, fontWeight: '700', letterSpacing: 2, fontSize: 12 }}>ITEM DETAILS</Text>
             </View>
             <View style={{ paddingHorizontal: 18, paddingVertical: 14 }}>
               {item.condition && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Condition</Text>
-                  <Text style={{ color: '#B8783A', fontWeight: '800' }}>{item.condition}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Condition</Text>
+                  <Text style={{ color: tokens.colors.accent, fontWeight: '800' }}>{item.condition}</Text>
                 </View>
               )}
               {item.brand && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Brand</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.brand}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Brand</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>{item.brand}</Text>
                 </View>
               )}
               {item.model_number && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Model</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.model_number}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Model</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>{item.model_number}</Text>
                 </View>
               )}
               {item.year && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Year</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.year}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Year</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>{item.year}</Text>
                 </View>
               )}
               {item.size && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Size</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.size}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Size</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>{item.size}</Text>
                 </View>
               )}
               {item.collection && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Collection</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.collection}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Collection</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>{item.collection}</Text>
                 </View>
               )}
               {item.event && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Event</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.event}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Event</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>{item.event}</Text>
                 </View>
               )}
               {peopleForItem().length > 0 && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>People</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{peopleForItem().join(', ')}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>People</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>{peopleForItem().join(', ')}</Text>
                 </View>
               )}
               {item.created_at && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '600' }}>Added</Text>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '600' }}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '600' }}>Added</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '600' }}>{new Date(item.created_at).toLocaleDateString()}</Text>
                 </View>
               )}
             </View>
@@ -267,45 +268,45 @@ export default function ItemDetail() {
         </View>
 
         <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: '#D8E6EE' }}>
-            <View style={{ paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#D8E6EE' }}>
-              <Text style={{ color: '#4A7A9B', fontWeight: '700', letterSpacing: 2, fontSize: 12 }}>PURCHASE DETAILS</Text>
+          <View style={{ backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: tokens.colors.border }}>
+            <View style={{ paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: tokens.colors.border }}>
+              <Text style={{ color: tokens.colors.accentCool, fontWeight: '700', letterSpacing: 2, fontSize: 12 }}>PURCHASE DETAILS</Text>
             </View>
             <View style={{ paddingHorizontal: 18, paddingVertical: 14 }}>
               {item.price && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Price</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>${item.price}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Price</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>${item.price}</Text>
                 </View>
               )}
               {item.estimated_value && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Estimated Value</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>${item.estimated_value}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Estimated Value</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>${item.estimated_value}</Text>
                 </View>
               )}
               {item.date_purchased && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Purchased</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.date_purchased}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Purchased</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>{item.date_purchased}</Text>
                 </View>
               )}
               {(item.acquisition_method || item.acquired) && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Acquired Via</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.acquisition_method || item.acquired}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Acquired Via</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>{item.acquisition_method || item.acquired}</Text>
                 </View>
               )}
               {item.location && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '700' }}>Location</Text>
-                  <Text style={{ color: '#0C1620', fontWeight: '700' }}>{item.location}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>Location</Text>
+                  <Text style={{ color: tokens.colors.ink, fontWeight: '700' }}>{item.location}</Text>
                 </View>
               )}
               {item.updated_at && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '600' }}>Updated</Text>
-                  <Text style={{ color: '#4A7A9B', fontWeight: '600' }}>{new Date(item.updated_at).toLocaleDateString()}</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '600' }}>Updated</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '600' }}>{new Date(item.updated_at).toLocaleDateString()}</Text>
                 </View>
               )}
             </View>

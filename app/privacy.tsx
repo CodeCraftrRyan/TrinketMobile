@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import BrandHeader from '../components/ui/BrandHeader';
+import { tokens } from '../lib/tokens';
 
 const SECTIONS = [
   {
@@ -49,18 +50,18 @@ export default function PrivacyPolicy() {
           marginTop: 6,
           paddingVertical: 8,
           paddingHorizontal: 12,
-          backgroundColor: '#D8E6EE',
+          backgroundColor: tokens.colors.border,
           borderRadius: 8,
           alignSelf: 'flex-start',
         }}
       >
-        <Text style={{ color: '#0C1620', fontWeight: '600' }}>← Back to Settings</Text>
+        <Text style={{ color: tokens.colors.ink, fontWeight: '600' }}>← Back to Settings</Text>
       </TouchableOpacity>
 
-      <Text style={{ fontSize: 28, fontWeight: '300', color: '#0C1620', fontFamily: 'CormorantGaramond_300Light', marginBottom: 8 }}>
+      <Text style={{ fontSize: 28, fontWeight: '300', color: tokens.colors.ink, fontFamily: 'CormorantGaramond_300Light', marginBottom: 8 }}>
         Your Privacy Matters
       </Text>
-      <Text style={{ color: '#4A7A9B', fontSize: 16, marginBottom: 18 }}>
+      <Text style={{ color: tokens.colors.accentCool, fontSize: 16, marginBottom: 18 }}>
         We’re committed to keeping your collection safe, secure, and respected.
       </Text>
 
@@ -68,18 +69,18 @@ export default function PrivacyPolicy() {
         <View
           key={section.title}
           style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: tokens.colors.card,
             borderRadius: 16,
             padding: 16,
             borderWidth: 1,
-            borderColor: '#D8E6EE',
+            borderColor: tokens.colors.border,
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 18, fontWeight: '600', color: '#0C1620', marginBottom: 6 }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', color: tokens.colors.ink, marginBottom: 6 }}>
             {section.title}
           </Text>
-          <Text style={{ color: '#2E4A5E', fontSize: 15, lineHeight: 22 }}>
+          <Text style={{ color: tokens.colors.muted, fontSize: 15, lineHeight: 22 }}>
             {section.body}
           </Text>
         </View>

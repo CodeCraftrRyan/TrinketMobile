@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import BottomTabs from '../../components/ui/BottomTabs';
 import { supabase } from "../../lib/supabase";
+import { tokens } from '../../lib/tokens';
 
 export default function TabsLayout() {
   const router = useRouter();
@@ -43,8 +44,8 @@ export default function TabsLayout() {
 
   if (checking) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0C1620' }}>
-        <ActivityIndicator color="#FFFFFF" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.colors.ink }}>
+        <ActivityIndicator color=tokens.colors.card />
       </View>
     );
   }
@@ -54,9 +55,9 @@ export default function TabsLayout() {
       tabBar={(props) => <BottomTabs {...(props as any)} />}
       screenOptions={{
         headerShown: false,
-  tabBarActiveTintColor: "#FFFFFF",
-  tabBarInactiveTintColor: "#4A7A9B",
-  tabBarStyle: { backgroundColor: "#0C1620", borderTopColor: "#D8E6EE" },
+  tabBarActiveTintColor: tokens.colors.card,
+  tabBarInactiveTintColor: tokens.colors.accentCool,
+  tabBarStyle: { backgroundColor: tokens.colors.ink, borderTopColor: tokens.colors.border },
       }}
     >
       <Tabs.Screen name="home" options={{ title: "Home" }} />

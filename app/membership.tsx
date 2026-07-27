@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacit
 import Screen from '../components/Screen';
 import { supabase } from '../lib/supabase';
 import { createCheckoutSession, openCheckout } from '../services/payments';
+import { tokens } from '../lib/tokens';
 
 type Plan = 'Free' | 'Pro' | 'Premium';
 
@@ -116,7 +117,7 @@ export default function Membership() {
     return (
       <Screen>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#B8783A" />
+          <ActivityIndicator size="large" color=tokens.colors.accent />
         </View>
       </Screen>
     );
@@ -259,7 +260,7 @@ export default function Membership() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7FAFB',
+    backgroundColor: tokens.colors.bg,
   },
   loadingContainer: {
     flex: 1,
@@ -272,29 +273,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: '#D8E6EE',
+    borderBottomColor: tokens.colors.border,
   },
   cancelButton: {
-    color: '#B8783A',
+    color: tokens.colors.accent,
     fontSize: 17,
     width: 70,
   },
   title: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#0C1620',
+    color: tokens.colors.ink,
   },
   saveButton: {
-    color: '#B8783A',
+    color: tokens.colors.accent,
     fontSize: 17,
     fontWeight: '600',
     width: 70,
     textAlign: 'right',
   },
   saveButtonDisabled: {
-    color: '#4A7A9B',
+    color: tokens.colors.accentCool,
   },
   scrollView: {
     flex: 1,
@@ -303,19 +304,19 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   currentPlanBanner: {
-    backgroundColor: '#B8783A',
+    backgroundColor: tokens.colors.accent,
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
     alignItems: 'center',
   },
   checkoutBanner: {
-    backgroundColor: '#F7FAFB',
+    backgroundColor: tokens.colors.bg,
     borderRadius: 12,
     padding: 14,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#D8E6EE',
+    borderColor: tokens.colors.border,
   },
   checkoutBannerSuccess: {
     backgroundColor: '#EAF6EF',
@@ -326,37 +327,37 @@ const styles = StyleSheet.create({
     borderColor: '#F0C7BC',
   },
   checkoutBannerText: {
-    color: '#2E4A5E',
+    color: tokens.colors.muted,
     fontSize: 14.5,
     fontWeight: '600',
   },
   bannerLabel: {
-    color: '#FFFFFF',
+    color: tokens.colors.card,
     fontSize: 15,
     marginBottom: 4,
   },
   bannerPlan: {
-    color: '#FFFFFF',
+    color: tokens.colors.card,
     fontSize: 24,
     fontWeight: '700',
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#0C1620',
+    color: tokens.colors.ink,
     marginBottom: 16,
   },
   planCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens.colors.card,
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: '#D8E6EE',
+    borderColor: tokens.colors.border,
   },
   planCardSelected: {
-    borderColor: '#B8783A',
-    backgroundColor: '#D8E6EE',
+    borderColor: tokens.colors.accent,
+    backgroundColor: tokens.colors.border,
   },
   planHeader: {
     flexDirection: 'row',
@@ -375,11 +376,11 @@ const styles = StyleSheet.create({
   planName: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#0C1620',
+    color: tokens.colors.ink,
   },
   planPrice: {
     fontSize: 15,
-    color: '#4A7A9B',
+    color: tokens.colors.accentCool,
     marginTop: 2,
   },
   radioButton: {
@@ -387,22 +388,22 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#D8E6EE',
+    borderColor: tokens.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   radioButtonSelected: {
-    borderColor: '#B8783A',
+    borderColor: tokens.colors.accent,
   },
   radioButtonInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#B8783A',
+    backgroundColor: tokens.colors.accent,
   },
   divider: {
     height: 1,
-    backgroundColor: '#D8E6EE',
+    backgroundColor: tokens.colors.border,
     marginBottom: 16,
   },
   featuresList: {
@@ -415,30 +416,30 @@ const styles = StyleSheet.create({
   },
   checkmark: {
     fontSize: 16,
-    color: '#B8783A',
+    color: tokens.colors.accent,
     fontWeight: '700',
   },
   featureText: {
     fontSize: 15,
-    color: '#0C1620',
+    color: tokens.colors.ink,
   },
   currentBadge: {
     position: 'absolute',
     top: 16,
     right: 16,
-    backgroundColor: '#B8783A',
+    backgroundColor: tokens.colors.accent,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
   currentBadgeText: {
-    color: '#FFFFFF',
+    color: tokens.colors.card,
     fontSize: 12,
     fontWeight: '600',
   },
   disclaimer: {
     fontSize: 13,
-    color: '#4A7A9B',
+    color: tokens.colors.accentCool,
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 32,

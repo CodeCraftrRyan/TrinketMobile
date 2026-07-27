@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BrandHeader from '../../components/ui/BrandHeader';
+import { tokens } from '../../lib/tokens';
 
 const icons = [
   'camera-outline', 'infinite-outline', 'home-outline', 'telescope-outline',
   'book-outline', 'color-palette-outline', 'heart-outline', 'leaf-outline'
 ] as const;
 const colors = [
-  '#B8783A', '#4A7A9B', '#D8E6EE', '#F7FAFB', '#FFFFFF', '#0C1620'
+  tokens.colors.accent, tokens.colors.accentCool, tokens.colors.border, tokens.colors.bg, tokens.colors.card, tokens.colors.ink
 ];
 
 export default function ChooseIcon() {
@@ -28,10 +29,10 @@ export default function ChooseIcon() {
           {icons.map((icon, i) => (
             <TouchableOpacity
               key={icon}
-              style={[styles.iconBox, selectedIcon === icon && { borderColor: '#B8783A', borderWidth: 2 }]}
+              style={[styles.iconBox, selectedIcon === icon && { borderColor: tokens.colors.accent, borderWidth: 2 }]}
               onPress={() => setSelectedIcon(icon)}
             >
-              <Ionicons name={icon} size={38} color="#0C1620" />
+              <Ionicons name={icon} size={38} color=tokens.colors.ink />
             </TouchableOpacity>
           ))}
         </View>
@@ -56,17 +57,17 @@ export default function ChooseIcon() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F7FAFB' },
+  safe: { flex: 1, backgroundColor: tokens.colors.bg },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-  title: { fontSize: 32, fontWeight: '800', color: '#0C1620', marginBottom: 8, textAlign: 'center' },
-  subtitle: { color: '#4A7A9B', fontSize: 18, marginBottom: 32, textAlign: 'center' },
+  title: { fontSize: 32, fontWeight: '800', color: tokens.colors.ink, marginBottom: 8, textAlign: 'center' },
+  subtitle: { color: tokens.colors.accentCool, fontSize: 18, marginBottom: 32, textAlign: 'center' },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 18, marginBottom: 32 },
-  iconBox: { width: 72, height: 72, borderRadius: 16, backgroundColor: '#F7FAFB', alignItems: 'center', justifyContent: 'center', margin: 8 },
+  iconBox: { width: 72, height: 72, borderRadius: 16, backgroundColor: tokens.colors.bg, alignItems: 'center', justifyContent: 'center', margin: 8 },
   colorRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 32 },
-  colorCircle: { width: 36, height: 36, borderRadius: 18, marginHorizontal: 7, borderWidth: 2, borderColor: '#D8E6EE' },
-  colorSelected: { borderColor: '#B8783A', borderWidth: 3 },
-  nextBtn: { backgroundColor: '#B8783A', borderRadius: 12, paddingVertical: 16, paddingHorizontal: 32, alignItems: 'center', marginTop: 12 },
+  colorCircle: { width: 36, height: 36, borderRadius: 18, marginHorizontal: 7, borderWidth: 2, borderColor: tokens.colors.border },
+  colorSelected: { borderColor: tokens.colors.accent, borderWidth: 3 },
+  nextBtn: { backgroundColor: tokens.colors.accent, borderRadius: 12, paddingVertical: 16, paddingHorizontal: 32, alignItems: 'center', marginTop: 12 },
   nextText: { color: '#fff', fontWeight: '700', fontSize: 20 },
-  previewBtn: { backgroundColor: '#4A7A9B', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, alignItems: 'center', marginTop: 18 },
+  previewBtn: { backgroundColor: tokens.colors.accentCool, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, alignItems: 'center', marginTop: 18 },
   previewText: { color: '#fff', fontWeight: '700', fontSize: 18 },
 });

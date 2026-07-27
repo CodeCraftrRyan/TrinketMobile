@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import BrandHeader from '../../components/ui/BrandHeader';
 import { supabase } from '../../lib/supabase';
+import { tokens } from '../../lib/tokens';
 
 export default function SignUp() {
   const router = useRouter();
@@ -337,34 +338,34 @@ export default function SignUp() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F7FAFB' },
+  safe: { flex: 1, backgroundColor: tokens.colors.bg },
   scroll: { flexGrow: 1, padding: 20 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  backLink: { color: '#B8783A', fontWeight: '600' },
+  backLink: { color: tokens.colors.accent, fontWeight: '600' },
   dots: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#D8E6EE' },
-  dotActive: { backgroundColor: '#0C1620' },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.colors.border },
+  dotActive: { backgroundColor: tokens.colors.ink },
   centerWrap: { flex: 1, alignItems: 'stretch', justifyContent: 'flex-start', paddingTop: 24, gap: 8 },
-  welcomeTitle: { fontSize: 32, fontWeight: '800', color: '#0C1620' },
-  bigTitle: { fontSize: 32, fontWeight: '800', color: '#0C1620', marginTop: 16 },
-  subtitle: { color: '#4A7A9B', marginTop: 4, marginBottom: 8, textAlign: 'left' },
+  welcomeTitle: { fontSize: 32, fontWeight: '800', color: tokens.colors.ink },
+  bigTitle: { fontSize: 32, fontWeight: '800', color: tokens.colors.ink, marginTop: 16 },
+  subtitle: { color: tokens.colors.accentCool, marginTop: 4, marginBottom: 8, textAlign: 'left' },
   formWrap: { gap: 12, width: '100%' },
-  fieldLabel: { color: '#4A7A9B', fontSize: 12, fontWeight: '600', letterSpacing: 0.6, marginTop: 4, marginBottom: -2 },
+  fieldLabel: { color: tokens.colors.accentCool, fontSize: 12, fontWeight: '600', letterSpacing: 0.6, marginTop: 4, marginBottom: -2 },
   helperText: { color: '#7B8E9C', fontSize: 12, marginTop: -2, marginBottom: 6 },
-  input: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D8E6EE', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: '#0C1620', height: 48 },
+  input: { backgroundColor: tokens.colors.card, borderWidth: 1, borderColor: tokens.colors.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: tokens.colors.ink, height: 48 },
   phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  countryPickerCompact: { width: 96, height: 48, borderWidth: 1, borderColor: '#D8E6EE', borderRadius: 10, justifyContent: 'center', backgroundColor: '#FFFFFF', position: 'relative' },
-  countryPickerValue: { color: '#0C1620', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  countryPickerCompactInput: { width: '100%', height: 44, color: '#0C1620', position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, opacity: 0 },
+  countryPickerCompact: { width: 96, height: 48, borderWidth: 1, borderColor: tokens.colors.border, borderRadius: 10, justifyContent: 'center', backgroundColor: tokens.colors.card, position: 'relative' },
+  countryPickerValue: { color: tokens.colors.ink, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  countryPickerCompactInput: { width: '100%', height: 44, color: tokens.colors.ink, position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, opacity: 0 },
   phoneInput: { flex: 1 },
-  primaryBtn: { backgroundColor: '#B8783A', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16, alignItems: 'center', marginTop: 6 },
-  primaryBtnText: { color: '#FFFFFF', fontWeight: '700' },
-  secondaryBtn: { backgroundColor: '#F7FAFB', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  secondaryBtnText: { color: '#0C1620', fontWeight: '600' },
+  primaryBtn: { backgroundColor: tokens.colors.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16, alignItems: 'center', marginTop: 6 },
+  primaryBtnText: { color: tokens.colors.card, fontWeight: '700' },
+  secondaryBtn: { backgroundColor: tokens.colors.bg, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  secondaryBtnText: { color: tokens.colors.ink, fontWeight: '600' },
   btnDisabled: { opacity: 0.5 },
-  link: { color: '#B8783A', fontWeight: '600' },
-  muted: { color: '#4A7A9B', marginTop: 10, textAlign: 'center' },
-  personRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: '#D8E6EE', borderRadius: 8, backgroundColor: '#FFFFFF', marginTop: 8 },
-  personText: { color: '#0C1620', fontWeight: '500' },
-  removeLink: { color: '#B8783A', fontWeight: '600' },
+  link: { color: tokens.colors.accent, fontWeight: '600' },
+  muted: { color: tokens.colors.accentCool, marginTop: 10, textAlign: 'center' },
+  personRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: tokens.colors.border, borderRadius: 8, backgroundColor: tokens.colors.card, marginTop: 8 },
+  personText: { color: tokens.colors.ink, fontWeight: '500' },
+  removeLink: { color: tokens.colors.accent, fontWeight: '600' },
 });

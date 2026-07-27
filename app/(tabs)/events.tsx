@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import TabHeader from '../../components/ui/TabHeader';
 import { supabase } from '../../lib/supabase';
+import { tokens } from '../../lib/tokens';
 
 type EventRow = {
   id: number | string;
@@ -96,8 +97,8 @@ export default function EventsTab() {
       <View style={{ marginBottom: 12 }}>
         <Card>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ color: '#4A7A9B' }}>Search events…</Text>
-            <Text style={{ color: '#4A7A9B' }}>{events.length} events</Text>
+            <Text style={{ color: tokens.colors.accentCool }}>Search events…</Text>
+            <Text style={{ color: tokens.colors.accentCool }}>{events.length} events</Text>
           </View>
         </Card>
       </View>
@@ -126,12 +127,12 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 12, paddingBottom: 48 },
   column: { justifyContent: 'space-between', marginBottom: 12 },
   cardWrapper: { flex: 1, marginHorizontal: 6, minWidth: 160 },
-  imageWrap: { height: 140, backgroundColor: '#D8E6EE', justifyContent: 'center', alignItems: 'center' },
+  imageWrap: { height: 140, backgroundColor: tokens.colors.border, justifyContent: 'center', alignItems: 'center' },
   image: { width: '100%', height: '100%', resizeMode: 'cover' },
   placeholder: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
-  placeholderText: { color: '#4A7A9B' },
+  placeholderText: { color: tokens.colors.accentCool },
   cardBody: { padding: 12, backgroundColor: '#fff' },
   title: { fontSize: 16, fontWeight: '700' },
-  meta: { color: '#4A7A9B', fontSize: 13 },
-  desc: { marginTop: 8, color: '#0C1620', fontSize: 13 },
+  meta: { color: tokens.colors.accentCool, fontSize: 13 },
+  desc: { marginTop: 8, color: tokens.colors.ink, fontSize: 13 },
 });

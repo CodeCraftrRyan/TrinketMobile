@@ -6,7 +6,7 @@ import BrandHeader from './ui/BrandHeader';
 
 export default function Screen({ children }: { children: ReactNode }) {
   const { settings } = useAccessibilitySettings();
-  const backgroundColor = settings.highContrast ? '#FFFFFF' : tokens.colors.bg;
+  const backgroundColor = settings.highContrast ? tokens.colors.card : tokens.colors.bg;
   const scale = settings.largeText ? 1.3 : 1;
   const { width, height } = useWindowDimensions();
   const paddedWidth = width * scale + 60;

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import BrandHeader from '../components/ui/BrandHeader';
 import { supabase } from "../lib/supabase";
+import { tokens } from '../lib/tokens';
 
 export default function NewEvent() {
   const router = useRouter();
@@ -52,7 +53,7 @@ export default function NewEvent() {
         placeholder="Event Name"
         value={name}
         onChangeText={setName}
-  placeholderTextColor="#4A7A9B"
+  placeholderTextColor=tokens.colors.accentCool
       />
 
       <TextInput
@@ -60,7 +61,7 @@ export default function NewEvent() {
         placeholder="Event Date (YYYY-MM-DD)"
         value={eventDate}
         onChangeText={setEventDate}
-  placeholderTextColor="#4A7A9B"
+  placeholderTextColor=tokens.colors.accentCool
       />
 
       <TextInput
@@ -68,7 +69,7 @@ export default function NewEvent() {
         placeholder="Start Date (YYYY-MM-DD, optional)"
         value={startDate}
         onChangeText={setStartDate}
-  placeholderTextColor="#4A7A9B"
+  placeholderTextColor=tokens.colors.accentCool
       />
 
       <TextInput
@@ -76,7 +77,7 @@ export default function NewEvent() {
         placeholder="End Date (YYYY-MM-DD, optional)"
         value={endDate}
         onChangeText={setEndDate}
-  placeholderTextColor="#4A7A9B"
+  placeholderTextColor=tokens.colors.accentCool
       />
 
       <TextInput
@@ -84,7 +85,7 @@ export default function NewEvent() {
         placeholder="Cover Photo URL (optional)"
         value={coverPhotoUrl}
         onChangeText={setCoverPhotoUrl}
-  placeholderTextColor="#4A7A9B"
+  placeholderTextColor=tokens.colors.accentCool
       />
 
       <TextInput
@@ -92,7 +93,7 @@ export default function NewEvent() {
         placeholder="People (comma separated, optional)"
         value={peopleList}
         onChangeText={setPeopleList}
-  placeholderTextColor="#4A7A9B"
+  placeholderTextColor=tokens.colors.accentCool
       />
 
       <TextInput
@@ -100,7 +101,7 @@ export default function NewEvent() {
         placeholder="Description (optional)"
         value={description}
         onChangeText={setDescription}
-  placeholderTextColor="#4A7A9B"
+  placeholderTextColor=tokens.colors.accentCool
         multiline
       />
 
@@ -116,11 +117,11 @@ export default function NewEvent() {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: "#F7FAFB", padding: 16 },
-  h1: { fontSize: 24, fontWeight: "800", color: "#0C1620", marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: "#D8E6EE", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, color: "#0C1620", marginBottom: 10 },
-  primaryBtn: { backgroundColor: "#B8783A", borderRadius: 10, paddingVertical: 14, alignItems: "center", marginTop: 6 },
+  page: { flex: 1, backgroundColor: tokens.colors.bg, padding: 16 },
+  h1: { fontSize: 24, fontWeight: "800", color: tokens.colors.ink, marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: tokens.colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, color: tokens.colors.ink, marginBottom: 10 },
+  primaryBtn: { backgroundColor: tokens.colors.accent, borderRadius: 10, paddingVertical: 14, alignItems: "center", marginTop: 6 },
   primaryBtnText: { color: "#fff", fontWeight: "700" },
   linkBtn: { alignItems: "center", marginTop: 10 },
-  linkText: { color: "#B8783A", fontWeight: "600" },
+  linkText: { color: tokens.colors.accent, fontWeight: "600" },
 });
