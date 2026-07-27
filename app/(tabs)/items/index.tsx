@@ -406,16 +406,16 @@ export default function Items() {
           <Text style={{ color: tokens.colors.accentCool, fontSize: 18, marginTop: 2 }}>34 trinkets preserved</Text>
         </View>
   <TouchableOpacity style={{ backgroundColor: tokens.colors.card, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: tokens.colors.border, shadowColor: tokens.colors.ink, shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }}>
-          <Ionicons name="swap-vertical" size={24} color=tokens.colors.ink />
+          <Ionicons name="swap-vertical" size={24} color={tokens.colors.ink} />
         </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 24, paddingHorizontal: 18, paddingVertical: 10, marginTop: 18, marginBottom: 16, marginHorizontal: 0, borderWidth: 1, borderColor: tokens.colors.border, shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 }}>
-        <Ionicons name="search" size={22} color=tokens.colors.accentCool style={{ marginRight: 8 }} />
+        <Ionicons name="search" size={22} color={tokens.colors.accentCool} style={{ marginRight: 8 }} />
         <TextInput
           placeholder="Search your trinkets..."
-          placeholderTextColor=tokens.colors.accentCool
+          placeholderTextColor={tokens.colors.accentCool}
           style={{ flex: 1, fontSize: 18, color: tokens.colors.ink, paddingVertical: 0, backgroundColor: 'transparent' }}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -441,7 +441,7 @@ export default function Items() {
             }
           }}
         >
-          <Ionicons name="albums-outline" size={18} color=tokens.colors.accent style={{ marginRight: 6 }} />
+          <Ionicons name="albums-outline" size={18} color={tokens.colors.accent} style={{ marginRight: 6 }} />
           <Text style={{ color: tokens.colors.ink, fontWeight: '600' }}>{selectedCollectionName ? `Collection: ${selectedCollectionName}` : 'Collections'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -454,7 +454,7 @@ export default function Items() {
             if (next) await loadPeople();
           }}
         >
-          <Ionicons name="people-outline" size={18} color=tokens.colors.accent style={{ marginRight: 6 }} />
+          <Ionicons name="people-outline" size={18} color={tokens.colors.accent} style={{ marginRight: 6 }} />
           <Text style={{ color: tokens.colors.ink, fontWeight: '600' }}>
             {selectedPeople.length > 0 ? `People: ${selectedPeople.join(', ')}` : 'People'}
           </Text>
@@ -468,7 +468,7 @@ export default function Items() {
             if (!showEvents) await loadEvents();
           }}
         >
-          <Ionicons name="calendar-outline" size={18} color=tokens.colors.accent style={{ marginRight: 6 }} />
+          <Ionicons name="calendar-outline" size={18} color={tokens.colors.accent} style={{ marginRight: 6 }} />
           <Text style={{ color: tokens.colors.ink, fontWeight: '600' }}>Events</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -481,7 +481,7 @@ export default function Items() {
             setShowEvents(false);
           }}
         >
-          <Ionicons name="close-circle-outline" size={18} color=tokens.colors.accentCool style={{ marginRight: 6 }} />
+          <Ionicons name="close-circle-outline" size={18} color={tokens.colors.accentCool} style={{ marginRight: 6 }} />
           <Text style={{ color: tokens.colors.accentCool, fontWeight: '600' }}>Clear Filters</Text>
         </TouchableOpacity>
       </View>
@@ -493,7 +493,7 @@ export default function Items() {
               value={collectionsFilter}
               onChangeText={setCollectionsFilter}
               placeholder="Search collections"
-              placeholderTextColor=tokens.colors.inkGhost
+              placeholderTextColor={tokens.colors.inkGhost}
               style={{ backgroundColor: tokens.colors.bg, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14, borderWidth: 1, borderColor: tokens.colors.border }}
             />
           </View>
@@ -516,7 +516,7 @@ export default function Items() {
                   value={newCollectionName}
                   onChangeText={setNewCollectionName}
                   placeholder="New collection name"
-                  placeholderTextColor=tokens.colors.inkGhost
+                  placeholderTextColor={tokens.colors.inkGhost}
                   style={{ flex: 1, backgroundColor: tokens.colors.bg, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14, borderWidth: 1, borderColor: tokens.colors.border }}
                 />
                 <TouchableOpacity
@@ -665,7 +665,7 @@ export default function Items() {
                   </View>
                 </View>
                 <View style={{ marginLeft: 10 }}>
-                  <Ionicons name="chevron-forward" size={24} color=tokens.colors.accentCool />
+                  <Ionicons name="chevron-forward" size={24} color={tokens.colors.accentCool} />
                 </View>
               </View>
             </TouchableOpacity>

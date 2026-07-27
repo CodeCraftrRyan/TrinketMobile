@@ -83,7 +83,7 @@ export default function People() {
     return (
       <Screen>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color=tokens.colors.accent />
+          <ActivityIndicator size="large" color={tokens.colors.accent} />
         </View>
       </Screen>
     );
@@ -106,7 +106,7 @@ export default function People() {
             value={newPerson}
             onChangeText={setNewPerson}
             placeholder="Add a person"
-            placeholderTextColor=tokens.colors.accentCool
+            placeholderTextColor={tokens.colors.accentCool}
             returnKeyType="done"
             onSubmitEditing={addPerson}
           />

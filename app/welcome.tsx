@@ -15,9 +15,9 @@ export default function Welcome() {
             iconSize={42}
             iconBackgroundSize={28}
             iconBackgroundRadius={28}
-            textColor=tokens.colors.card
+            textColor={tokens.colors.card}
             subtitle="YOUR PERSONAL ARCHIVE"
-            subtitleColor=tokens.colors.accentCool
+            subtitleColor={tokens.colors.accentCool}
             style={{ marginBottom: 20 }}
             titleStyle={{ fontSize: 46, fontFamily: 'CormorantGaramond_400Regular', letterSpacing: 0.5 }}
             subtitleStyle={{ fontSize: 20, fontFamily: 'DMSans_500Medium', letterSpacing: 1.2 }}

@@ -168,7 +168,7 @@ export default function Account() {
         onValueChange={onValueChange}
         trackColor={{ false: tokens.colors.border, true: tokens.colors.accent }}
         thumbColor={value ? tokens.colors.card : tokens.colors.card}
-        ios_backgroundColor=tokens.colors.border
+        ios_backgroundColor={tokens.colors.border}
         accessibilityLabel={label}
       />
     </View>

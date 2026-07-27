@@ -32,7 +32,7 @@ export default function ChooseIcon() {
               style={[styles.iconBox, selectedIcon === icon && { borderColor: tokens.colors.accent, borderWidth: 2 }]}
               onPress={() => setSelectedIcon(icon)}
             >
-              <Ionicons name={icon} size={38} color=tokens.colors.ink />
+              <Ionicons name={icon} size={38} color={tokens.colors.ink} />
             </TouchableOpacity>
           ))}
         </View>

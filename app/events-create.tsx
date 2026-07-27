@@ -71,49 +71,49 @@ export default function CreateEvent() {
           placeholder="Event Name*"
           value={name}
           onChangeText={setName}
-          placeholderTextColor=tokens.colors.accentCool
+          placeholderTextColor={tokens.colors.accentCool}
         />
         <TextInput
           style={{ ...styles.input, fontSize: 18, fontFamily: 'DMSans_400Regular', color: tokens.colors.ink, backgroundColor: 'transparent' }}
           placeholder="Event Date (YYYY-MM-DD)*"
           value={eventDate}
           onChangeText={setEventDate}
-          placeholderTextColor=tokens.colors.accentCool
+          placeholderTextColor={tokens.colors.accentCool}
         />
         <TextInput
           style={{ ...styles.input, fontSize: 16, color: tokens.colors.ink, backgroundColor: 'transparent' }}
           placeholder="Start Date (YYYY-MM-DD, optional)"
           value={startDate}
           onChangeText={setStartDate}
-          placeholderTextColor=tokens.colors.accentCool
+          placeholderTextColor={tokens.colors.accentCool}
         />
         <TextInput
           style={{ ...styles.input, fontSize: 16, color: tokens.colors.ink, backgroundColor: 'transparent' }}
           placeholder="End Date (YYYY-MM-DD, optional)"
           value={endDate}
           onChangeText={setEndDate}
-          placeholderTextColor=tokens.colors.accentCool
+          placeholderTextColor={tokens.colors.accentCool}
         />
         <TextInput
           style={{ ...styles.input, fontSize: 16, color: tokens.colors.ink, backgroundColor: 'transparent' }}
           placeholder="Cover Photo URL (optional)"
           value={coverPhotoUrl}
           onChangeText={setCoverPhotoUrl}
-          placeholderTextColor=tokens.colors.accentCool
+          placeholderTextColor={tokens.colors.accentCool}
         />
         <TextInput
           style={{ ...styles.input, fontSize: 16, color: tokens.colors.ink, backgroundColor: 'transparent' }}
           placeholder="People (comma separated, optional)"
           value={peopleList}
           onChangeText={setPeopleList}
-          placeholderTextColor=tokens.colors.accentCool
+          placeholderTextColor={tokens.colors.accentCool}
         />
         <TextInput
           style={[styles.input, { height: 120, textAlignVertical: "top", paddingTop: 12, fontSize: 16, color: tokens.colors.ink, backgroundColor: 'transparent' }]}
           placeholder="Description (optional)"
           value={description}
           onChangeText={setDescription}
-          placeholderTextColor=tokens.colors.accentCool
+          placeholderTextColor={tokens.colors.accentCool}
           multiline
         />
   <TouchableOpacity style={{ backgroundColor: tokens.colors.accent, borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 6, shadowColor: tokens.colors.accent, shadowOpacity: 0.12, shadowRadius: 8 }} onPress={save} disabled={saving}>

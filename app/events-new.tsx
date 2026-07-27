@@ -53,7 +53,7 @@ export default function NewEvent() {
         placeholder="Event Name"
         value={name}
         onChangeText={setName}
-  placeholderTextColor=tokens.colors.accentCool
+  placeholderTextColor={tokens.colors.accentCool}
       />
 
       <TextInput
@@ -61,7 +61,7 @@ export default function NewEvent() {
         placeholder="Event Date (YYYY-MM-DD)"
         value={eventDate}
         onChangeText={setEventDate}
-  placeholderTextColor=tokens.colors.accentCool
+  placeholderTextColor={tokens.colors.accentCool}
       />
 
       <TextInput
@@ -69,7 +69,7 @@ export default function NewEvent() {
         placeholder="Start Date (YYYY-MM-DD, optional)"
         value={startDate}
         onChangeText={setStartDate}
-  placeholderTextColor=tokens.colors.accentCool
+  placeholderTextColor={tokens.colors.accentCool}
       />
 
       <TextInput
@@ -77,7 +77,7 @@ export default function NewEvent() {
         placeholder="End Date (YYYY-MM-DD, optional)"
         value={endDate}
         onChangeText={setEndDate}
-  placeholderTextColor=tokens.colors.accentCool
+  placeholderTextColor={tokens.colors.accentCool}
       />
 
       <TextInput
@@ -85,7 +85,7 @@ export default function NewEvent() {
         placeholder="Cover Photo URL (optional)"
         value={coverPhotoUrl}
         onChangeText={setCoverPhotoUrl}
-  placeholderTextColor=tokens.colors.accentCool
+  placeholderTextColor={tokens.colors.accentCool}
       />
 
       <TextInput
@@ -93,7 +93,7 @@ export default function NewEvent() {
         placeholder="People (comma separated, optional)"
         value={peopleList}
         onChangeText={setPeopleList}
-  placeholderTextColor=tokens.colors.accentCool
+  placeholderTextColor={tokens.colors.accentCool}
       />
 
       <TextInput
@@ -101,7 +101,7 @@ export default function NewEvent() {
         placeholder="Description (optional)"
         value={description}
         onChangeText={setDescription}
-  placeholderTextColor=tokens.colors.accentCool
+  placeholderTextColor={tokens.colors.accentCool}
         multiline
       />
 

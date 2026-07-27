@@ -60,7 +60,7 @@ export default function Profile() {
     return (
       <Screen>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color=tokens.colors.accent />
+          <ActivityIndicator size="large" color={tokens.colors.accent} />
         </View>
       </Screen>
     );
@@ -89,7 +89,7 @@ export default function Profile() {
               value={firstName}
               onChangeText={setFirstName}
               placeholder="Enter first name"
-              placeholderTextColor=tokens.colors.accentCool
+              placeholderTextColor={tokens.colors.accentCool}
             />
           </View>
 
@@ -100,7 +100,7 @@ export default function Profile() {
               value={lastName}
               onChangeText={setLastName}
               placeholder="Enter last name"
-              placeholderTextColor=tokens.colors.accentCool
+              placeholderTextColor={tokens.colors.accentCool}
             />
           </View>
 
@@ -110,7 +110,7 @@ export default function Profile() {
               style={[styles.input, styles.disabledInput]}
               value={email}
               editable={false}
-              placeholderTextColor=tokens.colors.accentCool
+              placeholderTextColor={tokens.colors.accentCool}
             />
             <Text style={styles.helperText}>Email cannot be changed here</Text>
           </View>
@@ -122,7 +122,7 @@ export default function Profile() {
               value={bio}
               onChangeText={setBio}
               placeholder="Tell us about yourself"
-              placeholderTextColor=tokens.colors.accentCool
+              placeholderTextColor={tokens.colors.accentCool}
               multiline
               numberOfLines={4}
               textAlignVertical="top"

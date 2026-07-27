@@ -91,7 +91,7 @@ export default function Contact() {
                 value={name}
                 onChangeText={setName}
                 placeholder="Your name"
-                placeholderTextColor=tokens.colors.accentCool
+                placeholderTextColor={tokens.colors.accentCool}
                 editable={!sending}
               />
             </View>
@@ -103,7 +103,7 @@ export default function Contact() {
                 value={email}
                 onChangeText={setEmail}
                 placeholder="your.email@example.com"
-                placeholderTextColor=tokens.colors.accentCool
+                placeholderTextColor={tokens.colors.accentCool}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -118,7 +118,7 @@ export default function Contact() {
                 value={subject}
                 onChangeText={setSubject}
                 placeholder="What is this about?"
-                placeholderTextColor=tokens.colors.accentCool
+                placeholderTextColor={tokens.colors.accentCool}
                 editable={!sending}
               />
             </View>
@@ -130,7 +130,7 @@ export default function Contact() {
                 value={message}
                 onChangeText={setMessage}
                 placeholder="Tell us more..."
-                placeholderTextColor=tokens.colors.accentCool
+                placeholderTextColor={tokens.colors.accentCool}
                 multiline
                 numberOfLines={6}
                 textAlignVertical="top"
@@ -144,7 +144,7 @@ export default function Contact() {
               disabled={sending}
             >
               {sending ? (
-                <ActivityIndicator color=tokens.colors.card />
+                <ActivityIndicator color={tokens.colors.card} />
               ) : (
                 <Text style={styles.submitButtonText}>Send Message</Text>
               )}

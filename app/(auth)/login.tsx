@@ -59,7 +59,7 @@ export default function Login() {
                 keyboardType="email-address"
                 value={email}
                 onChangeText={setEmail}
-                placeholderTextColor=tokens.colors.accentCool
+                placeholderTextColor={tokens.colors.accentCool}
                 style={[styles.input, email && styles.inputActive]}
                 returnKeyType="next"
               />
@@ -71,7 +71,7 @@ export default function Login() {
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
-                placeholderTextColor=tokens.colors.accentCool
+                placeholderTextColor={tokens.colors.accentCool}
                 style={[styles.input, password && styles.inputActive]}
               />
             </View>

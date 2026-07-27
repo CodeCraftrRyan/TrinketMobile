@@ -117,7 +117,7 @@ export default function Membership() {
     return (
       <Screen>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color=tokens.colors.accent />
+          <ActivityIndicator size="large" color={tokens.colors.accent} />
         </View>
       </Screen>
     );

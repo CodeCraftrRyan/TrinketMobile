@@ -45,7 +45,7 @@ export default function TabsLayout() {
   if (checking) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.colors.ink }}>
-        <ActivityIndicator color=tokens.colors.card />
+        <ActivityIndicator color={tokens.colors.card} />
       </View>
     );
   }

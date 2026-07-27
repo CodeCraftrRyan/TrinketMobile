@@ -178,7 +178,7 @@ export default function Home() {
           shadowOffset: { width: 0, height: 2.2 },
           elevation: 1,
         }}>
-          <Ionicons name="search-outline" size={20} color=tokens.colors.accentCool style={{ marginRight: 8 }} />
+          <Ionicons name="search-outline" size={20} color={tokens.colors.accentCool} style={{ marginRight: 8 }} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: tokens.colors.accentCool, fontSize: 17.6 }}>
               Search your memories...
@@ -197,7 +197,7 @@ export default function Home() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13, marginTop: 9, paddingHorizontal: 18 }}>
           <Text style={{ fontSize: 26.4, fontWeight: '300', color: tokens.colors.ink, fontFamily: 'CormorantGaramond_300Light' }}>Recent Memory</Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/items')}>
-            <Text style={{ color: tokens.colors.accent, fontSize: 18.7, fontWeight: '600' }}>See all <Ionicons name="arrow-forward-outline" size={17.6} color=tokens.colors.accent /></Text>
+            <Text style={{ color: tokens.colors.accent, fontSize: 18.7, fontWeight: '600' }}>See all <Ionicons name="arrow-forward-outline" size={17.6} color={tokens.colors.accent} /></Text>
           </TouchableOpacity>
         </View>
         {/* Preview of Last Uploaded Item */}

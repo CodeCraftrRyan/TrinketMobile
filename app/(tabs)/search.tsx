@@ -251,17 +251,17 @@ const styles = StyleSheet.create({
       <View style={styles.container}>
         {/* General Search Bar */}
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={20} color=tokens.colors.accentCool style={{ marginRight: 8 }} />
+          <Ionicons name="search-outline" size={20} color={tokens.colors.accentCool} style={{ marginRight: 8 }} />
           <TextInput 
             placeholder="Search everything..." 
             value={generalSearchText} 
             onChangeText={setGeneralSearchText} 
             style={styles.searchInputInline}
-            placeholderTextColor=tokens.colors.accentCool
+            placeholderTextColor={tokens.colors.accentCool}
           />
           {generalSearchText ? (
             <TouchableOpacity onPress={() => setGeneralSearchText('')}>
-              <Ionicons name="close-circle" size={20} color=tokens.colors.accentCool />
+              <Ionicons name="close-circle" size={20} color={tokens.colors.accentCool} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
             {searchResults.items.length === 0 && searchResults.events.length === 0 ? (
               <Card>
                 <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                  <Ionicons name="search-outline" size={48} color=tokens.colors.border />
+                  <Ionicons name="search-outline" size={48} color={tokens.colors.border} />
                   <Text style={{ fontSize: 16, fontWeight: '600', marginTop: 12, marginBottom: 4 }}>No results found</Text>
                   <Text style={{ color: tokens.colors.accentCool, textAlign: 'center' }}>Try searching with different keywords</Text>
                 </View>
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
                 {searchResults.items.length > 0 && (
                   <View style={{ marginBottom: 24 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                      <Ionicons name="cube" size={20} color=tokens.colors.accent />
+                      <Ionicons name="cube" size={20} color={tokens.colors.accent} />
                       <Text style={{ fontSize: 18, fontWeight: '700', marginLeft: 8 }}>
                         Items ({searchResults.items.length})
                       </Text>
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
                                 return imgs.length > 0 ? (
                                   <Image source={{ uri: imgs[0] }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
                                 ) : (
-                                  <Ionicons name="image-outline" size={24} color=tokens.colors.border />
+                                  <Ionicons name="image-outline" size={24} color={tokens.colors.border} />
                                 );
                               })()}
                             </View>
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
                 {searchResults.events.length > 0 && (
                   <View style={{ marginBottom: 24 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                      <Ionicons name="calendar" size={20} color=tokens.colors.accent />
+                      <Ionicons name="calendar" size={20} color={tokens.colors.accent} />
                       <Text style={{ fontSize: 18, fontWeight: '700', marginLeft: 8 }}>
                         Events ({searchResults.events.length})
                       </Text>
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
                               alignItems: 'center',
                               minWidth: 50
                             }}>
-                              <Ionicons name="calendar" size={20} color=tokens.colors.accent />
+                              <Ionicons name="calendar" size={20} color={tokens.colors.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                               <Text style={{ fontWeight: '700', fontSize: 15, marginBottom: 4 }}>{event.name || 'Untitled Event'}</Text>
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
               <>
                 {loadingCollection && !refreshing ? (
                   <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                    <ActivityIndicator size="large" color=tokens.colors.accent />
+                    <ActivityIndicator size="large" color={tokens.colors.accent} />
                     <Text style={{ color: tokens.colors.accentCool, marginTop: 12 }}>Loading your collection...</Text>
                   </View>
                 ) : filteredItems.length === 0 ? (
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
                     {items.length === 0 ? (
                       <>
                         <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                          <Ionicons name="cube-outline" size={64} color=tokens.colors.border />
+                          <Ionicons name="cube-outline" size={64} color={tokens.colors.border} />
                       <Text style={{ fontSize: 18, fontWeight: '600', marginTop: 16, marginBottom: 8 }}>No items yet</Text>
                       <Text style={{ color: tokens.colors.accentCool, textAlign: 'center', marginBottom: 16 }}>Start building your collection by adding your first item</Text>
                       <Button title="Add your first item" onPress={() => router.push('/(tabs)/add')} />
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
                   </>
                 ) : (
                   <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                    <Ionicons name="search-outline" size={48} color=tokens.colors.border />
+                    <Ionicons name="search-outline" size={48} color={tokens.colors.border} />
                     <Text style={{ fontSize: 16, fontWeight: '600', marginTop: 12, marginBottom: 4 }}>No results found</Text>
                     <Text style={{ color: tokens.colors.accentCool, textAlign: 'center' }}>Try searching with different keywords</Text>
                   </View>
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
                               <Image source={{ uri: imgs[0] }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
                             ) : (
                               <View style={{ alignItems: 'center' }}>
-                                <Ionicons name="image-outline" size={32} color=tokens.colors.border />
+                                <Ionicons name="image-outline" size={32} color={tokens.colors.border} />
                                 <Text style={{ color: tokens.colors.accentCool, fontSize: 12, marginTop: 4 }}>No image</Text>
                               </View>
                             );
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
                           <View style={{ marginTop: 8 }}>
                             {it.location && (
                               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                                <Ionicons name="location-outline" size={14} color=tokens.colors.accentCool />
+                                <Ionicons name="location-outline" size={14} color={tokens.colors.accentCool} />
                                 <Text style={{ color: tokens.colors.accentCool, fontSize: 14, marginLeft: 4 }}>{it.location}</Text>
                               </View>
                             )}
@@ -494,20 +494,20 @@ const styles = StyleSheet.create({
                 elevation: 8,
               }}
             >
-        <Ionicons name="add" size={32} color=tokens.colors.card />
+        <Ionicons name="add" size={32} color={tokens.colors.card} />
             </TouchableOpacity>
           </>
         ) : mode === 'events' ? (
           <>
             {loadingEvents ? (
               <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                <ActivityIndicator size="large" color=tokens.colors.accent />
+                <ActivityIndicator size="large" color={tokens.colors.accent} />
                 <Text style={{ color: tokens.colors.accentCool, marginTop: 12 }}>Loading events...</Text>
               </View>
             ) : eventsList.length === 0 ? (
               <Card>
                 <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                  <Ionicons name="calendar-outline" size={64} color=tokens.colors.border />
+                  <Ionicons name="calendar-outline" size={64} color={tokens.colors.border} />
                   <Text style={{ fontSize: 18, fontWeight: '600', marginTop: 16, marginBottom: 8 }}>No events yet</Text>
                   <Text style={{ color: tokens.colors.accentCool, textAlign: 'center', marginBottom: 16 }}>Create your first event to keep track of important dates</Text>
                   <Button title="Create Event" onPress={() => router.push('/events-new')} />
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
                           alignItems: 'center',
                           minWidth: 60
                         }}>
-                          <Ionicons name="calendar" size={24} color=tokens.colors.accent />
+                          <Ionicons name="calendar" size={24} color={tokens.colors.accent} />
                           {event.event_date && (
                               <Text style={{ fontSize: 10, color: tokens.colors.accent, marginTop: 4 }}>
                               {new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
                           <Text style={{ fontWeight: '700', fontSize: 16, marginBottom: 4 }}>{event.name || 'Untitled Event'}</Text>
                           {event.location && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                                <Ionicons name="location-outline" size={14} color=tokens.colors.accentCool />
+                                <Ionicons name="location-outline" size={14} color={tokens.colors.accentCool} />
                                 <Text style={{ color: tokens.colors.accentCool, marginLeft: 4, fontSize: 14 }}>{event.location}</Text>
                             </View>
                           )}
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
           <>
             <Card style={{ marginBottom: 16 }}>
               <View style={{ alignItems: 'center', paddingVertical: 12 }}>
-                <Ionicons name="camera" size={48} color=tokens.colors.accent style={{ marginBottom: 12 }} />
+                <Ionicons name="camera" size={48} color={tokens.colors.accent} style={{ marginBottom: 12 }} />
                 <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 8, textAlign: 'center' }}>Visual Search</Text>
                 <Text style={{ color: tokens.colors.accentCool, textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 }}>
                   Take a photo of an item to find similar objects in your collection
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
                   <Image source={{ uri: queryImage }} style={{ width: 200, height: 160, borderRadius: 12, marginBottom: 12 }} />
                   {loadingResults ? (
                     <>
-                      <ActivityIndicator size="large" color=tokens.colors.accent />
+                      <ActivityIndicator size="large" color={tokens.colors.accent} />
                       <Text style={{ color: tokens.colors.accentCool, marginTop: 12 }}>Searching for similar items...</Text>
                     </>
                   ) : (
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
             ListEmptyComponent={() => !queryImage ? null : (
               <Card>
                 <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                  <Ionicons name="search-outline" size={48} color=tokens.colors.border />
+                  <Ionicons name="search-outline" size={48} color={tokens.colors.border} />
                   <Text style={{ fontSize: 16, fontWeight: '600', marginTop: 12, marginBottom: 4 }}>No similar items found</Text>
                   <Text style={{ color: tokens.colors.accentCool, textAlign: 'center' }}>Try taking another photo from a different angle</Text>
                 </View>

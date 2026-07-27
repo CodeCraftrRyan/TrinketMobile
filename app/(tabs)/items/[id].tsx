@@ -169,19 +169,19 @@ export default function ItemDetail() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
               {purchaseLabel && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.border, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
-                  <Ionicons name="calendar-outline" size={16} color=tokens.colors.accentCool style={{ marginRight: 6 }} />
+                  <Ionicons name="calendar-outline" size={16} color={tokens.colors.accentCool} style={{ marginRight: 6 }} />
                   <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>{purchaseLabel}</Text>
                 </View>
               )}
               {item.location && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.border, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
-                  <Ionicons name="location-outline" size={16} color=tokens.colors.accentCool style={{ marginRight: 6 }} />
+                  <Ionicons name="location-outline" size={16} color={tokens.colors.accentCool} style={{ marginRight: 6 }} />
                   <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>{item.location}</Text>
                 </View>
               )}
               {item.event && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.border, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
-                  <Ionicons name="calendar-outline" size={16} color=tokens.colors.accentCool style={{ marginRight: 6 }} />
+                  <Ionicons name="calendar-outline" size={16} color={tokens.colors.accentCool} style={{ marginRight: 6 }} />
                   <Text style={{ color: tokens.colors.accentCool, fontWeight: '700' }}>{item.event}</Text>
                 </View>
               )}

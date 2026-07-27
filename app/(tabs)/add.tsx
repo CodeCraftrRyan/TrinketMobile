@@ -533,8 +533,8 @@ export default function AddTab() {
       <View style={{ paddingHorizontal: 20, paddingVertical: 20 }}>
         <BrandHeader
           style={{ marginTop: 32, marginBottom: 20 }}
-          textColor=tokens.colors.card
-          subtitleColor=tokens.colors.inkGhost
+          textColor={tokens.colors.card}
+          subtitleColor={tokens.colors.inkGhost}
         />
         {/* Photo Upload */}
         <View style={{ alignItems: 'center', marginBottom: 18 }}>
@@ -547,7 +547,7 @@ export default function AddTab() {
               <Image source={{ uri: photo }} style={{ width: 101, height: 101, borderRadius: 12, resizeMode: 'cover' }} />
             ) : (
               <View style={{ alignItems: 'center', gap: 8 }}>
-                <Ionicons name="camera" size={36} color=tokens.colors.accentCool />
+                <Ionicons name="camera" size={36} color={tokens.colors.accentCool} />
                 <Text style={{ color: tokens.colors.accentCool, fontWeight: '700', fontSize: 12, textAlign: 'center' }} numberOfLines={1}>
                   Upload Photo
                 </Text>
@@ -577,7 +577,7 @@ export default function AddTab() {
             value={name}
             onChangeText={setName}
             placeholder="Grandma's Locket..."
-            placeholderTextColor=tokens.colors.inkGhost
+            placeholderTextColor={tokens.colors.inkGhost}
             onFocus={() => {
               setFocusedField('name');
               if (name === '' || name === "Grandma's Locket...") setName('');
@@ -611,7 +611,7 @@ export default function AddTab() {
           <Text style={{ flex: 2, color: tokens.colors.accentCool, fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
             {category?.label ?? 'Select category'}
           </Text>
-          <Ionicons name="chevron-forward" size={16} color=tokens.colors.accentCool />
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.accentCool} />
         </TouchableOpacity>
 
   {/* Description */}
@@ -639,7 +639,7 @@ export default function AddTab() {
               value={description}
               onChangeText={setDescription}
               placeholder="e.g. 'Gold locket with initials'"
-              placeholderTextColor=tokens.colors.inkGhost
+              placeholderTextColor={tokens.colors.inkGhost}
               onFocus={() => {
                 setFocusedField('description');
                 if (description === '' || description === "'Gold locket with initials'") setDescription('');
@@ -647,7 +647,7 @@ export default function AddTab() {
               onBlur={() => setFocusedField('')}
             />
           </View>
-          <Ionicons name="chevron-forward" size={16} color=tokens.colors.accentCool />
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.accentCool} />
         </TouchableOpacity>
 
   {/* Category Modal */}
@@ -668,7 +668,7 @@ export default function AddTab() {
                     onPress={() => handleCategorySelect(item)}
                     style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }}
                   >
-                    <Ionicons name={item.icon as any} size={18} color=tokens.colors.accent style={{ marginRight: 10 }} />
+                    <Ionicons name={item.icon as any} size={18} color={tokens.colors.accent} style={{ marginRight: 10 }} />
                     <Text style={{ fontSize: 15, color: tokens.colors.ink, fontWeight: item.label === category?.label ? 'bold' : '600' }}>{item.label}</Text>
                   </Pressable>
                 )}
@@ -711,7 +711,7 @@ export default function AddTab() {
             <Ionicons name={room.icon as any} size={14.5} color="#fff" style={{ marginRight: 4 }} />
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12.75, fontFamily: 'DMSans_500Medium' }}>{room.label}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={16} color=tokens.colors.accentCool />
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.accentCool} />
         </TouchableOpacity>
 
         {/* Room/Location Modal */}
@@ -732,7 +732,7 @@ export default function AddTab() {
                     onPress={() => handleRoomSelect(item)}
                     style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }}
                   >
-                    <Ionicons name={item.icon as any} size={18} color=tokens.colors.accentCool style={{ marginRight: 10 }} />
+                    <Ionicons name={item.icon as any} size={18} color={tokens.colors.accentCool} style={{ marginRight: 10 }} />
                     <Text style={{ fontSize: 15, color: tokens.colors.ink, fontWeight: item.label === room.label ? 'bold' : '600' }}>{item.label}</Text>
                   </Pressable>
                 )}
@@ -766,7 +766,7 @@ export default function AddTab() {
               value={estimatedValue}
               onChangeText={setEstimatedValue}
               placeholder="$0.00 (optional)"
-              placeholderTextColor=tokens.colors.inkGhost
+              placeholderTextColor={tokens.colors.inkGhost}
               keyboardType="numeric"
               onFocus={() => setFocusedField('value')}
               onBlur={() => setFocusedField('')}
@@ -800,7 +800,7 @@ export default function AddTab() {
           <Text style={{ flex: 2, color: selectedPeople.length ? tokens.colors.accentCool : '#9AAAB5', fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
             {selectedPeople.length ? selectedPeople.join(', ') : 'Select people'}
           </Text>
-          <Ionicons name="chevron-forward" size={16} color=tokens.colors.accentCool />
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.accentCool} />
         </TouchableOpacity>
 
         {/* People Modal */}
@@ -822,7 +822,7 @@ export default function AddTab() {
                   value={peopleFilter}
                   onChangeText={setPeopleFilter}
                   placeholder="Search people"
-                  placeholderTextColor=tokens.colors.inkGhost
+                  placeholderTextColor={tokens.colors.inkGhost}
                 />
               </View>
               <FlatList
@@ -898,11 +898,11 @@ export default function AddTab() {
             placeholder={today}
             keyboardType="numbers-and-punctuation"
             maxLength={10}
-            placeholderTextColor=tokens.colors.inkGhost
+            placeholderTextColor={tokens.colors.inkGhost}
             onFocus={() => setFocusedField('date')}
             onBlur={() => setFocusedField('')}
           />
-          <Ionicons name="chevron-forward" size={16} color=tokens.colors.accentCool />
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.accentCool} />
         </TouchableOpacity>
 
         {/* Acquired Picklist */}
@@ -930,7 +930,7 @@ export default function AddTab() {
             <Ionicons name={acquired.icon as any} size={14.5} color="#fff" style={{ marginRight: 4 }} />
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12.75, fontFamily: 'DMSans_500Medium' }}>{acquired.label}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={16} color=tokens.colors.accentCool />
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.accentCool} />
         </TouchableOpacity>
 
         {/* Event Lookup */}
@@ -959,7 +959,7 @@ export default function AddTab() {
           <Text style={{ flex: 2, color: tokens.colors.accentCool, fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
             {eventName || 'Select event'}
           </Text>
-          <Ionicons name="chevron-forward" size={16} color=tokens.colors.accentCool />
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.accentCool} />
         </TouchableOpacity>
 
         {/* Event Modal */}
@@ -978,7 +978,7 @@ export default function AddTab() {
                   value={eventsFilter}
                   onChangeText={setEventsFilter}
                   placeholder="Search events"
-                  placeholderTextColor=tokens.colors.inkGhost
+                  placeholderTextColor={tokens.colors.inkGhost}
                 />
               </View>
               {!loadingEvents && filteredEvents.length === 0 ? (
@@ -988,7 +988,7 @@ export default function AddTab() {
                     value={newEventName}
                     onChangeText={setNewEventName}
                     placeholder="New event name"
-                    placeholderTextColor=tokens.colors.inkGhost
+                    placeholderTextColor={tokens.colors.inkGhost}
                   />
                   <TouchableOpacity
                     onPress={async () => {
@@ -1082,7 +1082,7 @@ export default function AddTab() {
           <Text style={{ flex: 2, color: tokens.colors.accentCool, fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
             {collection || 'Select collection'}
           </Text>
-          <Ionicons name="chevron-forward" size={16} color=tokens.colors.accentCool />
+          <Ionicons name="chevron-forward" size={16} color={tokens.colors.accentCool} />
         </TouchableOpacity>
 
         {/* Collection Modal */}
@@ -1101,7 +1101,7 @@ export default function AddTab() {
                   value={collectionsFilter}
                   onChangeText={setCollectionsFilter}
                   placeholder="Search collections"
-                  placeholderTextColor=tokens.colors.inkGhost
+                  placeholderTextColor={tokens.colors.inkGhost}
                 />
               </View>
               {!loadingCollections && filteredCollections.length === 0 ? (
@@ -1111,7 +1111,7 @@ export default function AddTab() {
                     value={newCollectionName}
                     onChangeText={setNewCollectionName}
                     placeholder="New collection name"
-                    placeholderTextColor=tokens.colors.inkGhost
+                    placeholderTextColor={tokens.colors.inkGhost}
                   />
                   <TouchableOpacity
                     onPress={async () => {
