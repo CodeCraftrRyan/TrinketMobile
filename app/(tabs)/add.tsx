@@ -1,3 +1,4 @@
+/* TK_THEME */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -529,7 +530,7 @@ export default function AddTab() {
   }, [eventId, eventName, events]);
 
   return (
-  <ScrollView style={{ flex: 1, backgroundColor: tokens.colors.accentCool }}>
+  <ScrollView style={{ flex: 1, backgroundColor: tokens.colors.bg }}>
       <View style={{ paddingHorizontal: 20, paddingVertical: 20 }}>
         <BrandHeader
           style={{ marginTop: 32, marginBottom: 20 }}
@@ -539,16 +540,16 @@ export default function AddTab() {
         {/* Photo Upload */}
         <View style={{ alignItems: 'center', marginBottom: 18 }}>
           <TouchableOpacity
-            style={{ backgroundColor: tokens.colors.bg, borderRadius: 16, padding: 18, borderWidth: 1, borderColor: tokens.colors.border, alignItems: 'center', justifyContent: 'center', width: 120, height: 120 }}
+            style={{ backgroundColor: tokens.colors.bg, borderRadius: tokens.radius.md, padding: 18, borderWidth: 1, borderColor: tokens.colors.border, alignItems: 'center', justifyContent: 'center', width: 120, height: 120 }}
             onPress={handlePhotoUpload}
             activeOpacity={0.8}
           >
             {photo ? (
-              <Image source={{ uri: photo }} style={{ width: 101, height: 101, borderRadius: 12, resizeMode: 'cover' }} />
+              <Image source={{ uri: photo }} style={{ width: 101, height: 101, borderRadius: tokens.radius.md, resizeMode: 'cover' }} />
             ) : (
               <View style={{ alignItems: 'center', gap: 8 }}>
                 <Ionicons name="camera" size={36} color={tokens.colors.accentCool} />
-                <Text style={{ color: tokens.colors.accentCool, fontWeight: '700', fontSize: 12, textAlign: 'center' }} numberOfLines={1}>
+                <Text style={{ color: tokens.colors.accentCool, fontWeight: '500', fontSize: 12, textAlign: 'center' }} numberOfLines={1}>
                   Upload Photo
                 </Text>
               </View>
@@ -569,9 +570,9 @@ export default function AddTab() {
           marginTop: '2%',
           marginBottom: '2%',
           ...(focusedField !== 'name' && { borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }),
-          borderRadius: 10,
+          borderRadius: tokens.radius.md,
         }}>
-          <Text style={{ flex: 1, fontWeight: '700', color: tokens.colors.ink, fontSize: 15.225, fontFamily: 'DMSans_500Medium' }}>Name</Text>
+          <Text style={{ flex: 1, fontWeight: '500', color: tokens.colors.ink, fontSize: 15.225, fontFamily: 'DMSans_500Medium' }}>Name</Text>
           <TextInput
             style={{ flex: 2, color: tokens.colors.accentCool, fontSize: 15.225, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}
             value={name}
@@ -599,7 +600,7 @@ export default function AddTab() {
             marginTop: '2%',
             marginBottom: '2%',
             ...(focusedField !== 'category' && { borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }),
-            borderRadius: 10,
+            borderRadius: tokens.radius.md,
           }}
           onPress={() => {
             setFocusedField('category');
@@ -607,7 +608,7 @@ export default function AddTab() {
           }}
           activeOpacity={0.8}
         >
-          <Text style={{ flex: 1, fontWeight: '700', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Category</Text>
+          <Text style={{ flex: 1, fontWeight: '500', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Category</Text>
           <Text style={{ flex: 2, color: tokens.colors.accentCool, fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
             {category?.label ?? 'Select category'}
           </Text>
@@ -627,12 +628,12 @@ export default function AddTab() {
             marginTop: '2%',
             marginBottom: '2%',
             ...(focusedField !== 'description' && { borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }),
-            borderRadius: 10,
+            borderRadius: tokens.radius.md,
           }}
           onPress={() => setFocusedField('description')}
           activeOpacity={0.8}
         >
-          <Text style={{ flex: 1, fontWeight: '700', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Description</Text>
+          <Text style={{ flex: 1, fontWeight: '500', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Description</Text>
           <View style={{ flex: 2 }}>
             <TextInput
               style={{ color: tokens.colors.accentCool, fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}
@@ -658,8 +659,8 @@ export default function AddTab() {
           onRequestClose={() => setCategoryModalVisible(false)}
         >
           <View style={{ flex: 1, backgroundColor: 'rgba(12,22,32,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-            <View style={{ backgroundColor: tokens.colors.card, borderRadius: 18, width: '80%', maxHeight: 320, padding: 12 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10, color: tokens.colors.ink, textAlign: 'center' }}>Select Category</Text>
+            <View style={{ backgroundColor: tokens.colors.card, borderRadius: tokens.radius.md, width: '80%', maxHeight: 320, padding: 12 }}>
+              <Text style={{ fontWeight: '500', fontSize: 18, marginBottom: 10, color: tokens.colors.ink, textAlign: 'center' }}>Select Category</Text>
               <FlatList
                 data={categoryOptions}
                 keyExtractor={item => item.id ?? item.label}
@@ -680,7 +681,7 @@ export default function AddTab() {
                 showsVerticalScrollIndicator={false}
               />
               <TouchableOpacity onPress={() => setCategoryModalVisible(false)} style={{ marginTop: 10, alignSelf: 'center' }}>
-                <Text style={{ color: tokens.colors.accent, fontWeight: '700', fontSize: 15 }}>Cancel</Text>
+                <Text style={{ color: tokens.colors.accent, fontWeight: '500', fontSize: 15 }}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -700,16 +701,16 @@ export default function AddTab() {
             marginTop: '2%',
             marginBottom: '2%',
             ...(focusedField !== 'room' && { borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }),
-            borderRadius: 10,
+            borderRadius: tokens.radius.md,
           }}
           onFocus={() => setFocusedField('room')}
           onBlur={() => setFocusedField('')}
           activeOpacity={0.8}
         >
-          <Text style={{ flex: 1, fontWeight: '700', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Room/Location</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.accentCool, borderRadius: 12.75, paddingHorizontal: 10, paddingVertical: 2.5, marginRight: 6 }}>
+          <Text style={{ flex: 1, fontWeight: '500', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Room/Location</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent', borderWidth: 1, borderColor: tokens.colors.border, borderRadius: tokens.radius.md, paddingHorizontal: 10, paddingVertical: 4, marginRight: 6 }}>
             <Ionicons name={room.icon as any} size={14.5} color="#fff" style={{ marginRight: 4 }} />
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12.75, fontFamily: 'DMSans_500Medium' }}>{room.label}</Text>
+            <Text style={{ color: '#fff', fontWeight: '500', fontSize: 12.75, fontFamily: 'DMSans_500Medium' }}>{room.label}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={tokens.colors.accentCool} />
         </TouchableOpacity>
@@ -722,8 +723,8 @@ export default function AddTab() {
           onRequestClose={() => setRoomModalVisible(false)}
         >
           <View style={{ flex: 1, backgroundColor: 'rgba(12,22,32,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-            <View style={{ backgroundColor: tokens.colors.card, borderRadius: 18, width: '80%', maxHeight: 320, padding: 12 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10, color: tokens.colors.ink, textAlign: 'center' }}>Select Room/Location</Text>
+            <View style={{ backgroundColor: tokens.colors.card, borderRadius: tokens.radius.md, width: '80%', maxHeight: 320, padding: 12 }}>
+              <Text style={{ fontWeight: '500', fontSize: 18, marginBottom: 10, color: tokens.colors.ink, textAlign: 'center' }}>Select Room/Location</Text>
               <FlatList
                 data={ROOM_OPTIONS}
                 keyExtractor={item => item.label}
@@ -739,7 +740,7 @@ export default function AddTab() {
                 showsVerticalScrollIndicator={false}
               />
               <TouchableOpacity onPress={() => setRoomModalVisible(false)} style={{ marginTop: 10, alignSelf: 'center' }}>
-                <Text style={{ color: tokens.colors.accent, fontWeight: '700', fontSize: 15 }}>Cancel</Text>
+                <Text style={{ color: tokens.colors.accent, fontWeight: '500', fontSize: 15 }}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -757,9 +758,9 @@ export default function AddTab() {
           marginTop: '2%',
           marginBottom: '2%',
           ...(focusedField !== 'value' && { borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }),
-          borderRadius: 10,
+          borderRadius: tokens.radius.md,
         }}>
-          <Text style={{ flex: 1, fontWeight: '700', color: tokens.colors.ink, fontSize: 15.225, fontFamily: 'DMSans_500Medium' }}>Estimated Value</Text>
+          <Text style={{ flex: 1, fontWeight: '500', color: tokens.colors.ink, fontSize: 15.225, fontFamily: 'DMSans_500Medium' }}>Estimated Value</Text>
           <View style={{ flex: 2 }}>
             <TextInput
               style={{ color: tokens.colors.accentCool, fontSize: 15.225, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}
@@ -788,7 +789,7 @@ export default function AddTab() {
             marginTop: '2%',
             marginBottom: '2%',
             ...(focusedField !== 'people' && { borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }),
-            borderRadius: 10,
+            borderRadius: tokens.radius.md,
           }}
           onPress={() => {
             setFocusedField('people');
@@ -796,7 +797,7 @@ export default function AddTab() {
           }}
           activeOpacity={0.8}
         >
-          <Text style={{ flex: 1, fontWeight: '700', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>People</Text>
+          <Text style={{ flex: 1, fontWeight: '500', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>People</Text>
           <Text style={{ flex: 2, color: selectedPeople.length ? tokens.colors.accentCool : '#9AAAB5', fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
             {selectedPeople.length ? selectedPeople.join(', ') : 'Select people'}
           </Text>
@@ -814,11 +815,11 @@ export default function AddTab() {
           }}
         >
           <View style={{ flex: 1, backgroundColor: 'rgba(12,22,32,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-            <View style={{ backgroundColor: tokens.colors.card, borderRadius: 18, width: '85%', maxHeight: 420, padding: 12 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10, color: tokens.colors.ink, textAlign: 'center' }}>Select People</Text>
+            <View style={{ backgroundColor: tokens.colors.card, borderRadius: tokens.radius.md, width: '85%', maxHeight: 420, padding: 12 }}>
+              <Text style={{ fontWeight: '500', fontSize: 18, marginBottom: 10, color: tokens.colors.ink, textAlign: 'center' }}>Select People</Text>
               <View style={{ paddingHorizontal: 8, paddingBottom: 8 }}>
                 <TextInput
-                  style={{ backgroundColor: tokens.colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14 }}
+                  style={{ backgroundColor: tokens.colors.border, borderRadius: tokens.radius.md, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14 }}
                   value={peopleFilter}
                   onChangeText={setPeopleFilter}
                   placeholder="Search people"
@@ -856,7 +857,7 @@ export default function AddTab() {
                   onPress={() => setSelectedPeople([])}
                   style={{ paddingVertical: 6 }}
                 >
-                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '700', fontSize: 15 }}>Clear</Text>
+                  <Text style={{ color: tokens.colors.accentCool, fontWeight: '500', fontSize: 15 }}>Clear</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
@@ -865,7 +866,7 @@ export default function AddTab() {
                   }}
                   style={{ paddingVertical: 6 }}
                 >
-                  <Text style={{ color: tokens.colors.accent, fontWeight: '700', fontSize: 15 }}>Done</Text>
+                  <Text style={{ color: tokens.colors.accent, fontWeight: '500', fontSize: 15 }}>Done</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -885,12 +886,12 @@ export default function AddTab() {
             marginTop: '2%',
             marginBottom: '2%',
             ...(focusedField !== 'date' && { borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }),
-            borderRadius: 10,
+            borderRadius: tokens.radius.md,
           }}
           onPress={() => setFocusedField('date')}
           activeOpacity={0.8}
         >
-          <Text style={{ flex: 1, fontWeight: '700', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Date</Text>
+          <Text style={{ flex: 1, fontWeight: '500', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Date</Text>
           <TextInput
             style={{ flex: 2, color: tokens.colors.accentCool, fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}
             value={date}
@@ -919,16 +920,16 @@ export default function AddTab() {
             marginTop: '2%',
             marginBottom: '2%',
             ...(focusedField !== 'acquired' && { borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }),
-            borderRadius: 10,
+            borderRadius: tokens.radius.md,
           }}
           onFocus={() => setFocusedField('acquired')}
           onBlur={() => setFocusedField('')}
           activeOpacity={0.8}
         >
-          <Text style={{ flex: 1, fontWeight: '700', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Acquired</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.accent, borderRadius: 12.75, paddingHorizontal: 10, paddingVertical: 2.5, marginRight: 6 }}>
+          <Text style={{ flex: 1, fontWeight: '500', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Acquired</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent', borderWidth: 1, borderColor: tokens.colors.accent, borderRadius: tokens.radius.md, paddingHorizontal: 10, paddingVertical: 4, marginRight: 6 }}>
             <Ionicons name={acquired.icon as any} size={14.5} color="#fff" style={{ marginRight: 4 }} />
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12.75, fontFamily: 'DMSans_500Medium' }}>{acquired.label}</Text>
+            <Text style={{ color: '#fff', fontWeight: '500', fontSize: 12.75, fontFamily: 'DMSans_500Medium' }}>{acquired.label}</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={tokens.colors.accentCool} />
         </TouchableOpacity>
@@ -946,7 +947,7 @@ export default function AddTab() {
             marginTop: '2%',
             marginBottom: '2%',
             ...(focusedField !== 'event' && { borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }),
-            borderRadius: 10,
+            borderRadius: tokens.radius.md,
           }}
           onPress={() => {
             setFocusedField('event');
@@ -955,7 +956,7 @@ export default function AddTab() {
           }}
           activeOpacity={0.8}
         >
-          <Text style={{ flex: 1, fontWeight: '700', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Event</Text>
+          <Text style={{ flex: 1, fontWeight: '500', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Event</Text>
           <Text style={{ flex: 2, color: tokens.colors.accentCool, fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
             {eventName || 'Select event'}
           </Text>
@@ -970,11 +971,11 @@ export default function AddTab() {
           onRequestClose={() => setEventModalVisible(false)}
         >
           <View style={{ flex: 1, backgroundColor: 'rgba(12,22,32,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-            <View style={{ backgroundColor: tokens.colors.card, borderRadius: 18, width: '85%', maxHeight: 420, padding: 12 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10, color: tokens.colors.ink, textAlign: 'center' }}>Select Event</Text>
+            <View style={{ backgroundColor: tokens.colors.card, borderRadius: tokens.radius.md, width: '85%', maxHeight: 420, padding: 12 }}>
+              <Text style={{ fontWeight: '500', fontSize: 18, marginBottom: 10, color: tokens.colors.ink, textAlign: 'center' }}>Select Event</Text>
               <View style={{ paddingHorizontal: 8, paddingBottom: 8 }}>
                 <TextInput
-                  style={{ backgroundColor: tokens.colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14 }}
+                  style={{ backgroundColor: tokens.colors.border, borderRadius: tokens.radius.md, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14 }}
                   value={eventsFilter}
                   onChangeText={setEventsFilter}
                   placeholder="Search events"
@@ -984,7 +985,7 @@ export default function AddTab() {
               {!loadingEvents && filteredEvents.length === 0 ? (
                 <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 8, paddingBottom: 12 }}>
                   <TextInput
-                    style={{ flex: 1, backgroundColor: tokens.colors.bg, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14, borderWidth: 1, borderColor: tokens.colors.border }}
+                    style={{ flex: 1, backgroundColor: tokens.colors.bg, borderRadius: tokens.radius.md, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14, borderWidth: 1, borderColor: tokens.colors.border }}
                     value={newEventName}
                     onChangeText={setNewEventName}
                     placeholder="New event name"
@@ -1018,9 +1019,9 @@ export default function AddTab() {
                         setNewEventName('');
                       }
                     }}
-                    style={{ backgroundColor: tokens.colors.accent, borderRadius: 12, paddingHorizontal: 14, justifyContent: 'center' }}
+                    style={{ backgroundColor: 'transparent', borderWidth: 1, borderColor: tokens.colors.accent, borderRadius: tokens.radius.md, paddingHorizontal: 16, justifyContent: 'center', minHeight: tokens.minTarget }}
                   >
-                    <Text style={{ color: tokens.colors.card, fontWeight: '700', fontSize: 14 }}>Add</Text>
+                    <Text style={{ color: tokens.colors.accent, fontWeight: '500', fontSize: 14 }}>Add</Text>
                   </TouchableOpacity>
                 </View>
               ) : null}
@@ -1050,7 +1051,7 @@ export default function AddTab() {
                 />
               )}
               <TouchableOpacity onPress={() => setEventModalVisible(false)} style={{ marginTop: 10, alignSelf: 'center' }}>
-                <Text style={{ color: tokens.colors.accent, fontWeight: '700', fontSize: 15 }}>Cancel</Text>
+                <Text style={{ color: tokens.colors.accent, fontWeight: '500', fontSize: 15 }}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1069,7 +1070,7 @@ export default function AddTab() {
             marginTop: '2%',
             marginBottom: '2%',
             ...(focusedField !== 'collection' && { borderBottomWidth: 1, borderBottomColor: tokens.colors.bg }),
-            borderRadius: 10,
+            borderRadius: tokens.radius.md,
           }}
           onPress={() => {
             setFocusedField('collection');
@@ -1078,7 +1079,7 @@ export default function AddTab() {
           }}
           activeOpacity={0.8}
         >
-          <Text style={{ flex: 1, fontWeight: '700', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Collection</Text>
+          <Text style={{ flex: 1, fontWeight: '500', color: tokens.colors.ink, fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Collection</Text>
           <Text style={{ flex: 2, color: tokens.colors.accentCool, fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
             {collection || 'Select collection'}
           </Text>
@@ -1093,11 +1094,11 @@ export default function AddTab() {
           onRequestClose={() => setCollectionModalVisible(false)}
         >
           <View style={{ flex: 1, backgroundColor: 'rgba(12,22,32,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-            <View style={{ backgroundColor: tokens.colors.card, borderRadius: 18, width: '85%', maxHeight: 420, padding: 12 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10, color: tokens.colors.ink, textAlign: 'center' }}>Select Collection</Text>
+            <View style={{ backgroundColor: tokens.colors.card, borderRadius: tokens.radius.md, width: '85%', maxHeight: 420, padding: 12 }}>
+              <Text style={{ fontWeight: '500', fontSize: 18, marginBottom: 10, color: tokens.colors.ink, textAlign: 'center' }}>Select Collection</Text>
               <View style={{ paddingHorizontal: 8, paddingBottom: 8 }}>
                 <TextInput
-                  style={{ backgroundColor: tokens.colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14 }}
+                  style={{ backgroundColor: tokens.colors.border, borderRadius: tokens.radius.md, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14 }}
                   value={collectionsFilter}
                   onChangeText={setCollectionsFilter}
                   placeholder="Search collections"
@@ -1107,7 +1108,7 @@ export default function AddTab() {
               {!loadingCollections && filteredCollections.length === 0 ? (
                 <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 8, paddingBottom: 12 }}>
                   <TextInput
-                    style={{ flex: 1, backgroundColor: tokens.colors.bg, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14, borderWidth: 1, borderColor: tokens.colors.border }}
+                    style={{ flex: 1, backgroundColor: tokens.colors.bg, borderRadius: tokens.radius.md, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14, borderWidth: 1, borderColor: tokens.colors.border }}
                     value={newCollectionName}
                     onChangeText={setNewCollectionName}
                     placeholder="New collection name"
@@ -1140,9 +1141,9 @@ export default function AddTab() {
                         setNewCollectionName('');
                       }
                     }}
-                    style={{ backgroundColor: tokens.colors.accent, borderRadius: 12, paddingHorizontal: 14, justifyContent: 'center' }}
+                    style={{ backgroundColor: 'transparent', borderWidth: 1, borderColor: tokens.colors.accent, borderRadius: tokens.radius.md, paddingHorizontal: 16, justifyContent: 'center', minHeight: tokens.minTarget }}
                   >
-                    <Text style={{ color: tokens.colors.card, fontWeight: '700', fontSize: 14 }}>Add</Text>
+                    <Text style={{ color: tokens.colors.accent, fontWeight: '500', fontSize: 14 }}>Add</Text>
                   </TouchableOpacity>
                 </View>
               ) : null}
@@ -1171,7 +1172,7 @@ export default function AddTab() {
                 />
               )}
               <TouchableOpacity onPress={() => setCollectionModalVisible(false)} style={{ marginTop: 10, alignSelf: 'center' }}>
-                <Text style={{ color: tokens.colors.accent, fontWeight: '700', fontSize: 15 }}>Cancel</Text>
+                <Text style={{ color: tokens.colors.accent, fontWeight: '500', fontSize: 15 }}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1197,9 +1198,9 @@ export default function AddTab() {
                   }
                   router.back();
                 }}
-                style={{ flex: 1, backgroundColor: tokens.colors.accent, paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
+                style={{ flex: 1, backgroundColor: 'transparent', borderWidth: 1, borderColor: tokens.colors.accent, paddingVertical: 14, borderRadius: tokens.radius.md, alignItems: 'center', justifyContent: 'center', minHeight: tokens.minTarget }}
               >
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Save</Text>
+                <Text style={{ color: '#fff', fontWeight: '500', fontSize: 16 }}>Save</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -1209,9 +1210,9 @@ export default function AddTab() {
                   }
                   router.back();
                 }}
-                style={{ flex: 1, backgroundColor: tokens.colors.border, paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
+                style={{ flex: 1, backgroundColor: tokens.colors.border, paddingVertical: 14, borderRadius: tokens.radius.md, alignItems: 'center' }}
               >
-                <Text style={{ color: tokens.colors.ink, fontWeight: '700', fontSize: 16 }}>Cancel</Text>
+                <Text style={{ color: tokens.colors.ink, fontWeight: '500', fontSize: 16 }}>Cancel</Text>
               </TouchableOpacity>
             </View>
             <TouchableOpacity
@@ -1236,9 +1237,9 @@ export default function AddTab() {
                   },
                 ]);
               }}
-              style={{ backgroundColor: '#FDECEC', borderWidth: 1, borderColor: '#F3B4B4', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
+              style={{ backgroundColor: '#FDECEC', borderWidth: 1, borderColor: '#F3B4B4', paddingVertical: 14, borderRadius: tokens.radius.md, alignItems: 'center' }}
             >
-              <Text style={{ color: '#C0392B', fontWeight: '700', fontSize: 16 }}>Delete Item</Text>
+              <Text style={{ color: '#C0392B', fontWeight: '500', fontSize: 16 }}>Delete Item</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -1258,15 +1259,15 @@ export default function AddTab() {
                   Alert.alert('Save failed', e?.message ?? 'Please try again');
                 }
               }}
-              style={{ flex: 1, backgroundColor: tokens.colors.accent, paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
+              style={{ flex: 1, backgroundColor: 'transparent', borderWidth: 1, borderColor: tokens.colors.accent, paddingVertical: 14, borderRadius: tokens.radius.md, alignItems: 'center', justifyContent: 'center', minHeight: tokens.minTarget }}
             >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Save</Text>
+              <Text style={{ color: '#fff', fontWeight: '500', fontSize: 16 }}>Save</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.back()}
-              style={{ flex: 1, backgroundColor: tokens.colors.border, paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
+              style={{ flex: 1, backgroundColor: tokens.colors.border, paddingVertical: 14, borderRadius: tokens.radius.md, alignItems: 'center' }}
             >
-              <Text style={{ color: tokens.colors.ink, fontWeight: '700', fontSize: 16 }}>Cancel</Text>
+              <Text style={{ color: tokens.colors.ink, fontWeight: '500', fontSize: 16 }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         )}
