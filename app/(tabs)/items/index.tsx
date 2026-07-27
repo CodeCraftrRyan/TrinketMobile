@@ -1,3 +1,4 @@
+/* TK_THEME */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -397,38 +398,61 @@ export default function Items() {
     );
   }
 
+  const plate = { backgroundColor: tokens.colors.card, borderWidth: 1, borderColor: tokens.colors.border, padding: 3 };
+  const chip = (on: boolean) => ({
+    flexDirection: 'row' as const, alignItems: 'center' as const,
+    backgroundColor: on ? tokens.colors.tint : 'transparent',
+    paddingHorizontal: 14, paddingVertical: 10, marginRight: 8, marginBottom: 8,
+    borderWidth: 1, borderColor: on ? tokens.colors.accent : tokens.colors.border,
+    minHeight: tokens.minTarget,
+  });
+  const panel = { backgroundColor: tokens.colors.card, borderWidth: 1, borderColor: tokens.colors.border, padding: 12, marginBottom: 16 };
+  const listRow = (on: boolean) => ({
+    paddingVertical: 10, paddingHorizontal: 12, marginBottom: 4, minHeight: tokens.minTarget,
+    backgroundColor: on ? tokens.colors.tint : 'transparent',
+    borderLeftWidth: 2, borderLeftColor: on ? tokens.colors.accent : 'transparent',
+  });
+
   return (
     <Screen>
       {/* Header */}
-      <View style={{ marginTop: 8, marginBottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8 }}>
-        <View>
-          <Text style={{ fontSize: 34, fontWeight: '300', color: tokens.colors.ink, fontFamily: 'CormorantGaramond_300Light' }}>My Collection</Text>
-          <Text style={{ color: tokens.colors.accentCool, fontSize: 18, marginTop: 2 }}>34 trinkets preserved</Text>
+      <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ ...tokens.type.title, color: tokens.colors.ink }}>My collection</Text>
+          <Text style={{ ...tokens.type.body, color: tokens.colors.inkLabel, marginTop: 2 }}>
+            {items.length === 0 ? 'Nothing kept yet' : `${items.length} ${items.length === 1 ? 'object' : 'objects'} kept`}
+          </Text>
         </View>
-  <TouchableOpacity style={{ backgroundColor: tokens.colors.card, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: tokens.colors.border, shadowColor: tokens.colors.ink, shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }}>
-          <Ionicons name="swap-vertical" size={24} color={tokens.colors.ink} />
+        <TouchableOpacity
+          accessibilityLabel="Sort"
+          style={{ borderWidth: 1, borderColor: tokens.colors.border, padding: 11, minWidth: tokens.minTarget, minHeight: tokens.minTarget, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Ionicons name="swap-vertical" size={20} color={tokens.colors.inkLabel} />
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 24, paddingHorizontal: 18, paddingVertical: 10, marginTop: 18, marginBottom: 16, marginHorizontal: 0, borderWidth: 1, borderColor: tokens.colors.border, shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 }}>
-        <Ionicons name="search" size={22} color={tokens.colors.accentCool} style={{ marginRight: 8 }} />
+      {/* Search */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.card, paddingHorizontal: 14, marginTop: 20, marginBottom: 16, borderWidth: 1, borderColor: tokens.colors.border }}>
+        <Ionicons name="search" size={20} color={tokens.colors.inkGhost} style={{ marginRight: 10 }} />
         <TextInput
-          placeholder="Search your trinkets..."
-          placeholderTextColor={tokens.colors.accentCool}
-          style={{ flex: 1, fontSize: 18, color: tokens.colors.ink, paddingVertical: 0, backgroundColor: 'transparent' }}
+          placeholder="Search names, people, places"
+          placeholderTextColor={tokens.colors.inkLabel}
+          style={{ flex: 1, ...tokens.type.ui, color: tokens.colors.ink, paddingVertical: 13 }}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
-        <TouchableOpacity style={{ marginLeft: 8, backgroundColor: tokens.colors.accent, borderRadius: 999, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', shadowColor: tokens.colors.accent, shadowOpacity: 0.12, shadowRadius: 8 }}>
-          <Ionicons name="camera" size={24} color="#fff" />
+        <TouchableOpacity
+          accessibilityLabel="Search by photograph"
+          style={{ marginLeft: 8, borderWidth: 1, borderColor: tokens.colors.accent, width: tokens.minTarget, height: tokens.minTarget, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Ionicons name="camera-outline" size={20} color={tokens.colors.accent} />
         </TouchableOpacity>
       </View>
 
-      {/* Filter Chips */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+      {/* Filters */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
         <TouchableOpacity
-          style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: showCollections ? tokens.colors.border : tokens.colors.bg, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8, marginRight: 10, borderWidth: 1, borderColor: tokens.colors.border }}
+          style={chip(showCollections || !!selectedCollectionId)}
           onPress={async () => {
             const next = !showCollections;
             setShowCollections(next);
@@ -441,11 +465,13 @@ export default function Items() {
             }
           }}
         >
-          <Ionicons name="albums-outline" size={18} color={tokens.colors.accent} style={{ marginRight: 6 }} />
-          <Text style={{ color: tokens.colors.ink, fontWeight: '600' }}>{selectedCollectionName ? `Collection: ${selectedCollectionName}` : 'Collections'}</Text>
+          <Text style={{ ...tokens.type.ui, fontSize: 15, color: tokens.colors.ink }}>
+            {selectedCollectionName ?? 'Collections'}
+          </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
-          style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: showPeople ? tokens.colors.border : tokens.colors.bg, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8, marginRight: 10, borderWidth: 1, borderColor: tokens.colors.border }}
+          style={chip(showPeople || selectedPeople.length > 0)}
           onPress={async () => {
             const next = !showPeople;
             setShowPeople(next);
@@ -454,13 +480,13 @@ export default function Items() {
             if (next) await loadPeople();
           }}
         >
-          <Ionicons name="people-outline" size={18} color={tokens.colors.accent} style={{ marginRight: 6 }} />
-          <Text style={{ color: tokens.colors.ink, fontWeight: '600' }}>
-            {selectedPeople.length > 0 ? `People: ${selectedPeople.join(', ')}` : 'People'}
+          <Text style={{ ...tokens.type.ui, fontSize: 15, color: tokens.colors.ink }}>
+            {selectedPeople.length > 0 ? selectedPeople.join(', ') : 'People'}
           </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
-          style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: showEvents ? tokens.colors.border : tokens.colors.bg, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8, marginRight: 10, borderWidth: 1, borderColor: tokens.colors.border }}
+          style={chip(showEvents)}
           onPress={async () => {
             setShowEvents((v) => !v);
             setShowCollections(false);
@@ -468,56 +494,52 @@ export default function Items() {
             if (!showEvents) await loadEvents();
           }}
         >
-          <Ionicons name="calendar-outline" size={18} color={tokens.colors.accent} style={{ marginRight: 6 }} />
-          <Text style={{ color: tokens.colors.ink, fontWeight: '600' }}>Events</Text>
+          <Text style={{ ...tokens.type.ui, fontSize: 15, color: tokens.colors.ink }}>Events</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.bg, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1, borderColor: tokens.colors.border }}
-          onPress={() => {
-            setSelectedCollectionId(null);
-            setSelectedPeople([]);
-            setShowCollections(false);
-            setShowPeople(false);
-            setShowEvents(false);
-          }}
-        >
-          <Ionicons name="close-circle-outline" size={18} color={tokens.colors.accentCool} style={{ marginRight: 6 }} />
-          <Text style={{ color: tokens.colors.accentCool, fontWeight: '600' }}>Clear Filters</Text>
-        </TouchableOpacity>
+
+        {(selectedCollectionId || selectedPeople.length > 0) && (
+          <TouchableOpacity
+            style={chip(false)}
+            onPress={() => {
+              setSelectedCollectionId(null);
+              setSelectedPeople([]);
+              setShowCollections(false);
+              setShowPeople(false);
+              setShowEvents(false);
+            }}
+          >
+            <Text style={{ ...tokens.type.ui, fontSize: 15, color: tokens.colors.link }}>Clear</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {showCollections && (
-        <View style={{ backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: tokens.colors.border, padding: 12, marginBottom: 16 }}>
-          <View style={{ paddingBottom: 8 }}>
-            <TextInput
-              value={collectionsFilter}
-              onChangeText={setCollectionsFilter}
-              placeholder="Search collections"
-              placeholderTextColor={tokens.colors.inkGhost}
-              style={{ backgroundColor: tokens.colors.bg, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14, borderWidth: 1, borderColor: tokens.colors.border }}
-            />
-          </View>
+        <View style={panel}>
+          <TextInput
+            value={collectionsFilter}
+            onChangeText={setCollectionsFilter}
+            placeholder="Search collections"
+            placeholderTextColor={tokens.colors.inkLabel}
+            style={{ borderWidth: 1, borderColor: tokens.colors.border, paddingHorizontal: 12, paddingVertical: 11, color: tokens.colors.ink, ...tokens.type.ui, marginBottom: 8 }}
+          />
           <TouchableOpacity
-            onPress={() => {
-              setSelectedCollectionId(null);
-              setShowCollections(false);
-            }}
-            style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10, backgroundColor: selectedCollectionId ? tokens.colors.bg : tokens.colors.border, marginBottom: 6 }}
+            onPress={() => { setSelectedCollectionId(null); setShowCollections(false); }}
+            style={listRow(!selectedCollectionId)}
           >
-            <Text style={{ color: tokens.colors.accent, fontWeight: '700' }}>All Collections</Text>
+            <Text style={{ ...tokens.type.ui, color: tokens.colors.ink }}>All collections</Text>
           </TouchableOpacity>
           {collectionsLoading ? (
-            <Text style={{ color: tokens.colors.accentCool, paddingVertical: 6 }}>Loading collections...</Text>
+            <Text style={{ ...tokens.type.ui, color: tokens.colors.inkLabel, paddingVertical: 8 }}>Loading collections</Text>
           ) : filteredCollections.length === 0 ? (
             <View>
-              <Text style={{ color: tokens.colors.accentCool, paddingVertical: 6 }}>No collections found.</Text>
+              <Text style={{ ...tokens.type.ui, color: tokens.colors.inkLabel, paddingVertical: 8 }}>No collections yet.</Text>
               <View style={{ flexDirection: 'row', gap: 8, paddingVertical: 6 }}>
                 <TextInput
                   value={newCollectionName}
                   onChangeText={setNewCollectionName}
                   placeholder="New collection name"
-                  placeholderTextColor={tokens.colors.inkGhost}
-                  style={{ flex: 1, backgroundColor: tokens.colors.bg, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: tokens.colors.ink, fontSize: 14, borderWidth: 1, borderColor: tokens.colors.border }}
+                  placeholderTextColor={tokens.colors.inkLabel}
+                  style={{ flex: 1, borderWidth: 1, borderColor: tokens.colors.border, paddingHorizontal: 12, paddingVertical: 11, color: tokens.colors.ink, ...tokens.type.ui }}
                 />
                 <TouchableOpacity
                   onPress={async () => {
@@ -545,9 +567,9 @@ export default function Items() {
                       setNewCollectionName('');
                     }
                   }}
-                  style={{ backgroundColor: tokens.colors.accent, borderRadius: 12, paddingHorizontal: 14, justifyContent: 'center' }}
+                  style={{ borderWidth: 1, borderColor: tokens.colors.accent, paddingHorizontal: 18, justifyContent: 'center', minHeight: tokens.minTarget }}
                 >
-                  <Text style={{ color: tokens.colors.card, fontWeight: '700', fontSize: 14 }}>Add</Text>
+                  <Text style={{ ...tokens.type.button, color: tokens.colors.accent }}>Add</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -556,13 +578,10 @@ export default function Items() {
               {filteredCollections.map((collection) => (
                 <TouchableOpacity
                   key={collection.id}
-                  onPress={() => {
-                    setSelectedCollectionId(collection.id);
-                    setShowCollections(false);
-                  }}
-                  style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10, backgroundColor: selectedCollectionId === collection.id ? tokens.colors.border : tokens.colors.bg, marginBottom: 6 }}
+                  onPress={() => { setSelectedCollectionId(collection.id); setShowCollections(false); }}
+                  style={listRow(selectedCollectionId === collection.id)}
                 >
-                  <Text style={{ color: tokens.colors.ink, fontWeight: '600' }}>{collection.name}</Text>
+                  <Text style={{ ...tokens.type.ui, color: tokens.colors.ink }}>{collection.name}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -571,112 +590,140 @@ export default function Items() {
       )}
 
       {showPeople && (
-  <View style={{ backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: tokens.colors.border, padding: 12, marginBottom: 16 }}>
-          <TouchableOpacity
-            onPress={() => setSelectedPeople([])}
-            style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10, backgroundColor: selectedPeople.length ? tokens.colors.bg : tokens.colors.border, marginBottom: 6 }}
-          >
-            <Text style={{ color: tokens.colors.accent, fontWeight: '700' }}>All People</Text>
+        <View style={panel}>
+          <TouchableOpacity onPress={() => setSelectedPeople([])} style={listRow(selectedPeople.length === 0)}>
+            <Text style={{ ...tokens.type.ui, color: tokens.colors.ink }}>All people</Text>
           </TouchableOpacity>
           {peopleLoading ? (
-            <Text style={{ color: tokens.colors.accentCool, paddingVertical: 6 }}>Loading people...</Text>
+            <Text style={{ ...tokens.type.ui, color: tokens.colors.inkLabel, paddingVertical: 8 }}>Loading people</Text>
           ) : peopleOptions.length === 0 ? (
-            <Text style={{ color: tokens.colors.accentCool, paddingVertical: 6 }}>No people yet.</Text>
+            <Text style={{ ...tokens.type.ui, color: tokens.colors.inkLabel, paddingVertical: 8 }}>No people named yet.</Text>
           ) : (
             peopleOptions.map((person) => (
               <TouchableOpacity
                 key={person}
                 onPress={() => {
                   setSelectedPeople((prev) => (
-                    prev.includes(person)
-                      ? prev.filter((entry) => entry !== person)
-                      : [...prev, person]
+                    prev.includes(person) ? prev.filter((e) => e !== person) : [...prev, person]
                   ));
                 }}
-                style={{ paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10, backgroundColor: selectedPeople.includes(person) ? tokens.colors.border : tokens.colors.bg, marginBottom: 6 }}
+                style={listRow(selectedPeople.includes(person))}
               >
-                <Text style={{ color: tokens.colors.ink, fontWeight: '600' }}>{person}</Text>
+                <Text style={{ ...tokens.type.ui, color: tokens.colors.ink }}>{person}</Text>
               </TouchableOpacity>
             ))
           )}
         </View>
       )}
 
-      {/* Items or Events List */}
+      {/* The list */}
       {showEvents ? (
         <View>
-          <Card>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ color: tokens.colors.accentCool, fontWeight: '600', fontSize: 18 }}>Your Events</Text>
-              <Button title="Add an Event" onPress={() => router.push('/events-create')} />
-            </View>
-          </Card>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: tokens.colors.ruleStrong }}>
+            <Text style={{ ...tokens.type.name, color: tokens.colors.ink }}>Events</Text>
+            <TouchableOpacity onPress={() => router.push('/events-create')} style={{ borderWidth: 1, borderColor: tokens.colors.accent, paddingHorizontal: 16, paddingVertical: 12, minHeight: tokens.minTarget, justifyContent: 'center' }}>
+              <Text style={{ ...tokens.type.button, color: tokens.colors.accent }}>Add an event</Text>
+            </TouchableOpacity>
+          </View>
           {eventsLoading ? (
             <ActivityIndicator style={{ marginTop: 24 }} />
           ) : events.length === 0 ? (
-            <Card>
-              <Text style={{ marginBottom: 8 }}>No events yet.</Text>
-              <Button title="Add your first event" onPress={() => router.push('/events-create')} />
-            </Card>
+            <View style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: tokens.colors.border, padding: 28, alignItems: 'center', marginTop: 16 }}>
+              <Text style={{ ...tokens.type.ui, color: tokens.colors.inkLabel, textAlign: 'center', marginBottom: 16 }}>
+                No events yet. A day worth remembering — a wedding, a move, a clearing out.
+              </Text>
+              <TouchableOpacity onPress={() => router.push('/events-create')} style={{ borderWidth: 1, borderColor: tokens.colors.accent, paddingHorizontal: 18, paddingVertical: 12, minHeight: tokens.minTarget, justifyContent: 'center' }}>
+                <Text style={{ ...tokens.type.button, color: tokens.colors.accent }}>Add your first event</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
-            <ScrollView style={{ marginTop: 12 }}>
-              {events.map(ev => (
-                <TouchableOpacity key={ev.id} style={{ marginBottom: 16 }} onPress={() => router.push({ pathname: '/events-detail', params: { id: ev.id } })}>
-                  <Card>
-                    <Text style={{ fontWeight: 'bold', fontSize: 20, color: tokens.colors.ink }}>{ev.name}</Text>
-                    <Text style={{ color: tokens.colors.accentCool, fontSize: 15, marginTop: 2 }}>{ev.event_date || ev.start_date || ''}</Text>
-                    <Text style={{ color: tokens.colors.accentCool, fontSize: 14, marginTop: 2 }}>{ev.description || ''}</Text>
-                  </Card>
+            <ScrollView style={{ marginTop: 4 }}>
+              {events.map((ev) => (
+                <TouchableOpacity
+                  key={ev.id}
+                  onPress={() => router.push({ pathname: '/events-detail', params: { id: ev.id } })}
+                  style={{ paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: tokens.colors.ruleSoft }}
+                >
+                  <Text style={{ ...tokens.type.name, color: tokens.colors.ink }}>{ev.name}</Text>
+                  <Text style={{ ...tokens.type.fact, color: tokens.colors.inkFact, marginTop: 4 }}>{ev.event_date || ev.start_date || ''}</Text>
+                  {!!ev.description && (
+                    <Text style={{ ...tokens.type.ui, color: tokens.colors.inkLabel, marginTop: 4 }} numberOfLines={2}>{ev.description}</Text>
+                  )}
                 </TouchableOpacity>
               ))}
             </ScrollView>
           )}
         </View>
       ) : filteredItems.length === 0 ? (
-        <Card>
-          <Text style={{ marginBottom: 8 }}>{selectedCollectionId ? 'No items match this collection yet.' : selectedPeople.length ? 'No items match these people yet.' : 'No items yet.'}</Text>
-          <Button title="Add your first item" onPress={() => router.push('/(tabs)/add')} />
-        </Card>
+        <View style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: tokens.colors.border, padding: 32, alignItems: 'center' }}>
+          <View style={{ width: 16, height: 16, borderWidth: 1, borderColor: tokens.colors.inkGhost, marginBottom: 16 }} />
+          <Text style={{ ...tokens.type.ui, color: tokens.colors.inkLabel, textAlign: 'center', marginBottom: 20 }}>
+            {selectedCollectionId
+              ? 'Nothing in this collection yet.'
+              : selectedPeople.length
+                ? 'Nothing tagged with these people yet.'
+                : 'Nothing catalogued yet. Photograph one thing and the archive begins.'}
+          </Text>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/add')} style={{ borderWidth: 1, borderColor: tokens.colors.accent, paddingHorizontal: 20, paddingVertical: 13, minHeight: tokens.minTarget, justifyContent: 'center' }}>
+            <Text style={{ ...tokens.type.button, color: tokens.colors.accent }}>Add your first item</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
-  <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadItems(); loadPeople(); loadCollections(); }} />} style={{ marginBottom: 12 }}>
+        <ScrollView
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadItems(); loadPeople(); loadCollections(); }} />}
+          style={{ marginBottom: 12 }}
+        >
+          <View style={{ borderTopWidth: 1, borderTopColor: tokens.colors.ruleStrong }} />
           {filteredItems.map((it) => (
-            <TouchableOpacity key={it.id} onPress={() => router.push({ pathname: '/(tabs)/items/[id]', params: { id: it.id } })} style={{ marginBottom: 16 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.card, borderRadius: 18, padding: 14, shadowColor: tokens.colors.ink, shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, borderWidth: 1, borderColor: tokens.colors.border }}>
-                <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: tokens.colors.ink, alignItems: 'center', justifyContent: 'center', marginRight: 14, overflow: 'hidden' }}>
+            <TouchableOpacity
+              key={it.id}
+              onPress={() => router.push({ pathname: '/(tabs)/items/[id]', params: { id: it.id } })}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: tokens.colors.ruleSoft }}
+            >
+              <View style={{ ...plate, width: 66, height: 66, marginRight: 14 }}>
+                <View style={{ flex: 1, backgroundColor: tokens.colors.bg, alignItems: 'center', justifyContent: 'center' }}>
                   {imagesFor(it).length > 0 ? (
-                    <Image source={{ uri: imagesFor(it)[0] }} style={{ width: 56, height: 56, borderRadius: 14, resizeMode: 'cover' }} />
+                    <Image source={{ uri: imagesFor(it)[0] }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
                   ) : (
-                    <Ionicons name="cube-outline" size={32} color="#fff" />
+                    <View style={{ width: 13, height: 13, borderWidth: 1, borderColor: tokens.colors.inkGhost }} />
                   )}
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontWeight: '300', fontSize: 20, color: tokens.colors.ink, fontFamily: 'CormorantGaramond_300Light' }} numberOfLines={1}>{it.name}</Text>
-                  <Text style={{ color: tokens.colors.accentCool, fontSize: 15, marginTop: 2 }} numberOfLines={1}>{it.location || 'No description'}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
-                    {(() => {
-                      const label = resolveCategoryLabel(it);
-                      return label ? (
-                        <View style={{ backgroundColor: tokens.colors.border, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2, marginRight: 8 }}>
-                          <Text style={{ color: tokens.colors.accent, fontWeight: '600', fontSize: 13 }}>{label}</Text>
-                        </View>
-                      ) : null;
-                    })()}
-                    <Text style={{ color: tokens.colors.accentCool, fontSize: 14 }}>{it.created_at ? new Date(it.created_at).toLocaleDateString() : ''}</Text>
-                  </View>
-                </View>
-                <View style={{ marginLeft: 10 }}>
-                  <Ionicons name="chevron-forward" size={24} color={tokens.colors.accentCool} />
-                </View>
               </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={{ ...tokens.type.nameSmall, color: tokens.colors.ink }} numberOfLines={2}>{it.name}</Text>
+                {(() => {
+                  const label = resolveCategoryLabel(it);
+                  const bits = [label, it.location].filter(Boolean);
+                  return bits.length ? (
+                    <Text style={{ ...tokens.type.ui, fontSize: 15, color: tokens.colors.inkLabel, marginTop: 2 }} numberOfLines={1}>
+                      {bits.join(' · ')}
+                    </Text>
+                  ) : null;
+                })()}
+                {!!it.created_at && (
+                  <Text style={{ ...tokens.type.fact, fontSize: 12, color: tokens.colors.inkFact, marginTop: 5 }}>
+                    {new Date(it.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </Text>
+                )}
+              </View>
+
+              <Ionicons name="chevron-forward" size={20} color={tokens.colors.inkGhost} />
             </TouchableOpacity>
           ))}
         </ScrollView>
       )}
 
       {/* Footer */}
-      <View style={{ alignItems: 'center', paddingVertical: 10, backgroundColor: 'transparent' }}>
-        <Text style={{ color: tokens.colors.accentCool, fontWeight: '600', fontSize: 16 }}>{`Showing ${Math.min(items.length, 5)} of ${items.length} memories`}</Text>
-      </View>
+      {filteredItems.length > 0 && (
+        <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+          <Text style={{ ...tokens.type.ui, fontSize: 15, color: tokens.colors.inkLabel }}>
+            {filteredItems.length === items.length
+              ? `${items.length} ${items.length === 1 ? 'object' : 'objects'}`
+              : `Showing ${filteredItems.length} of ${items.length}`}
+          </Text>
+        </View>
+      )}
     </Screen>
   );
 }
