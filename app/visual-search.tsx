@@ -1,207 +1,264 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Screen from '../components/Screen';
-import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
-import TabHeader from '../components/ui/TabHeader';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '../lib/supabase';
+import { tokens } from '../lib/tokens';
 
-type SearchResult = {
-  id: string | number;
-  score?: number;
-};
+const c = tokens.colors;
+const PHOTO_BUCKET = 'item-photos';
+
+type SearchResult = { id: string | number; score?: number };
 
 export default function VisualSearchScreen() {
-  const [queryImage, setQueryImage] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [loadingResults, setLoadingResults] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
-  const [searched, setSearched] = useState(false);
   const router = useRouter();
-  const autoStarted = useRef(false);
+  const [queryImage, setQueryImage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [stage, setStage] = useState<'idle' | 'uploading' | 'searching'>('idle');
+  const [results, setResults] = useState<any[]>([]);
+  const [covers, setCovers] = useState<Record<string, string>>({});
+  const [searched, setSearched] = useState(false);
 
-  // Open the camera automatically when the screen loads (the user tapped the
-  // camera icon expecting it to fire straight away).
-  useEffect(() => {
-    if (autoStarted.current) return;
-    autoStarted.current = true;
-    pickAndSearch();
-  }, []);
-
-  async function pickAndSearch() {
+  async function choosePhoto(fromCamera: boolean) {
     try {
       const ImagePicker = await import('expo-image-picker');
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) return;
-      const res = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+      const perm = fromCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permission needed',
+          fromCamera ? 'Please allow camera access.' : 'Please allow photo access.');
+        return;
+      }
+      const res = fromCamera
+        ? await ImagePicker.launchCameraAsync({ quality: 0.8 })
+        : await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
       if ((res as any).canceled) return;
       const uri = res.assets?.[0]?.uri;
-      if (!uri) return;
+      if (uri) await search(uri);
+    } catch (e: any) {
+      console.warn('Picker failed', e?.message ?? e);
+      Alert.alert('Unavailable', 'Please try again in a moment.');
+    }
+  }
 
-      setQueryImage(uri);
-      setUploading(true);
-      setSearched(false);
-      setResults([]);
+  async function search(uri: string) {
+    setQueryImage(uri);
+    setResults([]);
+    setCovers({});
+    setSearched(false);
+    setBusy(true);
+    setStage('uploading');
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+      if (!userId) throw new Error('Please sign in first.');
 
-      const userResp = await supabase.auth.getUser();
-      const userId = userResp.data?.user?.id ?? 'anon';
-      const parts = uri.split('/');
-      const fname = parts[parts.length - 1] ?? `query-${Date.now()}.jpg`;
-      const path = `${userId}/${Date.now()}-${fname}`;
-
-      const response = await fetch(uri);
-      const blob = await response.blob();
+      // Upload the query photograph. Read it as base64 rather than fetch/blob —
+      // blob uploads are unreliable on React Native and fail silently.
+      const ext = (uri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+      const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
       const { error: upErr } = await supabase.storage
         .from('search-queries')
-        .upload(path, blob, { cacheControl: '3600', upsert: false, contentType: 'image/jpeg' });
+        .upload(path, decode(base64), { contentType, upsert: false });
       if (upErr) throw upErr;
 
-      setLoadingResults(true);
+      setStage('searching');
 
-      // Call the image-search edge function. invoke() sends the user's auth
-      // token automatically, which the function uses to scope results to this user.
+      // invoke() sends the user's auth token, which the function uses to scope
+      // results to this archive.
       const { data: searchData, error: searchErr } = await supabase.functions.invoke('image-search', {
         body: { imagePath: path },
       });
       if (searchErr) throw searchErr;
 
-      const json = searchData as { results: SearchResult[] };
-      const ids = (json?.results ?? []).map((r) => r.id);
-      if (ids.length === 0) {
-        setResults([]);
-        setSearched(true);
-        setLoadingResults(false);
-        setUploading(false);
-        return;
-      }
-      const { data: items } = await supabase.from('items').select().in('id', ids).limit(50);
-      const itemsById = new Map((items || []).map((it: any) => [String(it.id), it]));
-      const ordered = ids.map((id) => itemsById.get(String(id))).filter(Boolean);
-      setResults(ordered as any[]);
+      const ids = ((searchData as { results: SearchResult[] })?.results ?? []).map((r) => r.id);
+      if (!ids.length) { setSearched(true); return; }
+
+      const { data: items } = await supabase
+        .from('items')
+        .select('id,name,photo_url,location,category_id,estimated_value')
+        .in('id', ids)
+        .limit(50);
+      const byId = new Map((items ?? []).map((it: any) => [String(it.id), it]));
+      const ordered = ids.map((id) => byId.get(String(id))).filter(Boolean) as any[];
+      setResults(ordered);
       setSearched(true);
-      setLoadingResults(false);
-      setUploading(false);
+
+      // items.photo_url holds a storage PATH, so it must be signed to display.
+      const paths: Record<string, string> = {};
+      for (const row of ordered) {
+        let p = row.photo_url ?? null;
+        if (!p) {
+          const { data: photo } = await supabase
+            .from('item_photos').select('storage_path')
+            .eq('item_id', row.id)
+            .order('sort_order', { ascending: true }).limit(1).maybeSingle();
+          p = photo?.storage_path ?? null;
+        }
+        if (p) paths[String(row.id)] = p;
+      }
+      const entries = Object.entries(paths);
+      if (entries.length) {
+        const { data: signed } = await supabase.storage
+          .from(PHOTO_BUCKET)
+          .createSignedUrls(entries.map(([, p]) => p), 60 * 60);
+        const out: Record<string, string> = {};
+        entries.forEach(([itemId], i) => {
+          const url = signed?.[i]?.signedUrl;
+          if (url) out[itemId] = url;
+        });
+        setCovers(out);
+      }
     } catch (e: any) {
       console.warn('Visual search failed', e?.message ?? e);
-      alert('Image search failed: ' + (e?.message ?? ''));
-      setUploading(false);
-      setLoadingResults(false);
+      Alert.alert('Search failed', e?.message ?? 'Please try again.');
       setSearched(true);
+    } finally {
+      setBusy(false);
+      setStage('idle');
     }
   }
 
   return (
-    <Screen>
-      <TabHeader title="Visual Search" />
-      <View style={styles.container}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-          {/* Take / retake photo */}
-          <Card style={{ marginBottom: 16 }}>
-            <View style={{ alignItems: 'center', paddingVertical: 12 }}>
-              <Ionicons name="camera" size={48} color="#B8783A" style={{ marginBottom: 12 }} />
-              <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 8, textAlign: 'center' }}>Visual Search</Text>
-              <Text style={{ color: '#4A7A9B', textAlign: 'center', marginBottom: 16, paddingHorizontal: 12 }}>
-                Take a photo of an item to find similar objects in your collection
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
+
+        {/* Masthead */}
+        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 28 }}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={10}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Ionicons name="chevron-back" size={19} color={c.inkGhost} />
+            <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Back</Text>
+          </TouchableOpacity>
+
+          <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75, marginTop: 22 }}>
+            Find by photograph
+          </Text>
+          <Text style={{ ...tokens.type.display, fontSize: 32, lineHeight: 38, color: c.bg, marginTop: 6 }}>
+            Point at a thing.
+          </Text>
+          <Text style={{ ...tokens.type.ui, color: c.inkGhost, opacity: 0.85, marginTop: 10, lineHeight: 23 }}>
+            Photograph an object and we&rsquo;ll look for it in your archive.
+          </Text>
+        </View>
+
+        {/* Take or choose */}
+        <View style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingTop: 26 }}>
+          <TouchableOpacity
+            onPress={() => choosePhoto(true)}
+            disabled={busy}
+            style={{
+              flex: 1, paddingVertical: 18, alignItems: 'center',
+              borderRadius: tokens.radius.sm, backgroundColor: c.primary,
+              opacity: busy ? 0.5 : 1,
+            }}>
+            <Ionicons name="camera-outline" size={20} color={c.primaryText} />
+            <Text style={{ ...tokens.type.button, color: c.primaryText, marginTop: 6 }}>
+              {queryImage ? 'Again' : 'Photograph'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => choosePhoto(false)}
+            disabled={busy}
+            style={{
+              flex: 1, paddingVertical: 18, alignItems: 'center',
+              borderRadius: tokens.radius.sm,
+              borderWidth: 1, borderColor: c.border, backgroundColor: c.card,
+              opacity: busy ? 0.5 : 1,
+            }}>
+            <Ionicons name="images-outline" size={20} color={c.ink} />
+            <Text style={{ ...tokens.type.button, color: c.ink, marginTop: 6 }}>From library</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* The photograph, and what came of it */}
+        {queryImage && (
+          <View style={{ paddingHorizontal: 20, paddingTop: 26 }}>
+            <Image source={{ uri: queryImage }}
+              style={{ width: '100%', height: 220, backgroundColor: c.surfaceSoft, borderRadius: tokens.radius.md }}
+              resizeMode="cover" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14 }}>
+              {busy && <ActivityIndicator color={c.accentCool} />}
+              <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.inkLabel }}>
+                {stage === 'uploading' ? 'Sending the photograph'
+                  : stage === 'searching' ? 'Looking through your archive'
+                  : searched
+                    ? results.length
+                      ? `${results.length} ${results.length === 1 ? 'match' : 'matches'}`
+                      : 'Nothing like it here yet'
+                    : ''}
               </Text>
-              <Button
-                title={uploading ? 'Processing…' : queryImage ? 'Retake Photo' : 'Take Photo'}
-                onPress={pickAndSearch}
-                disabled={uploading}
-              />
             </View>
-          </Card>
+          </View>
+        )}
 
-          {/* Query image + status */}
-          {queryImage ? (
-            <Card style={{ marginBottom: 16 }}>
-              <View style={{ alignItems: 'center', paddingVertical: 12 }}>
-                <Image source={{ uri: queryImage }} style={{ width: 200, height: 160, borderRadius: 12, marginBottom: 12 }} />
-                {loadingResults ? (
-                  <>
-                    <ActivityIndicator size="large" color="#B8783A" />
-                    <Text style={{ color: '#4A7A9B', marginTop: 12 }}>Searching for similar items...</Text>
-                  </>
+        {/* Matches */}
+        {results.length > 0 && (
+          <View style={{ paddingTop: 26 }}>
+            <Text style={{ ...tokens.type.label, color: c.inkLabel, paddingHorizontal: 20, marginBottom: 12 }}>
+              Closest first
+            </Text>
+            <View style={{ borderTopWidth: 1, borderTopColor: c.border, marginHorizontal: 20 }} />
+            {results.map((it) => (
+              <TouchableOpacity
+                key={String(it.id)}
+                onPress={() => router.push({ pathname: '/(tabs)/items/[id]', params: { id: String(it.id) } } as any)}
+                activeOpacity={0.75}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 14,
+                  paddingVertical: 14, marginHorizontal: 20,
+                  borderBottomWidth: 1, borderBottomColor: c.ruleSoft,
+                }}>
+                {covers[String(it.id)] ? (
+                  <Image source={{ uri: covers[String(it.id)] }}
+                    style={{ width: 54, height: 54, backgroundColor: c.surfaceSoft }} resizeMode="cover" />
                 ) : (
-                  <Text style={{ color: '#B8783A', fontWeight: '600' }}>
-                    ✓ Found {results.length} similar item{results.length !== 1 ? 's' : ''}
-                  </Text>
+                  <View style={{
+                    width: 54, height: 54, backgroundColor: c.surfaceSoft,
+                    alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Ionicons name="image-outline" size={18} color={c.inkLight} />
+                  </View>
                 )}
-              </View>
-            </Card>
-          ) : null}
-
-          {/* Results grid */}
-          {results.length > 0 ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-              {results.map((it) => (
-                <TouchableOpacity key={it.id} onPress={() => router.push({ pathname: '/(tabs)/items/[id]', params: { id: it.id } })} style={{ width: '48%', marginBottom: 20 }}>
-                  <Card style={{ padding: 12, borderRadius: 18 }}>
-                    <View style={{ height: 180, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F7FAFB', alignItems: 'center', justifyContent: 'center' }}>
-                      {(() => {
-                        const imgs = Array.isArray(it.images) && it.images.length > 0 ? it.images : it.image_url ? [it.image_url] : it.photo_url ? [it.photo_url] : [];
-                        return imgs.length > 0 ? (
-                          <Image source={{ uri: imgs[0] }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-                        ) : (
-                          <View style={{ alignItems: 'center' }}>
-                            <Ionicons name="image-outline" size={32} color="#D8E6EE" />
-                            <Text style={{ color: '#4A7A9B', fontSize: 12, marginTop: 4 }}>No image</Text>
-                          </View>
-                        );
-                      })()}
-                    </View>
-                    <View style={{ marginTop: 12 }}>
-                      <Text style={{ fontWeight: '700', fontSize: 16 }} numberOfLines={2}>{it.name || 'Untitled'}</Text>
-                      {it.item_category && (
-                        <View style={{ marginTop: 6 }}>
-                          <View style={{ backgroundColor: '#D8E6EE', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start' }}>
-                            <Text style={{ color: '#B8783A', fontSize: 12, fontWeight: '600' }}>{it.item_category}</Text>
-                          </View>
-                        </View>
-                      )}
-                      <View style={{ marginTop: 8 }}>
-                        {it.location && (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                            <Ionicons name="location-outline" size={14} color="#4A7A9B" />
-                            <Text style={{ color: '#4A7A9B', fontSize: 14, marginLeft: 4 }}>{it.location}</Text>
-                          </View>
-                        )}
-                        {it.estimated_value && (
-                          <Text style={{ color: '#B8783A', fontWeight: '600', fontSize: 14 }}>${it.estimated_value}</Text>
-                        )}
-                      </View>
-                    </View>
-                  </Card>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : searched && !loadingResults && queryImage ? (
-            <Card>
-              <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                <Ionicons name="search-outline" size={48} color="#D8E6EE" />
-                <Text style={{ fontSize: 16, fontWeight: '600', marginTop: 12, marginBottom: 4 }}>No similar items found</Text>
-                <Text style={{ color: '#4A7A9B', textAlign: 'center', marginBottom: 20 }}>This item isn't in your archive yet. Want to add it?</Text>
-                <View style={{ width: '100%', paddingHorizontal: 8 }}>
-                  <Button title="Create new item" onPress={() => router.push({ pathname: '/(tabs)/add', params: { incomingPhoto: queryImage ?? '' } })} />
-                  <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 14, alignItems: 'center' }}>
-                    <Text style={{ color: '#4A7A9B', fontWeight: '600' }}>Back</Text>
-                  </TouchableOpacity>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ ...tokens.type.nameSmall, color: c.ink }} numberOfLines={1}>
+                    {it.name || 'Untitled object'}
+                  </Text>
+                  {!!it.location && (
+                    <Text style={{ color: c.inkLabel, fontSize: 14, marginTop: 3 }} numberOfLines={1}>
+                      {it.location}
+                    </Text>
+                  )}
                 </View>
-              </View>
-            </Card>
-          ) : null}
-        </ScrollView>
-      </View>
-    </Screen>
+                <Ionicons name="chevron-forward" size={18} color={c.inkLabel} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Nothing found */}
+        {searched && !busy && results.length === 0 && queryImage && (
+          <View style={{ paddingHorizontal: 20, paddingTop: 30, alignItems: 'flex-start' }}>
+            <Text style={{ ...tokens.type.body, color: c.inkLabel }}>
+              This one isn&rsquo;t in your archive yet. Keep it?
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.push({ pathname: '/(tabs)/add', params: { incomingPhoto: queryImage ?? '' } } as any)}
+              style={{
+                marginTop: 18, paddingHorizontal: 22, paddingVertical: 15,
+                borderRadius: tokens.radius.sm, backgroundColor: c.primary,
+              }}>
+              <Text style={{ ...tokens.type.button, color: c.primaryText }}>Add this object</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+      </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F7FAFB',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-});

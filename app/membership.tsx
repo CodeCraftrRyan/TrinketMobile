@@ -1,8 +1,11 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Screen from '../components/Screen';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { tokens } from '../lib/tokens';
+
+const c = tokens.colors;
 
 type Plan = 'Free' | 'Pro' | 'Premium';
 
@@ -10,7 +13,7 @@ export default function Membership() {
   const router = useRouter();
   const [currentPlan, setCurrentPlan] = useState<Plan>('Free');
   const [loading, setLoading] = useState(true);
-  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
+  const [yearly, setYearly] = useState(false);
   const [planRows, setPlanRows] = useState<any[]>([]);
 
   const loadMembership = useCallback(async () => {
@@ -31,19 +34,11 @@ export default function Membership() {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-
       if (subError) throw subError;
-
-      const planJoin = sub?.subscription_plans as
-        | { name?: string; slug?: string }
-        | { name?: string; slug?: string }[]
-        | null
-        | undefined;
+      const planJoin = sub?.subscription_plans as any;
       const planRow = Array.isArray(planJoin) ? planJoin[0] : planJoin;
       const rawName = planRow?.name ?? 'Free';
-      const resolvedPlan = (['Free', 'Pro', 'Premium'].includes(rawName) ? rawName : 'Free') as Plan;
-
-      setCurrentPlan(resolvedPlan);
+      setCurrentPlan((['Free', 'Pro', 'Premium'].includes(rawName) ? rawName : 'Free') as Plan);
 
       // Prices and limits come from the database, never from constants here —
       // hardcoded copies drift the moment a price changes.
@@ -55,29 +50,15 @@ export default function Membership() {
       if (plansError) throw plansError;
       setPlanRows(rows ?? []);
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Could not load membership');
+      Alert.alert('Could not load your plan', e?.message ?? 'Please try again.');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    loadMembership();
-  }, [loadMembership]);
+  useEffect(() => { loadMembership(); }, [loadMembership]);
 
-  if (loading) {
-    return (
-      <Screen>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#B8783A" />
-        </View>
-      </Screen>
-    );
-  }
-
-  const ICONS: Record<string, string> = { Free: '📦', Pro: '⭐', Premium: '💎' };
-
-  // "Up to 500 items" / "Unlimited items" — null means no cap.
+  // "Up to 500 objects" / "Unlimited objects" — null means no cap.
   function limitLine(value: number | null | undefined, singular: string, plural: string) {
     if (value === null || value === undefined) return `Unlimited ${plural}`;
     return `Up to ${value} ${value === 1 ? singular : plural}`;
@@ -85,12 +66,17 @@ export default function Membership() {
 
   function featuresFor(row: any): string[] {
     return [
-      limitLine(row?.max_items, 'item', 'items'),
-      limitLine(row?.max_events, 'event', 'events'),
+      limitLine(row?.max_items, 'object', 'objects'),
       limitLine(row?.max_collections, 'collection', 'collections'),
-      limitLine(row?.max_photos_per_item, 'photo per object', 'photos per object'),
+      limitLine(row?.max_events, 'event', 'events'),
+      limitLine(row?.max_photos_per_item, 'photograph per object', 'photographs per object'),
     ];
   }
+
+  const money = (value: number | null | undefined) => {
+    const n = Number(value ?? 0);
+    return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
+  };
 
   const plans = planRows.map((row) => {
     const name = String(row?.name ?? '');
@@ -98,187 +84,149 @@ export default function Membership() {
       id: (['Free', 'Pro', 'Premium'].includes(name) ? name : 'Free') as Plan,
       name,
       features: featuresFor(row),
-      icon: ICONS[name] ?? '📦',
       row,
     };
   });
 
-  function money(value: number | null | undefined) {
-    const n = Number(value ?? 0);
-    return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
-  }
-
-  function priceFor(planId: Plan, interval: 'monthly' | 'yearly') {
-    const plan = plans.find((p) => p.id === planId);
-    const row = plan?.row;
+  function priceFor(row: any) {
     if (!row) return '';
-    if (row.is_free) return 'Free';
-    return interval === 'monthly'
-      ? `${money(row.price_monthly_usd)} / month`
-      : `${money(row.price_yearly_usd)} / year`;
+    if (row.is_free) return 'No charge';
+    return yearly
+      ? `${money(row.price_yearly_usd)} / year`
+      : `${money(row.price_monthly_usd)} / month`;
   }
 
+  function perMonth(row: any) {
+    if (!row || row.is_free || !yearly) return null;
+    const y = Number(row.price_yearly_usd ?? 0);
+    if (!y) return null;
+    return `${money(y / 12)} a month, billed yearly`;
+  }
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={c.accentCool} />
+      </View>
+    );
+  }
 
   return (
-    <Screen>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
-            <Text style={styles.backButton}>Back</Text>
-          </Pressable>
-          <Text style={styles.title}>Membership</Text>
-          <View style={{ width: 70 }} />
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
+
+        {/* Masthead */}
+        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 28 }}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={10}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Ionicons name="chevron-back" size={19} color={c.inkGhost} />
+            <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Profile</Text>
+          </TouchableOpacity>
+
+          <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75, marginTop: 22 }}>
+            Your plan
+          </Text>
+          <Text style={{ ...tokens.type.display, fontSize: 32, lineHeight: 38, color: c.bg, marginTop: 6 }}>
+            {currentPlan}
+          </Text>
+          <Text style={{ ...tokens.type.ui, color: c.inkGhost, opacity: 0.85, marginTop: 10, lineHeight: 23 }}>
+            Plans are managed on the web, at yourtrinkets.com.
+          </Text>
         </View>
 
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-          <View style={styles.currentPlanBanner}>
-            <Text style={styles.bannerLabel}>Current Plan</Text>
-            <Text style={styles.bannerPlan}>{currentPlan}</Text>
+        {/* Billing period */}
+        <View style={{ alignItems: 'center', paddingTop: 26 }}>
+          <View style={{
+            flexDirection: 'row', padding: 4,
+            borderWidth: 1, borderColor: c.border,
+            borderRadius: tokens.radius.sm,
+            backgroundColor: c.card,
+          }}>
+            {[['Monthly', false], ['Yearly', true]].map(([label, val]) => {
+              const on = yearly === val;
+              return (
+                <TouchableOpacity
+                  key={String(label)}
+                  onPress={() => setYearly(val as boolean)}
+                  style={{
+                    paddingHorizontal: 26, paddingVertical: 11,
+                    borderRadius: tokens.radius.sm,
+                    backgroundColor: on ? c.ink : 'transparent',
+                  }}>
+                  <Text style={{ ...tokens.type.ui, fontSize: 15, color: on ? c.bg : c.ink }}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
+        </View>
 
-          <Text style={styles.sectionTitle}>Plans</Text>
-
-          <View style={styles.intervalWrap}>
-            <View style={styles.intervalToggle}>
-              <Pressable
-                onPress={() => setBillingInterval('monthly')}
-                style={({ pressed }) => [styles.intervalOption, billingInterval === 'monthly' && styles.intervalSelected, pressed && styles.pressed]}
-                accessibilityRole="button"
-                accessibilityLabel="Show monthly pricing"
-              >
-                <Text style={[styles.intervalText, billingInterval === 'monthly' && styles.intervalTextSelected]}>Monthly</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setBillingInterval('yearly')}
-                style={({ pressed }) => [styles.intervalOption, billingInterval === 'yearly' && styles.intervalSelected, pressed && styles.pressed]}
-                accessibilityRole="button"
-                accessibilityLabel="Show yearly pricing"
-              >
-                <Text style={[styles.intervalText, billingInterval === 'yearly' && styles.intervalTextSelected]}>Yearly</Text>
-              </Pressable>
-            </View>
-          </View>
-
+        {/* Plans */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 26 }}>
           {plans.map((plan) => {
             const isCurrent = currentPlan === plan.id;
             return (
               <View
                 key={plan.id}
-                style={[styles.planCard, isCurrent && styles.planCardCurrent]}
-                accessibilityLabel={`Plan ${plan.name}. ${priceFor(plan.id, billingInterval)}${isCurrent ? ', current plan' : ''}`}
-              >
-                {plan.id === 'Pro' && (
-                  <View style={styles.mostPopularBadge}>
-                    <Text style={styles.mostPopularText}>Most popular</Text>
-                  </View>
-                )}
-                <View style={styles.planHeader}>
-                  <View style={styles.planHeaderLeft}>
-                    <Text style={styles.planIcon}>{plan.icon}</Text>
-                    <View style={{ alignItems: 'center', minWidth: 90 }}>
-                      <Text style={styles.planName}>{plan.name}</Text>
-                      <Text style={styles.planPrice}>{priceFor(plan.id, billingInterval)}</Text>
-                    </View>
+                style={{
+                  backgroundColor: c.card,
+                  borderWidth: 1,
+                  borderColor: isCurrent ? c.accent : c.border,
+                  borderRadius: tokens.radius.lg,
+                  padding: 20,
+                  marginBottom: 14,
+                }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ ...tokens.type.name, color: c.ink }}>{plan.name}</Text>
+                    <Text style={{ color: c.inkLabel, fontSize: 15, marginTop: 4 }}>
+                      {priceFor(plan.row)}
+                    </Text>
+                    {!!perMonth(plan.row) && (
+                      <Text style={{ ...tokens.type.fact, color: c.inkFact, marginTop: 4 }}>
+                        {perMonth(plan.row)}
+                      </Text>
+                    )}
                   </View>
                   {isCurrent && (
-                    <View style={styles.currentBadge}>
-                      <Text style={styles.currentBadgeText}>Current</Text>
-                    </View>
+                    <Text style={{ ...tokens.type.label, color: c.inkFact, marginTop: 6 }}>Current</Text>
                   )}
                 </View>
 
-                <View style={styles.divider} />
-
-                <View style={styles.featuresList}>
-                  {plan.features.map((feature, index) => (
-                    <View key={index} style={styles.featureRow}>
-                      <Text style={styles.checkmark}>✓</Text>
-                      <Text style={styles.featureText}>{feature}</Text>
+                <View style={{ marginTop: 18 }}>
+                  {plan.features.map((feature, i) => (
+                    <View
+                      key={feature}
+                      style={{
+                        flexDirection: 'row', alignItems: 'center', gap: 10,
+                        paddingVertical: 11,
+                        borderTopWidth: i === 0 ? 1 : 0,
+                        borderTopColor: c.border,
+                        borderBottomWidth: i === plan.features.length - 1 ? 0 : 1,
+                        borderBottomColor: c.ruleSoft,
+                      }}>
+                      <Text style={{ color: c.accentCool, fontSize: 15 }}>✓</Text>
+                      <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.ink }}>{feature}</Text>
                     </View>
                   ))}
                 </View>
               </View>
             );
           })}
+        </View>
 
-          <Text style={styles.manageText}>
-            To change or cancel your plan, visit yourtrinkets.com from a web browser.
-          </Text>
+        <Text style={{
+          ...tokens.type.fact,
+          color: c.inkLabel,
+          paddingHorizontal: 20, paddingTop: 8,
+          lineHeight: 21,
+        }}>
+          Changing plans happens on the web. Whatever you choose there appears
+          here the next time you open the app.
+        </Text>
 
-          <Text style={styles.disclaimer}>
-            Plans can be cancelled anytime. Changes take effect immediately.
-          </Text>
-        </ScrollView>
-      </View>
-    </Screen>
+      </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F7FAFB' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#D8E6EE',
-  },
-  backButton: { color: '#B8783A', fontSize: 17, width: 70 },
-  title: { fontSize: 17, fontWeight: '600', color: '#0C1620' },
-  scrollView: { flex: 1 },
-  content: { padding: 16 },
-  currentPlanBanner: {
-    backgroundColor: '#B8783A',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 29,
-    alignItems: 'center',
-  },
-  bannerLabel: { color: '#FFFFFF', fontSize: 15, marginBottom: 4 },
-  bannerPlan: { color: '#FFFFFF', fontSize: 24, fontWeight: '700' },
-  sectionTitle: { fontSize: 20, fontWeight: '600', color: '#0C1620', marginBottom: 19 },
-  planCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 31,
-    borderWidth: 2,
-    borderColor: '#0C1620',
-  },
-  planCardCurrent: {
-    borderColor: '#B8783A',
-    backgroundColor: '#D8E6EE',
-    shadowColor: '#0C1620',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  planHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  planIcon: { fontSize: 32 },
-  planName: { fontSize: 20, fontWeight: '700', color: '#0C1620', textAlign: 'center' },
-  planPrice: { fontSize: 15, color: '#4A7A9B', marginTop: 2, textAlign: 'center' },
-  mostPopularBadge: { position: 'absolute', left: 16, top: -12, backgroundColor: '#FFFFFF', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  mostPopularText: { fontSize: 12, fontWeight: '700', color: '#154406', fontStyle: 'italic' },
-  divider: { height: 1, backgroundColor: '#D8E6EE', marginBottom: 16 },
-  featuresList: { gap: 12 },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  checkmark: { fontSize: 16, color: '#B8783A', fontWeight: '700' },
-  featureText: { fontSize: 15, color: '#0C1620' },
-  currentBadge: { backgroundColor: '#B8783A', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4 },
-  currentBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
-  manageText: { fontSize: 14, color: '#4A7A9B', textAlign: 'center', marginTop: 4, marginBottom: 16, lineHeight: 20 },
-  disclaimer: { fontSize: 13, color: '#4A7A9B', textAlign: 'center', marginBottom: 38, lineHeight: 18 },
-  intervalWrap: { alignItems: 'center', marginBottom: 16 },
-  intervalToggle: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 10, padding: 4, elevation: 1 },
-  intervalOption: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
-  intervalSelected: { backgroundColor: '#B8783A' },
-  intervalText: { color: '#0C1620', fontWeight: '600' },
-  intervalTextSelected: { color: '#FFFFFF' },
-  pressed: { opacity: 0.85 },
-});

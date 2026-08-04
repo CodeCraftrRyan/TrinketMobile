@@ -24,6 +24,8 @@ export default function ItemDetail() {
   const [activePhoto, setActivePhoto] = useState(0);
   const [isFavourite, setIsFavourite] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [appearsIn, setAppearsIn] = useState<{ id: string; name: string; count: number }[]>([]);
+  const [similar, setSimilar] = useState<{ id: string; name: string; uri: string | null }[]>([]);
 
   function peopleForItem() {
     return peopleNames;
@@ -115,6 +117,83 @@ export default function ItemDetail() {
             // non-critical
           }
         }
+        // The collections this object is filed in.
+        if (data?.id) {
+          try {
+            const { data: links } = await supabase
+              .from('collection_items').select('collection_id').eq('item_id', data.id);
+            const colIds = (links ?? []).map((r: any) => r.collection_id).filter(Boolean);
+            if (colIds.length) {
+              const [{ data: cols }, { data: allLinks }] = await Promise.all([
+                supabase.from('collections').select('id,name').in('id', colIds),
+                supabase.from('collection_items').select('collection_id').in('collection_id', colIds),
+              ]);
+              const tally: Record<string, number> = {};
+              (allLinks ?? []).forEach((r: any) => {
+                const k = String(r.collection_id);
+                tally[k] = (tally[k] ?? 0) + 1;
+              });
+              if (mounted) {
+                setAppearsIn((cols ?? []).map((r: any) => ({
+                  id: String(r.id),
+                  name: String(r.name ?? 'Collection'),
+                  count: tally[String(r.id)] ?? 0,
+                })));
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to load collections for item', e);
+          }
+        }
+
+        // Other objects of the same kind. Category, not similarity — the
+        // embeddings that would do this properly live on the web side.
+        if (data?.id && data?.category_id && uid) {
+          try {
+            const { data: kin } = await supabase
+              .from('items')
+              .select('id,name,photo_url')
+              .eq('user_id', uid)
+              .eq('category_id', data.category_id)
+              .neq('id', data.id)
+              .order('created_at', { ascending: false })
+              .limit(8);
+            const rows = kin ?? [];
+            const paths: Record<string, string> = {};
+            for (const row of rows) {
+              let path = (row as any).photo_url ?? null;
+              if (!path) {
+                const { data: p } = await supabase
+                  .from('item_photos').select('storage_path')
+                  .eq('item_id', (row as any).id)
+                  .order('sort_order', { ascending: true }).limit(1).maybeSingle();
+                path = p?.storage_path ?? null;
+              }
+              if (path) paths[String((row as any).id)] = path;
+            }
+            const entries = Object.entries(paths);
+            const urlById: Record<string, string> = {};
+            if (entries.length) {
+              const { data: signed } = await supabase.storage
+                .from(PHOTO_BUCKET)
+                .createSignedUrls(entries.map(([, p]) => p), 60 * 60);
+              entries.forEach(([itemId], i) => {
+                const url = signed?.[i]?.signedUrl;
+                if (url) urlById[itemId] = url;
+              });
+            }
+            if (mounted) {
+              setSimilar(rows.map((r: any) => ({
+                id: String(r.id),
+                name: String(r.name ?? 'Untitled object'),
+                uri: urlById[String(r.id)] ?? null,
+              })));
+            }
+          } catch (e) {
+            console.warn('Failed to load similar objects', e);
+          }
+        }
+
         // record recently viewed
         try {
           if (data?.id) await addRecentlyViewed(String(data.id));
@@ -214,6 +293,9 @@ export default function ItemDetail() {
       detailRows.push([label, String(value)]);
     }
   };
+  push('Category', categoryName || item.item_category || item.category);
+  push('Place', item.location);
+  detailRows.push(['Valued', item.estimated_value ? `$${item.estimated_value}` : 'Not appraised']);
   push('Condition', item.condition);
   push('Brand', item.brand);
   push('Model', item.model_number);
@@ -239,28 +321,40 @@ export default function ItemDetail() {
 
   const Section = ({ title, rows }: { title: string; rows: [string, string][] }) =>
     rows.length ? (
-      <View style={{ paddingHorizontal: 20, marginTop: 34 }}>
-        <Text style={{ ...tokens.type.label, color: c.inkLabel, marginBottom: 4 }}>{title}</Text>
-        {rows.map(([label, value], i) => (
-          <View
-            key={label}
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              gap: 20,
-              paddingVertical: 13,
-              borderTopWidth: i === 0 ? 1 : 0,
-              borderTopColor: c.border,
-              borderBottomWidth: 1,
-              borderBottomColor: c.ruleSoft,
-            }}>
-            <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.inkLabel }}>{label}</Text>
-            <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.ink, flexShrink: 1, textAlign: 'right' }}>
-              {value}
-            </Text>
+      <View style={{ paddingHorizontal: 20, marginTop: 30 }}>
+        <View style={{
+          backgroundColor: c.card,
+          borderWidth: 1, borderColor: c.border,
+          borderRadius: tokens.radius.lg,
+          overflow: 'hidden',
+        }}>
+          <View style={{
+            paddingHorizontal: 18, paddingVertical: 14,
+            borderBottomWidth: 1, borderBottomColor: c.border,
+            backgroundColor: c.bg,
+          }}>
+            <Text style={{ ...tokens.type.label, color: c.inkLabel }}>{title}</Text>
           </View>
-        ))}
+          {rows.map(([label, value], i) => (
+            <View
+              key={label}
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: 20,
+                paddingHorizontal: 18,
+                paddingVertical: 15,
+                borderBottomWidth: i === rows.length - 1 ? 0 : 1,
+                borderBottomColor: c.ruleSoft,
+              }}>
+              <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.accentCool }}>{label}</Text>
+              <Text style={{ ...tokens.type.ui, fontSize: 15, fontWeight: '500', color: c.ink, flexShrink: 1, textAlign: 'right' }}>
+                {value}
+              </Text>
+            </View>
+          ))}
+        </View>
       </View>
     ) : null;
 
@@ -381,8 +475,77 @@ export default function ItemDetail() {
           </Text>
         </View>
 
-        <Section title="Object details" rows={detailRows} />
+        <Section title="Item details" rows={detailRows} />
         <Section title="Acquisition" rows={purchaseRows} />
+
+        {appearsIn.length > 0 && (
+          <View style={{ paddingHorizontal: 20, marginTop: 32 }}>
+            <Text style={{ ...tokens.type.label, color: c.inkLabel, marginBottom: 10 }}>Appears in</Text>
+            {appearsIn.map((col) => (
+              <TouchableOpacity
+                key={col.id}
+                onPress={() => router.push({ pathname: '/collection/[id]', params: { id: col.id } } as any)}
+                activeOpacity={0.75}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 14,
+                  padding: 14, marginBottom: 10,
+                  backgroundColor: c.card,
+                  borderWidth: 1, borderColor: c.border,
+                  borderRadius: tokens.radius.lg,
+                }}>
+                <View style={{
+                  width: 46, height: 46, backgroundColor: c.surfaceSoft,
+                  borderRadius: tokens.radius.md,
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Ionicons name="folder-outline" size={19} color={c.accentCool} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ ...tokens.type.nameSmall, color: c.ink }} numberOfLines={1}>{col.name}</Text>
+                  <Text style={{ color: c.inkLabel, fontSize: 14, marginTop: 2 }}>
+                    {col.count} {col.count === 1 ? 'object' : 'objects'}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={c.inkLabel} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {similar.length > 0 && (
+          <View style={{ marginTop: 30 }}>
+            <Text style={{ ...tokens.type.label, color: c.inkLabel, paddingHorizontal: 20, marginBottom: 12 }}>
+              Also {(categoryName || 'in this category').toString().toLowerCase()}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }}>
+              {similar.map((row) => (
+                <TouchableOpacity
+                  key={row.id}
+                  onPress={() => router.push({ pathname: '/(tabs)/items/[id]', params: { id: row.id } } as any)}
+                  activeOpacity={0.8}
+                  style={{ width: 132 }}>
+                  {row.uri ? (
+                    <Image source={{ uri: row.uri }}
+                      style={{ width: 132, height: 132, borderRadius: tokens.radius.md, backgroundColor: c.surfaceSoft }}
+                      resizeMode="cover" />
+                  ) : (
+                    <View style={{
+                      width: 132, height: 132, borderRadius: tokens.radius.md,
+                      backgroundColor: c.surfaceSoft,
+                      alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Ionicons name="image-outline" size={22} color={c.inkLight} />
+                    </View>
+                  )}
+                  <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.ink, marginTop: 8 }} numberOfLines={2}>
+                    {row.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
       </ScrollView>
     </View>

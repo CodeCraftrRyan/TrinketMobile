@@ -87,7 +87,6 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="home" options={{ title: "Home" }} />
-      <Tabs.Screen name="search" options={{ title: "Search" }} />
       <Tabs.Screen name="account" options={{ title: "Account" }} />
       {/* Keep items, events, and add screens but hide from tabs - accessible via direct navigation */}
       <Tabs.Screen name="collections" options={{ href: null }} />

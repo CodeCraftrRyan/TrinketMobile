@@ -1,21 +1,26 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-
-import { useEffect, useState } from 'react';
-import { Alert, Linking, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Screen from '../../components/Screen';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Linking, Platform, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAccessibilitySettings } from '../../lib/accessibility';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
 
+const c = tokens.colors;
+
 export default function Account() {
   const router = useRouter();
-  const [profile, setProfile] = useState({
-    name: '',
-    email: '',
-    initial: '',
-  });
+  const [profile, setProfile] = useState({ name: '', email: '', initials: '', since: '' });
   const [userId, setUserId] = useState<string | null>(null);
+  const [people, setPeople] = useState<{ id: string; name: string }[]>([]);
+  const [peopleCounts, setPeopleCounts] = useState<Record<string, number>>({});
+  const [newPerson, setNewPerson] = useState('');
+  const [showAddPerson, setShowAddPerson] = useState(false);
+  const [savingPerson, setSavingPerson] = useState(false);
+  const [plan, setPlan] = useState<any>(null);
+  const [counts, setCounts] = useState({ items: 0, collections: 0, events: 0 });
+  const { settings, setLargeText, setHighContrast } = useAccessibilitySettings();
 
   useEffect(() => {
     let mounted = true;
@@ -23,103 +28,105 @@ export default function Account() {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data?.user) return;
       const user = data.user;
-      const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User';
-      const email = user.email || '';
-      const initial = name.charAt(0).toUpperCase();
+      const meta = user.user_metadata ?? {};
+      const name = meta.full_name || meta.name || user.email?.split('@')[0] || 'User';
+      const parts = String(name).trim().split(/\s+/);
+      const initials = (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+      const created = user.created_at ? new Date(user.created_at) : null;
+      const since = created && !isNaN(created.getTime())
+        ? created.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        : '';
       if (mounted) {
-        setProfile({ name, email, initial });
+        setProfile({ name, email: user.email || '', initials, since });
         setUserId(user.id ?? null);
       }
     }
     loadUser();
     return () => { mounted = false; };
   }, []);
-  const [people, setPeople] = useState<{ id: string; name: string }[]>([]);
-  const [newPerson, setNewPerson] = useState('');
-  const [showAddPerson, setShowAddPerson] = useState(false);
-  const [savingPerson, setSavingPerson] = useState(false);
-  const [currentPlan, setCurrentPlan] = useState<'Free' | 'Pro' | 'Premium'>('Free');
-  const { settings, setLargeText, setHighContrast } = useAccessibilitySettings();
 
-  // Read the user's real plan from subscriptions -> subscription_plans (same
-  // source of truth as web and the membership screen). Display only — all
-  // purchasing/management happens on the web.
-  useEffect(() => {
+  // The plan, and what the archive holds. Display only — all purchasing and
+  // management happens on the web.
+  const loadArchive = useCallback(async () => {
     if (!userId) return;
-    let mounted = true;
-    (async () => {
-      try {
-        const { data: sub, error } = await supabase
-          .from('subscriptions')
-          .select('plan_id, subscription_plans ( name )')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (error) throw error;
-        const join = sub?.subscription_plans as { name?: string } | { name?: string }[] | null | undefined;
-        const row = Array.isArray(join) ? join[0] : join;
-        const name = row?.name ?? 'Free';
-        const resolved = (['Free', 'Pro', 'Premium'].includes(name) ? name : 'Free') as 'Free' | 'Pro' | 'Premium';
-        if (mounted) setCurrentPlan(resolved);
-      } catch (e: any) {
-        console.warn('Failed to load plan', e?.message ?? e);
+    try {
+      const [it, co, ev] = await Promise.all([
+        supabase.from('items').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+        supabase.from('collections').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+        supabase.from('events').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      ]);
+      setCounts({ items: it.count ?? 0, collections: co.count ?? 0, events: ev.count ?? 0 });
+
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('plan_id, subscription_plans ( * )')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const join: any = (sub as any)?.subscription_plans;
+      const row = Array.isArray(join) ? join[0] : join;
+      if (row) {
+        setPlan(row);
+      } else {
+        const { data: free } = await supabase
+          .from('subscription_plans').select('*').eq('is_free', true).limit(1).maybeSingle();
+        setPlan(free ?? null);
       }
-    })();
-    return () => { mounted = false; };
+    } catch (e: any) {
+      console.warn('Failed to load the archive summary', e?.message ?? e);
+    }
   }, [userId]);
 
+  const loadPeople = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const { data, error } = await supabase
+        .from('people').select('id,name').eq('user_id', userId).order('name');
+      if (error) throw error;
+      const list = (data ?? [])
+        .filter((row: any) => row?.id && row?.name)
+        .map((row: any) => ({ id: String(row.id), name: String(row.name) }));
+      setPeople(list);
+
+      // How many objects each person is named on.
+      if (list.length) {
+        const { data: links } = await supabase
+          .from('item_people').select('person_id').in('person_id', list.map((p) => p.id));
+        const tally: Record<string, number> = {};
+        (links ?? []).forEach((r: any) => {
+          const k = String(r.person_id);
+          tally[k] = (tally[k] ?? 0) + 1;
+        });
+        setPeopleCounts(tally);
+      }
+    } catch (e: any) {
+      console.warn('Failed to load people', e?.message ?? e);
+      setPeople([]);
+    }
+  }, [userId]);
+
+  useEffect(() => { loadPeople(); loadArchive(); }, [loadPeople, loadArchive]);
+  useFocusEffect(useCallback(() => { loadPeople(); loadArchive(); }, [loadPeople, loadArchive]));
+
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+    Alert.alert('Log out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: async () => {
+      { text: 'Log out', style: 'destructive', onPress: async () => {
         try {
           await supabase.auth.signOut();
         } catch (e: any) {
-          Alert.alert('Sign out failed', e?.message ?? 'Please try again');
+          Alert.alert('Log out failed', e?.message ?? 'Please try again');
           return;
         }
-        // Replace the navigation stack with the login screen
         router.replace('/(auth)/login');
       } },
     ]);
   };
 
-  useEffect(() => {
-    let mounted = true;
-    async function loadPeople() {
-      if (!userId) return;
-      try {
-        const { data, error } = await supabase
-          .from('people')
-          .select('id,name')
-          .eq('user_id', userId)
-          .order('name');
-        if (error) throw error;
-        if (mounted) {
-          const list = (data ?? [])
-            .filter((row: { id?: string | number | null; name?: string | null }) => row?.id && row?.name)
-            .map((row: { id?: string | number | null; name?: string | null }) => ({
-              id: String(row.id),
-              name: String(row.name),
-            }));
-          setPeople(list);
-        }
-      } catch (e: any) {
-        console.warn('Failed to load people', e?.message ?? e);
-        if (mounted) setPeople([]);
-      }
-    }
-    loadPeople();
-    return () => { mounted = false; };
-  }, [userId]);
-
   async function addPersonFromName(nameInput?: string) {
     const name = (nameInput ?? newPerson).trim();
-    if (!name) {
-      Alert.alert('Missing name', 'Please enter a name');
-      return;
-    }
+    if (!name) { Alert.alert('Missing name', 'Please enter a name'); return; }
     if (people.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
       Alert.alert('Already added', 'That person is already in your list');
       return;
@@ -147,360 +154,301 @@ export default function Account() {
     }
   }
 
-  const SectionHeader = ({ children }: { children: React.ReactNode }) => (
-    <Text style={styles.sectionHeader}>{children}</Text>
-  );
+  function promptForPerson() {
+    if (Platform.OS === 'ios') {
+      Alert.prompt('Add a name', 'Someone an object came from', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Add', onPress: (value) => addPersonFromName(value ?? '') },
+      ]);
+    } else {
+      setShowAddPerson((prev) => !prev);
+    }
+  }
 
-  const Card = ({ children, style }: any) => (
-    <View style={[styles.card, style]}>{children}</View>
-  );
-
-  const Row = ({ left, right, onPress, danger, chevron = true }: any) => {
-    const leftContent = (
-      <Text style={[styles.rowLeft, danger && styles.dangerText]}>{left}</Text>
-    );
-    const rightContent =
-      right === undefined || right === null
-        ? null
-        : typeof right === 'string' || typeof right === 'number'
-          ? <Text style={[styles.rowRight, danger && styles.dangerText]}>{right}</Text>
-          : right;
-
-    return (
-      <TouchableOpacity
-        style={[styles.row, settings.largeText && styles.rowLargeText, danger && styles.dangerRow]}
-        onPress={onPress}
-        activeOpacity={onPress ? 0.7 : 1}
-        disabled={!onPress}
-      >
-        {leftContent}
-        <View style={styles.rowRightWrap}>
-          {rightContent}
-          {chevron && <Ionicons name="chevron-forward" size={16} color={danger ? '#B8783A' : '#4A7A9B'} />}
-        </View>
-      </TouchableOpacity>
-    );
+  const money = (v: any) => {
+    const n = Number(v ?? 0);
+    return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
   };
 
-  const ToggleRow = ({ label, value, onValueChange }: { label: string; value: boolean; onValueChange: (next: boolean) => void }) => (
-  <View style={[styles.row, settings.largeText && styles.rowLargeText, settings.largeText && styles.toggleRowLargeText]}>
-      <Text style={styles.rowLeft}>{label}</Text>
-      <Switch
-        style={[styles.toggleSwitch, settings.largeText && styles.toggleSwitchLargeText]}
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: '#D8E6EE', true: '#B8783A' }}
-        thumbColor={value ? '#FFFFFF' : '#FFFFFF'}
-        ios_backgroundColor="#D8E6EE"
-        accessibilityLabel={label}
-      />
-    </View>
+  // null means the plan does not cap this.
+  const usage: { label: string; used: number; cap: number | null }[] = [
+    { label: 'Objects', used: counts.items, cap: plan?.max_items ?? null },
+    { label: 'Collections', used: counts.collections, cap: plan?.max_collections ?? null },
+    { label: 'Events', used: counts.events, cap: plan?.max_events ?? null },
+  ];
+
+  const Label = ({ children }: any) => (
+    <Text style={{ ...tokens.type.label, color: c.inkLabel, paddingHorizontal: 20, marginTop: 30, marginBottom: 12 }}>
+      {children}
+    </Text>
+  );
+
+  const Row = ({ left, right, onPress, danger, chevron = true }: any) => (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+      disabled={!onPress}
+      style={{
+        flexDirection: settings.largeText ? 'column' : 'row',
+        alignItems: settings.largeText ? 'flex-start' : 'center',
+        justifyContent: 'space-between',
+        gap: settings.largeText ? 6 : 12,
+        paddingHorizontal: 18,
+        paddingVertical: 17,
+      }}>
+      <Text style={{ ...tokens.type.ui, color: danger ? c.accentDeep : c.ink, flex: settings.largeText ? undefined : 1 }}>
+        {left}
+      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {typeof right === 'string' || typeof right === 'number' ? (
+          <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.inkLabel }}>{right}</Text>
+        ) : right}
+        {chevron && onPress && <Ionicons name="chevron-forward" size={16} color={c.inkLabel} />}
+      </View>
+    </TouchableOpacity>
+  );
+
+  const Card = ({ children }: any) => (
+    <View style={{
+      marginHorizontal: 20,
+      backgroundColor: c.card,
+      borderWidth: 1, borderColor: c.border,
+      borderRadius: tokens.radius.lg,
+      overflow: 'hidden',
+    }}>{children}</View>
+  );
+
+  const Divider = () => (
+    <View style={{ height: 1, backgroundColor: c.ruleSoft, marginLeft: 18 }} />
   );
 
   return (
-    <Screen>
-      <ScrollView
-        style={{ flex: 1, backgroundColor: settings.highContrast ? '#FFFFFF' : tokens.colors.bg }}
-        contentContainerStyle={{ padding: 0, paddingBottom: 24 }}
-      >
-        {/* Profile Card */}
-        <View style={styles.profileCardWrap}>
-          <View style={styles.profileCard}>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarInitial}>{profile.initial}</Text>
+    <View style={{ flex: 1, backgroundColor: settings.highContrast ? '#FFFFFF' : c.bg }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
+
+        {/* Masthead */}
+        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>Profile</Text>
+            <TouchableOpacity onPress={promptForPerson} hitSlop={10}>
+              <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 22 }}>
+            <View style={{
+              width: 68, height: 68,
+              borderWidth: 1, borderColor: c.accent,
+              borderRadius: tokens.radius.md,
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Text style={{ color: c.bg, fontSize: 22, fontWeight: '500', letterSpacing: 0.5 }}>
+                {profile.initials}
+              </Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.profileName}>{profile.name}</Text>
-              <Text style={styles.profileEmail}>{profile.email}</Text>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ ...tokens.type.name, color: c.bg }} numberOfLines={1}>{profile.name}</Text>
+              {!!profile.since && (
+                <Text style={{ color: c.accent, fontSize: 15, marginTop: 3 }}>
+                  Archivist since {profile.since}
+                </Text>
+              )}
+              <Text style={{ color: c.inkGhost, fontSize: 15, marginTop: 2 }} numberOfLines={1}>
+                {profile.email}
+              </Text>
             </View>
           </View>
+
         </View>
 
-        {/* Account Details */}
-        <SectionHeader>ACCOUNT DETAILS</SectionHeader>
+        {/* What the archive holds, against what the plan allows */}
+        <Label>Your archive</Label>
         <Card>
-          <Row left="Name" right={profile.name} chevron={false} />
-          <View style={styles.divider} />
-          <Row left="Email" right={profile.email} chevron={false} />
-          <View style={styles.divider} />
-          <Row left="Password" right="Change" onPress={() => {}} />
-          <View style={styles.divider} />
-          <Row left="Sign Out" right={null} onPress={handleSignOut} danger chevron={false} />
+          {usage.map((row, i) => {
+            const pct = row.cap ? Math.min(1, row.used / row.cap) : 0;
+            const full = row.cap !== null && row.used >= row.cap;
+            return (
+              <View
+                key={row.label}
+                style={{
+                  paddingHorizontal: 18,
+                  paddingVertical: 16,
+                  borderBottomWidth: i === usage.length - 1 ? 0 : 1,
+                  borderBottomColor: c.ruleSoft,
+                }}>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <Text style={{ ...tokens.type.ui, color: c.ink }}>{row.label}</Text>
+                  <Text style={{ ...tokens.type.ui, fontSize: 15, color: full ? c.inkFact : c.inkLabel }}>
+                    {row.cap === null ? `${row.used}` : `${row.used} of ${row.cap}`}
+                  </Text>
+                </View>
+                {row.cap !== null ? (
+                  <View style={{ height: 5, backgroundColor: c.ruleSoft, marginTop: 12 }}>
+                    <View style={{
+                      height: 5,
+                      width: `${Math.round(pct * 100)}%`,
+                      backgroundColor: c.accent,
+                    }} />
+                  </View>
+                ) : (
+                  <Text style={{ ...tokens.type.fact, color: c.inkLabel, marginTop: 8 }}>
+                    No limit on your plan.
+                  </Text>
+                )}
+              </View>
+            );
+          })}
         </Card>
 
         {/* People */}
-        <SectionHeader>PEOPLE</SectionHeader>
-        <Card>
-          {people.map((person, i) => (
-            <View key={`${person.id}-${i}`}>
-              <Row left={person.name} onPress={() => {}} />
-              {i < people.length - 1 && <View style={styles.divider} />}
+        <View style={{
+          flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between',
+          paddingHorizontal: 20, marginTop: 26, marginBottom: 12,
+        }}>
+          <Text style={{ ...tokens.type.label, color: c.inkLabel }}>People</Text>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/items')}>
+            <Text style={{ color: c.inkLabel, fontSize: 15 }}></Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingHorizontal: 20 }}>
+          {people.map((person) => (
+            <View key={person.id} style={{
+              flexDirection: 'row', alignItems: 'center', gap: 8,
+              paddingHorizontal: 15, paddingVertical: 13,
+              backgroundColor: c.card,
+              borderWidth: 1, borderColor: c.border,
+              borderRadius: tokens.radius.md,
+            }}>
+              <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.ink }}>{person.name}</Text>
+              <Text style={{ color: c.inkFact, fontSize: 15 }}>{peopleCounts[person.id] ?? 0}</Text>
             </View>
           ))}
-        </Card>
-        {showAddPerson && Platform.OS !== 'ios' ? (
-          <View style={styles.inlineAddWrap}>
+          <TouchableOpacity
+            onPress={promptForPerson}
+            disabled={savingPerson}
+            style={{
+              paddingHorizontal: 15, paddingVertical: 13,
+              borderWidth: 1, borderColor: c.border, borderStyle: 'dashed',
+              borderRadius: tokens.radius.md,
+            }}>
+            <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.accentCool }}>
+              {savingPerson ? 'Adding…' : 'Add a name'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {showAddPerson && Platform.OS !== 'ios' && (
+          <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginTop: 12 }}>
             <TextInput
               value={newPerson}
               onChangeText={setNewPerson}
-              placeholder="Add a person"
-              placeholderTextColor="#9AAAB5"
-              style={styles.inlineAddInput}
+              placeholder="Diane Haviland"
+              placeholderTextColor={c.inkLight}
               returnKeyType="done"
               onSubmitEditing={() => addPersonFromName()}
+              style={{
+                flex: 1, backgroundColor: c.card,
+                borderWidth: 1, borderColor: c.border,
+                borderRadius: tokens.radius.md,
+                paddingHorizontal: 14, minHeight: 48,
+                ...tokens.type.ui, color: c.ink,
+              }}
             />
             <TouchableOpacity
-              style={[styles.inlineAddButton, (!newPerson.trim() || savingPerson) && styles.inlineAddButtonDisabled]}
               onPress={() => addPersonFromName()}
               disabled={!newPerson.trim() || savingPerson}
-            >
-              <Text style={styles.inlineAddButtonText}>{savingPerson ? 'Adding…' : 'Add'}</Text>
+              style={{
+                paddingHorizontal: 20, justifyContent: 'center',
+                borderRadius: tokens.radius.sm, backgroundColor: c.primary,
+                opacity: !newPerson.trim() || savingPerson ? 0.5 : 1,
+              }}>
+              <Text style={{ ...tokens.type.button, color: c.primaryText }}>Add</Text>
             </TouchableOpacity>
           </View>
-        ) : null}
-        <TouchableOpacity
-          style={styles.addPersonBtn}
-          onPress={() => {
-            if (Platform.OS === 'ios') {
-              Alert.prompt('Add Person', 'Enter a name', [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Add', onPress: (value) => addPersonFromName(value ?? '') },
-              ]);
-            } else {
-              setShowAddPerson((prev) => !prev);
-            }
-          }}
-          disabled={savingPerson}
-        >
-          <Text style={styles.addPersonText}>Add Person</Text>
+        )}
+
+        {/* Plan */}
+        <Label>Plan</Label>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push('/membership')}>
+          <Card>
+            <View style={{ padding: 20 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ ...tokens.type.name, color: c.ink }}>{plan?.name ?? 'Free'}</Text>
+                  <Text style={{ color: c.inkLabel, fontSize: 15, marginTop: 4 }}>
+                    {plan?.is_free
+                      ? 'No charge'
+                      : `${money(plan?.price_yearly_usd)}/yr · ${money(plan?.price_monthly_usd)}/mo`}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={c.inkLabel} style={{ marginTop: 6 }} />
+              </View>
+
+            </View>
+          </Card>
         </TouchableOpacity>
 
-        {/* Subscription */}
-        <SectionHeader>SUBSCRIPTION</SectionHeader>
+        {/* Account */}
+        <Label>Account</Label>
         <Card>
-          <Row
-            left="Current Plan"
-            right={<Text style={styles.freeBadge}>{currentPlan}</Text>}
-            onPress={() => router.push('/membership')}
-          />
+          <Row left="Name" right={profile.name} chevron={false} />
+          <Divider />
+          <Row left="Email" right={profile.email} chevron={false} />
+          <Divider />
+          <Row left="Password" right="Change" onPress={() => {}} />
         </Card>
 
-        {/* Accessibility */}
-        <SectionHeader>ACCESSIBILITY</SectionHeader>
+        {/* Reading */}
+        <Label>Reading</Label>
         <Card>
-          <ToggleRow label="Larger Text" value={settings.largeText} onValueChange={setLargeText} />
-          <View style={styles.divider} />
-          <ToggleRow label="High Contrast" value={settings.highContrast} onValueChange={setHighContrast} />
+          <View style={{
+            flexDirection: settings.largeText ? 'column' : 'row',
+            alignItems: settings.largeText ? 'flex-start' : 'center',
+            justifyContent: 'space-between',
+            gap: settings.largeText ? 10 : 12,
+            paddingHorizontal: 18, paddingVertical: 15,
+          }}>
+            <Text style={{ ...tokens.type.ui, color: c.ink }}>Larger text</Text>
+            <Switch value={settings.largeText} onValueChange={setLargeText}
+              trackColor={{ false: c.border, true: c.accent }} thumbColor="#FFFFFF"
+              ios_backgroundColor={c.border} accessibilityLabel="Larger text" />
+          </View>
+          <Divider />
+          <View style={{
+            flexDirection: settings.largeText ? 'column' : 'row',
+            alignItems: settings.largeText ? 'flex-start' : 'center',
+            justifyContent: 'space-between',
+            gap: settings.largeText ? 10 : 12,
+            paddingHorizontal: 18, paddingVertical: 15,
+          }}>
+            <Text style={{ ...tokens.type.ui, color: c.ink }}>High contrast</Text>
+            <Switch value={settings.highContrast} onValueChange={setHighContrast}
+              trackColor={{ false: c.border, true: c.accent }} thumbColor="#FFFFFF"
+              ios_backgroundColor={c.border} accessibilityLabel="High contrast" />
+          </View>
         </Card>
 
-        {/* Help */}
-        <SectionHeader>HELP</SectionHeader>
+        {/* Settings */}
+        <Label>Settings</Label>
         <Card>
-          <Row left="FAQ" onPress={() => router.push('/faq')} />
-          <View style={styles.divider} />
-          <Row left="Contact Support" onPress={() => Linking.openURL('mailto:admin@yourtrinkets.com')} />
+          <Row left="Questions" onPress={() => router.push('/faq')} />
+          <Divider />
+          <Row left="Get in touch" onPress={async () => {
+            const address = 'admin@yourtrinkets.com';
+            try {
+              await Linking.openURL(`mailto:${address}?subject=Trinket`);
+            } catch {
+              Alert.alert('No mail app set up', `Write to us at ${address}`);
+            }
+          }} />
+          <Divider />
+          <Row left="Privacy" onPress={() => router.push('/privacy')} />
+          <Divider />
+          <Row left="Log out" onPress={handleSignOut} danger chevron={false} />
         </Card>
 
-        {/* Privacy */}
-        <SectionHeader>PRIVACY</SectionHeader>
-        <Card>
-          <Row left="Privacy Policy" onPress={() => router.push('/privacy')} />
-        </Card>
-        <View style={{ height: 40 }} />
       </ScrollView>
-    </Screen>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  profileCardWrap: {
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 6,
-  },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  avatarCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#B8783A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 18,
-  },
-  avatarInitial: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 28,
-  },
-  profileName: {
-    fontWeight: '700',
-    fontSize: 19,
-    color: '#0C1620',
-    marginBottom: 2,
-  },
-  profileEmail: {
-    color: '#B8783A',
-    fontSize: 15,
-    fontWeight: '500',
-    textDecorationLine: 'underline',
-  },
-  sectionHeader: {
-    color: '#4A7A9B',
-    fontWeight: '700',
-    fontSize: 13.5,
-    letterSpacing: 1.1,
-    marginTop: 18,
-    marginBottom: 6,
-    marginLeft: 22,
-    flexWrap: 'wrap',
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    marginHorizontal: 14,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 17,
-    paddingHorizontal: 18,
-    backgroundColor: 'transparent',
-  },
-  rowLargeText: {
-    alignItems: 'flex-start',
-  },
-  rowLeft: {
-    fontWeight: '700',
-    fontSize: 15.5,
-    color: '#0C1620',
-    flex: 1,
-    flexWrap: 'wrap',
-    paddingRight: 12,
-  },
-  rowRightWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexShrink: 1,
-    maxWidth: '45%',
-    justifyContent: 'flex-end',
-  },
-  rowRight: {
-    fontWeight: '600',
-    fontSize: 15.5,
-    color: '#4A7A9B',
-    marginRight: 2,
-    textAlign: 'right',
-    flexShrink: 1,
-    flexWrap: 'wrap',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#D8E6EE',
-    marginLeft: 18,
-  },
-  dangerRow: {
-    backgroundColor: 'transparent',
-  },
-  dangerText: {
-    color: '#B8783A',
-    fontWeight: '700',
-  },
-  addPersonBtn: {
-    marginLeft: 22,
-    marginBottom: 8,
-  },
-  addPersonText: {
-    color: '#B8783A',
-    fontWeight: '700',
-    fontSize: 15.5,
-    paddingVertical: 4,
-  },
-  inlineAddWrap: {
-    flexDirection: 'row',
-    gap: 10,
-    marginHorizontal: 14,
-    marginBottom: 8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  inlineAddInput: {
-    flex: 1,
-    backgroundColor: '#F2F6F9',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#0C1620',
-    fontSize: 15.5,
-  },
-  inlineAddButton: {
-    backgroundColor: '#B8783A',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  inlineAddButtonDisabled: {
-    backgroundColor: '#D8E6EE',
-  },
-  inlineAddButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14.5,
-  },
-  toggleSwitch: {
-    alignSelf: 'center',
-  },
-  toggleRowLargeText: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  toggleSwitchLargeText: {
-    alignSelf: 'flex-start',
-  },
-  freeBadge: {
-    backgroundColor: '#D8E6EE',
-    color: '#B8783A',
-    fontWeight: '700',
-    fontSize: 14.5,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 2,
-    overflow: 'hidden',
-  },
-  subPrice: {
-    color: '#4A7A9B',
-    fontWeight: '700',
-    fontSize: 15.5,
-  },
-});

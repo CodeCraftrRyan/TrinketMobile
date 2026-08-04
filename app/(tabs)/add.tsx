@@ -67,7 +67,8 @@ const ACQUIRED_OPTIONS = [
 
 export default function AddTab() {
   const router = useRouter();
-  const { id, incomingPhoto } = useLocalSearchParams<{ id?: string; incomingPhoto?: string }>();
+  const { id, incomingPhoto, collection: collectionParam, event: eventParam } =
+    useLocalSearchParams<{ id?: string; incomingPhoto?: string; collection?: string; event?: string }>();
   const isEditing = Boolean(id);
   const today = new Date().toISOString().split('T')[0];
   const [focusedField, setFocusedField] = useState('');
@@ -121,6 +122,36 @@ export default function AddTab() {
       setPhotos([{ key: genKey(), localUri: incomingPhoto, displayUri: incomingPhoto }]);
     }
   }, [incomingPhoto, isEditing]);
+
+  // Arriving from a collection or an event preselects it, so the object files
+  // itself where the user was standing.
+  const arrivedFromApplied = useRef(false);
+  useEffect(() => {
+    if (arrivedFromApplied.current) return;
+    if (isEditing) return;
+    if (!collectionParam && !eventParam) return;
+    arrivedFromApplied.current = true;
+    (async () => {
+      try {
+        if (collectionParam) {
+          // syncItemCollection matches on name, so we need the name, not the id.
+          const { data } = await supabase
+            .from('collections').select('name').eq('id', collectionParam).maybeSingle();
+          if (data?.name) setCollection(String(data.name));
+        }
+        if (eventParam) {
+          const { data } = await supabase
+            .from('events').select('id,name').eq('id', eventParam).maybeSingle();
+          if (data?.id) {
+            setEventId(String(data.id));
+            if (data.name) setEventName(String(data.name));
+          }
+        }
+      } catch (e) {
+        console.warn('Could not preselect from the route', e);
+      }
+    })();
+  }, [collectionParam, eventParam, isEditing]);
 
   const filteredEvents = events.filter((row) => row.name.toLowerCase().includes(eventsFilter.toLowerCase()));
   const filteredCollections = collections.filter((row) => row.toLowerCase().includes(collectionsFilter.toLowerCase()));
@@ -737,6 +768,34 @@ export default function AddTab() {
   };
   const fieldText = { ...tokens.type.ui, color: c.ink };
 
+  // The quota triggers raise Postgres errors. Left alone they surface as
+  // "Items quota exceeded (50/50)." — a database message in front of a customer.
+  function friendlySaveError(e: any): { title: string; body: string } {
+    const msg = String(e?.message ?? '');
+    if (/quota exceeded/i.test(msg)) {
+      const [, used, cap] = msg.match(/\((\d+)\/(\d+)\)/) ?? [];
+      if (/items? quota/i.test(msg)) {
+        return {
+          title: 'Your archive is full',
+          body: cap
+            ? `Your plan holds ${cap} objects, and you have ${used}.`
+            : 'Your plan has no room for another object.',
+        };
+      }
+      if (/collections? quota/i.test(msg)) {
+        return { title: 'No room for another collection', body: cap ? `Your plan holds ${cap}.` : '' };
+      }
+      if (/events? quota/i.test(msg)) {
+        return { title: 'No room for another event', body: cap ? `Your plan holds ${cap}.` : '' };
+      }
+      return { title: 'Your plan is full', body: '' };
+    }
+    if (/photo limit/i.test(msg)) {
+      return { title: 'Photograph limit reached', body: msg };
+    }
+    return { title: 'Could not save', body: msg || 'Please try again.' };
+  }
+
   async function onSave() {
     try {
       setSavingPhotos(true);
@@ -754,7 +813,8 @@ export default function AddTab() {
       }
       Alert.alert('Save failed', 'The object could not be saved. Please try again.');
     } catch (e: any) {
-      Alert.alert('Save failed', e?.message ?? 'Please try again');
+      const { title, body } = friendlySaveError(e);
+      Alert.alert(title, body);
     } finally {
       setSavingPhotos(false);
     }
@@ -829,7 +889,7 @@ export default function AddTab() {
 
           <View style={{ flex: 1, gap: 12 }}>
             <TouchableOpacity
-              onPress={handlePhotoUpload}
+              onPress={takePhoto}
               disabled={atPhotoLimit}
               style={{
                 flex: 1, borderWidth: 1, borderColor: c.border, borderStyle: 'dashed',
@@ -843,7 +903,7 @@ export default function AddTab() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={handlePhotoUpload}
+              onPress={pickFromLibrary}
               disabled={atPhotoLimit}
               style={{
                 flex: 1, borderWidth: 1, borderColor: c.border, borderStyle: 'dashed',

@@ -177,10 +177,10 @@ export default function Home() {
     row.location,
   ].filter(Boolean).join(' · ');
 
-  const stats: [number, string][] = [
-    [counts.items, counts.items === 1 ? 'OBJECT' : 'OBJECTS'],
-    [counts.collections, counts.collections === 1 ? 'COLLECTION' : 'COLLECTIONS'],
-    [counts.events, counts.events === 1 ? 'EVENT' : 'EVENTS'],
+  const stats: [number, string, string][] = [
+    [counts.items, counts.items === 1 ? 'OBJECT' : 'OBJECTS', '/(tabs)/items'],
+    [counts.collections, counts.collections === 1 ? 'COLLECTION' : 'COLLECTIONS', '/(tabs)/collections'],
+    [counts.events, counts.events === 1 ? 'EVENT' : 'EVENTS', '/(tabs)/events'],
   ];
 
   return (
@@ -189,7 +189,7 @@ export default function Home() {
 
         {/* Masthead */}
         <View style={{ backgroundColor: c.surfaceDark, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 0 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 }}>
             <View style={{ flex: 1 }}>
               <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>Trinket</Text>
               <Text style={{
@@ -221,9 +221,13 @@ export default function Home() {
 
           {/* Register totals */}
           <View style={{ flexDirection: 'row', marginTop: 26 }}>
-            {stats.map(([value, label], i) => (
-              <View
+            {stats.map(([value, label, href], i) => (
+              <TouchableOpacity
                 key={label}
+                onPress={() => router.push(href as any)}
+                activeOpacity={0.6}
+                accessibilityRole="button"
+                accessibilityLabel={`${value} ${label.toLowerCase()}`}
                 style={{
                   flex: 1,
                   paddingVertical: 18,
@@ -235,13 +239,52 @@ export default function Home() {
                 }}
               >
                 <Text style={{ color: c.bg, fontSize: 26, fontWeight: '500' }}>{value}</Text>
-                <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.8, marginTop: 4 }}>
-                  {label}
-                </Text>
-              </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                  <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.8 }}>
+                    {label}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={11} color={c.inkGhost} style={{ opacity: 0.6 }} />
+                </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
+
+        {/* Find by photograph */}
+        <TouchableOpacity
+          onPress={() => router.push('/visual-search')}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Find an object by photograph"
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 14,
+            marginHorizontal: 20,
+            marginTop: 20,
+            paddingHorizontal: 16,
+            paddingVertical: 16,
+            borderWidth: 1,
+            borderColor: c.accent,
+            borderRadius: tokens.radius.sm,
+            backgroundColor: c.card,
+          }}>
+          <View style={{
+            width: 40, height: 40,
+            borderRadius: tokens.radius.sm,
+            backgroundColor: c.accent,
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Ionicons name="camera" size={20} color={c.primaryText} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ ...tokens.type.nameSmall, color: c.ink }}>Find something by photograph</Text>
+            <Text style={{ color: c.inkLabel, fontSize: 14, marginTop: 2 }}>
+              Point at an object and we&rsquo;ll look for it
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={c.inkLabel} />
+        </TouchableOpacity>
 
         {/* Recently added */}
         <View style={{

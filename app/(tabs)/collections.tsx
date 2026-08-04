@@ -162,9 +162,17 @@ export default function Collections() {
             <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>
               {collections.length} {collections.length === 1 ? 'collection' : 'collections'} · {objectTotal} {objectTotal === 1 ? 'object' : 'objects'}
             </Text>
-            <TouchableOpacity onPress={() => setAdding((v) => !v)} hitSlop={10}>
-              <Text style={{ ...tokens.type.ui, color: c.accent }}>{adding ? 'Cancel' : 'New'}</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+              <TouchableOpacity
+                onPress={() => router.push('/visual-search')}
+                hitSlop={10}
+                accessibilityLabel="Find an object by photograph">
+                <Ionicons name="camera-outline" size={20} color={c.accent} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setAdding((v) => !v)} hitSlop={10}>
+                <Text style={{ ...tokens.type.ui, color: c.accent }}>{adding ? 'Cancel' : 'New'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <Text style={{ ...tokens.type.display, fontSize: 34, lineHeight: 40, color: c.bg, marginTop: 8 }}>

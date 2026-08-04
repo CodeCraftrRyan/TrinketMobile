@@ -216,8 +216,15 @@ export default function Items() {
               <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Back</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/visual-search')} hitSlop={10}
-              accessibilityLabel="Search by photograph">
-              <Ionicons name="camera-outline" size={21} color={c.accent} />
+              accessibilityLabel="Find an object by photograph"
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 7,
+                paddingHorizontal: 14, paddingVertical: 9,
+                borderWidth: 1, borderColor: c.accent,
+                borderRadius: tokens.radius.sm,
+              }}>
+              <Ionicons name="camera-outline" size={17} color={c.accent} />
+              <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.accent }}>Find by photo</Text>
             </TouchableOpacity>
           </View>
 
