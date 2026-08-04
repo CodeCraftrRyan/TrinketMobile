@@ -67,8 +67,8 @@ const ACQUIRED_OPTIONS = [
 
 export default function AddTab() {
   const router = useRouter();
-  const { id, incomingPhoto, collection: collectionParam, event: eventParam } =
-    useLocalSearchParams<{ id?: string; incomingPhoto?: string; collection?: string; event?: string }>();
+  const { id, incomingPhoto, incomingDescription, collection: collectionParam, event: eventParam } =
+    useLocalSearchParams<{ id?: string; incomingPhoto?: string; incomingDescription?: string; collection?: string; event?: string }>();
   const isEditing = Boolean(id);
   const today = new Date().toISOString().split('T')[0];
   const [focusedField, setFocusedField] = useState('');
@@ -120,8 +120,11 @@ export default function AddTab() {
     if (incomingPhoto && typeof incomingPhoto === 'string' && incomingPhoto.length > 0) {
       incomingPhotoApplied.current = true;
       setPhotos([{ key: genKey(), localUri: incomingPhoto, displayUri: incomingPhoto }]);
+      if (typeof incomingDescription === 'string' && incomingDescription.trim()) {
+        setDescription((prev) => (prev && prev.trim() ? prev : incomingDescription.trim()));
+      }
     }
-  }, [incomingPhoto, isEditing]);
+  }, [incomingPhoto, incomingDescription, isEditing]);
 
   // Arriving from a collection or an event preselects it, so the object files
   // itself where the user was standing.
@@ -796,18 +799,56 @@ export default function AddTab() {
     return { title: 'Could not save', body: msg || 'Please try again.' };
   }
 
+  // Build the object's search vector so a photograph can find it later.
+  // Never let this fail the save — the object matters, the index can catch up.
+  async function indexForSearch(itemId: string | number) {
+    try {
+      const { error } = await supabase.functions.invoke('embed-item', {
+        body: { itemId },
+      });
+      if (error) throw error;
+    } catch (e: any) {
+      console.warn('Could not index the object for photo search', e?.message ?? e);
+    }
+  }
+
+  async function updateItem(itemId: string) {
+    const trimmedName = name.trim();
+    if (!trimmedName) throw new Error('An object needs a name.');
+    const cleanedValue = estimatedValue.trim()
+      ? Number(estimatedValue.replace(/[^0-9.]/g, ''))
+      : null;
+    const { error } = await supabase
+      .from('items')
+      .update({
+        name: trimmedName,
+        description: description.trim() || null,
+        estimated_value: Number.isFinite(cleanedValue as number) ? cleanedValue : null,
+        date_purchased: date.trim() || null,
+        acquisition_method: acquired?.label ?? null,
+        location: room?.label ?? null,
+        category_id: category?.id ?? null,
+        event_id: eventId ?? null,
+      })
+      .eq('id', itemId);
+    if (error) throw error;
+  }
+
   async function onSave() {
     try {
       setSavingPhotos(true);
       if (isEditing && id) {
+        await updateItem(id);
         await syncItemPeople(id);
         await syncItemCollection(id);
         await syncItemPhotos(id);
+        await indexForSearch(id);
         router.replace({ pathname: '/(tabs)/items/[id]', params: { id } } as any);
         return;
       }
       const newId = await createItem();
       if (newId) {
+        await indexForSearch(newId);
         router.replace({ pathname: '/(tabs)/items/[id]', params: { id: newId } } as any);
         return;
       }

@@ -10,7 +10,16 @@ import { tokens } from '../lib/tokens';
 const c = tokens.colors;
 const PHOTO_BUCKET = 'item-photos';
 
-type SearchResult = { id: string | number; score?: number };
+type SearchResult = { id: string | number; distance?: number };
+
+// How close is close? Measured against a real archive, where a correct match
+// came back at 0.95 and unrelated objects sat above 0.98.
+function matchStrength(distance: number | null | undefined) {
+  if (typeof distance !== 'number') return null;
+  if (distance < 0.85) return { label: 'Strong match', strong: true };
+  if (distance < 0.95) return { label: 'Possible match', strong: false };
+  return { label: 'Distant match', strong: false };
+}
 
 export default function VisualSearchScreen() {
   const router = useRouter();
@@ -20,6 +29,8 @@ export default function VisualSearchScreen() {
   const [results, setResults] = useState<any[]>([]);
   const [covers, setCovers] = useState<Record<string, string>>({});
   const [searched, setSearched] = useState(false);
+  const [seenDescription, setSeenDescription] = useState<string | null>(null);
+  const [distances, setDistances] = useState<Record<string, number | null>>({});
 
   async function choosePhoto(fromCamera: boolean) {
     try {
@@ -49,6 +60,8 @@ export default function VisualSearchScreen() {
     setResults([]);
     setCovers({});
     setSearched(false);
+    setSeenDescription(null);
+    setDistances({});
     setBusy(true);
     setStage('uploading');
     try {
@@ -76,7 +89,14 @@ export default function VisualSearchScreen() {
       });
       if (searchErr) throw searchErr;
 
-      const ids = ((searchData as { results: SearchResult[] })?.results ?? []).map((r) => r.id);
+      const payload = searchData as { results: SearchResult[]; description?: string };
+      setSeenDescription(payload?.description ?? null);
+      const byDistance: Record<string, number | null> = {};
+      (payload?.results ?? []).forEach((r: any) => {
+        byDistance[String(r.id)] = typeof r.distance === 'number' ? r.distance : null;
+      });
+      setDistances(byDistance);
+      const ids = (payload?.results ?? []).map((r) => r.id);
       if (!ids.length) { setSearched(true); return; }
 
       const { data: items } = await supabase
@@ -235,9 +255,41 @@ export default function VisualSearchScreen() {
                     </Text>
                   )}
                 </View>
+                {(() => {
+                  const strength = matchStrength(distances[String(it.id)]);
+                  if (!strength) return null;
+                  return (
+                    <Text style={{
+                      ...tokens.type.fact,
+                      color: strength.strong ? c.inkFact : c.inkLabel,
+                      marginRight: 8,
+                    }}>
+                      {strength.label}
+                    </Text>
+                  );
+                })()}
                 <Ionicons name="chevron-forward" size={18} color={c.inkLabel} />
               </TouchableOpacity>
             ))}
+          </View>
+        )}
+
+        {/* Found something, but it may not be the same thing */}
+        {searched && !busy && results.length > 0 && queryImage && (
+          <View style={{ paddingHorizontal: 20, paddingTop: 26, alignItems: 'flex-start' }}>
+            <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.inkLabel, lineHeight: 22 }}>
+              Not the one you meant? Keep this as its own object.
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.push({ pathname: '/(tabs)/add', params: { incomingPhoto: queryImage ?? '', incomingDescription: seenDescription ?? '' } } as any)}
+              style={{
+                marginTop: 14, paddingHorizontal: 22, paddingVertical: 14,
+                borderRadius: tokens.radius.sm,
+                borderWidth: 1, borderColor: c.border,
+                backgroundColor: c.card,
+              }}>
+              <Text style={{ ...tokens.type.ui, color: c.ink }}>Add it anyway</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -248,7 +300,7 @@ export default function VisualSearchScreen() {
               This one isn&rsquo;t in your archive yet. Keep it?
             </Text>
             <TouchableOpacity
-              onPress={() => router.push({ pathname: '/(tabs)/add', params: { incomingPhoto: queryImage ?? '' } } as any)}
+              onPress={() => router.push({ pathname: '/(tabs)/add', params: { incomingPhoto: queryImage ?? '', incomingDescription: seenDescription ?? '' } } as any)}
               style={{
                 marginTop: 18, paddingHorizontal: 22, paddingVertical: 15,
                 borderRadius: tokens.radius.sm, backgroundColor: c.primary,
