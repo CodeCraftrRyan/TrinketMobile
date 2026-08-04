@@ -154,7 +154,7 @@ export default function Contact() {
             <Text style={styles.contactInfoTitle}>Other Ways to Reach Us</Text>
             <View style={styles.contactItem}>
               <Text style={styles.contactLabel}>Email:</Text>
-              <Text style={styles.contactValue}>support@trinket.app</Text>
+              <Text style={styles.contactValue}>admin@yourtrinkets.com</Text>
             </View>
             <View style={styles.contactItem}>
               <Text style={styles.contactLabel}>Response Time:</Text>

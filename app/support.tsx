@@ -4,7 +4,7 @@ import Screen from '../components/Screen';
 import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 
-const SUPPORT_EMAIL = 'support@trinket.app';
+const SUPPORT_EMAIL = 'admin@yourtrinkets.com';
 
 export default function SupportLockout() {
   const router = useRouter();

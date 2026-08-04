@@ -95,6 +95,17 @@ async function embed(text: string, apiKey: string): Promise<number[]> {
   return vector;
 }
 
+/** The query photograph has done its work once it has been described. */
+async function forgetQueryPhoto(admin: any, imagePath: string) {
+  try {
+    const { error } = await admin.storage.from(QUERY_BUCKET).remove([imagePath]);
+    if (error) throw error;
+  } catch (e: any) {
+    // Not worth failing a search over, but worth knowing about.
+    console.warn('Could not remove the query photograph', e?.message ?? e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -212,6 +223,8 @@ Deno.serve(async (req) => {
       .filter((r: any) => typeof r.distance === 'number' && r.distance <= MAX_DISTANCE)
       .map((r: any) => ({ id: r.item_id, distance: r.distance }));
 
+    await forgetQueryPhoto(admin, imagePath);
+
     return json({
       ok: true,
       results,
@@ -221,6 +234,9 @@ Deno.serve(async (req) => {
     });
   } catch (e: any) {
     console.error('image-search failed', e?.message ?? e);
+    // A failed search leaves no more reason to keep the photograph than a
+    // successful one does.
+    await forgetQueryPhoto(admin, imagePath);
     return json({ error: 'The search could not be completed.' }, 500);
   }
 });
