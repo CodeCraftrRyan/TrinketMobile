@@ -1,285 +1,359 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Image, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import Screen from '../../components/Screen';
+import { useCallback, useEffect, useState } from 'react';
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
-import { theme } from '../../lib/theme';
-// Helper to format time ago
-function timeAgo(dateString: string): string {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
-  return date.toLocaleDateString();
+import { tokens } from '../../lib/tokens';
+
+const c = tokens.colors;
+const PHOTO_BUCKET = 'item-photos';
+
+type Row = {
+  id: string | number;
+  name: string | null;
+  created_at: string | null;
+  photo_url: string | null;
+  location: string | null;
+  people: string[] | null;
+  category_id: string | null;
+};
+
+// "Haviland Family Archive" / "Ryan Haviland" -> "Haviland"
+function familyNameFrom(meta: any): string {
+  const raw = String(meta?.archive_name ?? '').trim();
+  if (raw) {
+    const trimmed = raw
+      .replace(/\s*family\s+archive\s*$/i, '')
+      .replace(/\s*archive\s*$/i, '')
+      .replace(/(?:'|\u2019)s\s+collection\s*$/i, '')
+      .trim();
+    return trimmed || raw;
+  }
+  const full = String(meta?.full_name ?? '').trim();
+  if (full) return full.split(/\s+/).pop() ?? '';
+  return '';
 }
+
+function initialsFrom(meta: any, email?: string | null): string {
+  const full = String(meta?.full_name ?? meta?.name ?? '').trim();
+  if (full) {
+    const p = full.split(/\s+/);
+    return (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+  }
+  return email ? email[0].toUpperCase() : 'T';
+}
+
+const shortDate = (raw?: string | null) => {
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
 
 export default function Home() {
   const router = useRouter();
-  const [isAuthed, setIsAuthed] = useState(false);
-  const [itemsCount, setItemsCount] = useState<number | null>(null);
-  const [collectionsCount, setCollectionsCount] = useState<number | null>(null);
-  
-  
+  const [familyName, setFamilyName] = useState('');
+  const [initials, setInitials] = useState('T');
+  const [counts, setCounts] = useState({ items: 0, collections: 0, events: 0 });
+  const [recent, setRecent] = useState<Row[]>([]);
+  const [covers, setCovers] = useState<Record<string, string>>({});
+  const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
+  const [favourites, setFavourites] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [itemCap, setItemCap] = useState<number | null>(null);
 
-  const userName = 'Ryan';
-  const blogPosts = [
-    {
-      title: 'How to Catalog Your Collection',
-      summary: 'Simple steps to organize and preserve your favorite finds.',
-      url: 'https://www.yourtrinkets.com/blog/catalog-your-collection',
-    },
-    {
-      title: 'Preserve Memories With Photos',
-      summary: 'Tips for capturing details that bring your items to life.',
-      url: 'https://www.yourtrinkets.com/blog/preserve-memories',
-    },
-    {
-      title: 'Host a Show-and-Tell Night',
-      summary: 'Ideas for sharing your trinkets with friends and family.',
-      url: 'https://www.yourtrinkets.com/blog/show-and-tell',
-    },
-  ];
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
-  useEffect(() => {
-    let mounted = true;
-    async function checkSession() {
-      try {
-        const res = await supabase.auth.getSession();
-        const session = res?.data?.session ?? null;
-        if (!mounted) return;
-        if (session) {
-          setIsAuthed(true);
-        } else {
-          setIsAuthed(false);
-        }
-      } catch (e) {
-        // on error, show home view
-        console.warn('Failed to check session', e);
-        if (mounted) setIsAuthed(false);
-      }
-    }
-    checkSession();
-    return () => {
-      mounted = false;
-    };
-  }, [router]);
-
-  useEffect(() => {
-    let mounted = true;
-    async function loadCounts() {
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        const userId = userData?.user?.id;
-        if (!userId) {
-          setItemsCount(0);
-          setCollectionsCount(0);
-          return;
-        }
-        const [itemsRes, collectionsRes] = await Promise.all([
-          supabase.from('items').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-          supabase.from('collections').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-        ]);
-        if (!mounted) return;
-        if (!itemsRes.error) setItemsCount(itemsRes.count ?? 0);
-        if (!collectionsRes.error) setCollectionsCount(collectionsRes.count ?? 0);
-      } catch (e) {
-        console.warn('Failed to load dashboard counts', e);
-        if (mounted) {
-          setItemsCount(0);
-          setCollectionsCount(0);
-        }
-      }
-    }
-    if (isAuthed) loadCounts();
-    return () => { mounted = false; };
-  }, [isAuthed]);
-
-  // Placeholder data for demo
-  const itemCount = itemsCount ?? 0;
-  const collectionCount = collectionsCount ?? 0;
-  const [lastItem, setLastItem] = useState<any>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    async function fetchLastItem() {
+  const load = useCallback(async () => {
+    try {
       const { data: userData } = await supabase.auth.getUser();
-      const userId = userData?.user?.id;
-      if (!userId) {
-        setLastItem(null);
-        return;
+      const user = userData?.user;
+      if (!user) { setLoading(false); return; }
+      const meta = user.user_metadata ?? {};
+      setFamilyName(familyNameFrom(meta));
+      setInitials(initialsFrom(meta, user.email));
+
+      const [it, co, ev, cats] = await Promise.all([
+        supabase.from('items').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('collections').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('events').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('categories').select('id,name'),
+      ]);
+      // What the plan holds, so the archive can say when it is nearly full.
+      try {
+        const { data: sub } = await supabase
+          .from('subscriptions')
+          .select('plan_id, subscription_plans ( max_items )')
+          .eq('user_id', user.id)
+          .in('status', ['active', 'trialing'])
+          .order('current_period_end', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const joined: any = (sub as any)?.subscription_plans;
+        const planRow = Array.isArray(joined) ? joined[0] : joined;
+        if (planRow) {
+          setItemCap(planRow.max_items ?? null);
+        } else {
+          const { data: free } = await supabase
+            .from('subscription_plans')
+            .select('max_items')
+            .eq('is_free', true)
+            .limit(1)
+            .maybeSingle();
+          setItemCap(free?.max_items ?? null);
+        }
+      } catch (e) {
+        console.warn('Could not read the plan cap', e);
       }
-      const { data, error } = await supabase
+
+      setCounts({
+        items: it.count ?? 0,
+        collections: co.count ?? 0,
+        events: ev.count ?? 0,
+      });
+      if (!cats.error) {
+        const map: Record<string, string> = {};
+        (cats.data ?? []).forEach((r: any) => { if (r?.id) map[String(r.id)] = r.name ?? ''; });
+        setCategoryNames(map);
+      }
+
+      const { data: rows, error: rowsErr } = await supabase
         .from('items')
-        .select('id,name,created_at,image_url,images')
-        .eq('user_id', userId)
+        .select('id,name,created_at,photo_url,location,people,category_id')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (!mounted) return;
-      if (!error && data) {
-        setLastItem(data);
+        .limit(6);
+      if (rowsErr) throw rowsErr;
+      const list = (rows ?? []) as Row[];
+      setRecent(list);
+
+      // Favourites, so a kept object shows a star rather than a date.
+      const { data: favRows } = await supabase
+        .from('user_favorites')
+        .select('item_id')
+        .eq('user_id', user.id);
+      setFavourites(new Set((favRows ?? []).map((r: any) => String(r.item_id))));
+
+      // Cover photographs. items.photo_url holds a storage PATH — sign it.
+      const paths: Record<string, string> = {};
+      for (const row of list) {
+        let path = row.photo_url ?? null;
+        if (!path) {
+          const { data: p } = await supabase
+            .from('item_photos')
+            .select('storage_path')
+            .eq('item_id', row.id)
+            .order('sort_order', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          path = p?.storage_path ?? null;
+        }
+        if (path) paths[String(row.id)] = path;
       }
+      const entries = Object.entries(paths);
+      if (entries.length) {
+        const { data: signed } = await supabase.storage
+          .from(PHOTO_BUCKET)
+          .createSignedUrls(entries.map(([, p]) => p), 60 * 60);
+        const out: Record<string, string> = {};
+        entries.forEach(([id], i) => {
+          const url = signed?.[i]?.signedUrl;
+          if (url) out[id] = url;
+        });
+        setCovers(out);
+      }
+    } catch (e) {
+      console.warn('Home load failed', e);
+    } finally {
+      setLoading(false);
     }
-    if (isAuthed) fetchLastItem();
-    return () => { mounted = false; };
-  }, [isAuthed]);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const subtitleFor = (row: Row) => [
+    row.category_id ? categoryNames[String(row.category_id)] : null,
+    Array.isArray(row.people) && row.people.length ? `from ${row.people.join(', ')}` : null,
+    row.location,
+  ].filter(Boolean).join(' · ');
+
+  const stats: [number, string][] = [
+    [counts.items, counts.items === 1 ? 'OBJECT' : 'OBJECTS'],
+    [counts.collections, counts.collections === 1 ? 'COLLECTION' : 'COLLECTIONS'],
+    [counts.events, counts.events === 1 ? 'EVENT' : 'EVENTS'],
+  ];
+
   return (
-    <Screen>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: 0 }}>
-        {/* Greeting and stats */}
-        <View style={{ marginTop: 2, marginBottom: 26, paddingHorizontal: 18 }}>
-          <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 31, fontWeight: '300', color: theme.primary, fontFamily: 'CormorantGaramond_300Light' }}>{`${getGreeting()}, ${userName}`}</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => router.push({ pathname: '/(tabs)/account' })}
-                style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12, backgroundColor: '#F7FAFB', borderWidth: 1, borderColor: '#D8E6EE' }}
-                accessibilityLabel="Settings"
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+
+        {/* Masthead */}
+        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>Trinket</Text>
+              <Text style={{
+                ...tokens.type.display,
+                fontSize: 34,
+                lineHeight: 40,
+                color: c.bg,
+                marginTop: 4,
+              }} numberOfLines={2}>
+                {familyName ? `${familyName} family archive` : 'Your family archive'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push({ pathname: '/(tabs)/account' })}
+              accessibilityLabel="Account"
+              style={{
+                width: 46, height: 46,
+                borderWidth: 1, borderColor: c.accent,
+                borderRadius: tokens.radius.md,
+                alignItems: 'center', justifyContent: 'center',
+                marginTop: 4,
+              }}
+            >
+              <Text style={{ color: c.bg, fontSize: 15, fontWeight: '500', letterSpacing: 0.5 }}>
+                {initials}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Register totals */}
+          <View style={{ flexDirection: 'row', marginTop: 26 }}>
+            {stats.map(([value, label], i) => (
+              <View
+                key={label}
+                style={{
+                  flex: 1,
+                  paddingVertical: 18,
+                  paddingLeft: i ? 16 : 0,
+                  borderLeftWidth: i ? 1 : 0,
+                  borderLeftColor: 'rgba(216,230,238,0.18)',
+                  borderTopWidth: 1,
+                  borderTopColor: 'rgba(216,230,238,0.18)',
+                }}
               >
-                <Ionicons name="settings-outline" size={18} color={theme.primary} />
-              </TouchableOpacity>
-            </View>
-            <Text style={{ color: theme.muted, fontSize: 18, marginTop: 2 }}>Your stories are safe here.</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 7, flexWrap: 'wrap' }}>
-              <Text style={{ color: theme.muted, fontSize: 16 }}>{itemCount} items • </Text>
-              <Text style={{ color: theme.muted, fontSize: 16 }}>{collectionCount} collections</Text>
-              <Ionicons name="arrow-forward-outline" size={14} color={theme.muted} style={{ marginLeft: 4 }} />
-            </View>
+                <Text style={{ color: c.bg, fontSize: 26, fontWeight: '500' }}>{value}</Text>
+                <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.8, marginTop: 4 }}>
+                  {label}
+                </Text>
+              </View>
+            ))}
           </View>
         </View>
 
-        {/* Search Memories Bar */}
+        {/* Recently added */}
         <View style={{
           flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: '#FFFFFF',
-          borderRadius: 16.94,
-          paddingHorizontal: 18,
-          paddingVertical: 13,
-          marginBottom: 35,
-          marginHorizontal: 13,
-          borderWidth: 1,
-          borderColor: '#D8E6EE',
-          shadowColor: '#000',
-          shadowOpacity: 0.03,
-          shadowRadius: 6.6,
-          shadowOffset: { width: 0, height: 2.2 },
-          elevation: 1,
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          paddingHorizontal: 20,
+          paddingTop: 26,
+          paddingBottom: 12,
         }}>
-          <Ionicons name="search-outline" size={20} color="#4A7A9B" style={{ marginRight: 8 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#4A7A9B', fontSize: 17.6 }}>
-              Search your memories...
+          <Text style={{ ...tokens.type.label, color: c.inkLabel }}>Recently added</Text>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/items')}>
+            <Text style={{ color: c.accentDeep, fontSize: 15 }}>
+              {counts.items > 0 ? `All ${counts.items} objects  →` : 'Newest first'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ borderTopWidth: 1, borderTopColor: c.border, marginHorizontal: 20 }} />
+
+        {loading ? (
+          <Text style={{ color: c.inkLabel, paddingHorizontal: 20, paddingVertical: 28 }}>
+            Opening the register
+          </Text>
+        ) : recent.length === 0 ? (
+          <View style={{ paddingHorizontal: 20, paddingVertical: 36 }}>
+            <Text style={{ color: c.inkLabel, fontSize: 16, lineHeight: 23 }}>
+              Nothing catalogued yet. Photograph one thing and the register begins.
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push('/visual-search')}
-            style={{ marginLeft: 8, backgroundColor: '#D8E6EE', borderRadius: 8, padding: 6 }}
-            accessibilityLabel="Image Search"
-          >
-            <Ionicons name="camera-outline" size={20} color={theme.primary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Recent Memory header with See all */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13, marginTop: 9, paddingHorizontal: 18 }}>
-          <Text style={{ fontSize: 26.4, fontWeight: '300', color: '#0C1620', fontFamily: 'CormorantGaramond_300Light' }}>Recent Memory</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/items')}>
-            <Text style={{ color: '#B8783A', fontSize: 18.7, fontWeight: '600' }}>See all <Ionicons name="arrow-forward-outline" size={17.6} color="#B8783A" /></Text>
-          </TouchableOpacity>
-        </View>
-        {/* Preview of Last Uploaded Item */}
-        <View style={{
-          backgroundColor: '#F7FAFB',
-          borderRadius: 19.8,
-          flexDirection: 'row',
-          alignItems: 'center',
-          padding: 19.8,
-          marginBottom: 35,
-          marginHorizontal: 17.6,
-          shadowColor: '#000',
-          shadowOpacity: 0.04,
-          shadowRadius: 8.8,
-          shadowOffset: { width: 0, height: 2.2 },
-          elevation: 1,
-          minHeight: 110,
-        }}>
-          {lastItem ? (
-            <>
-              <Image
-                source={{ uri: (Array.isArray(lastItem.images) && lastItem.images.length > 0) ? lastItem.images[0] : lastItem.image_url }}
-                style={{ width: 88, height: 88, borderRadius: 15.4, marginRight: 19.8, backgroundColor: theme.background }}
-                resizeMode="cover"
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.primary, fontSize: 22, fontWeight: '700', marginBottom: 4.4 }} numberOfLines={1}>{lastItem.name}</Text>
-                <Text style={{ color: theme.muted, fontSize: 16.5, marginBottom: 2.2 }} numberOfLines={1}>
-                  Added {lastItem.created_at ? timeAgo(lastItem.created_at) : ''}
-                </Text>
-                <Text style={{ color: theme.muted, fontSize: 15.4 }}>Last Added Item</Text>
-              </View>
-            </>
-          ) : (
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' }}>
-              <Ionicons name="cube-outline" size={40} color={theme.muted} style={{ marginRight: 18 }} />
-              <View>
-                <Text style={{ color: theme.muted, fontSize: 18, fontWeight: '600', marginBottom: 4 }}>No recent trinkets</Text>
-                <Text style={{ color: theme.muted, fontSize: 15 }}>Your latest memory will appear here.</Text>
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* Blog section */}
-        <View style={{ marginBottom: 10, paddingHorizontal: 18 }}>
-          <Text style={{ fontSize: 26.4, fontWeight: '300', color: '#0C1620', fontFamily: 'CormorantGaramond_300Light' }}>From the Blog</Text>
-          <Text style={{ color: theme.muted, fontSize: 16.5, marginTop: 4 }}>Latest tips and stories from Trinket.</Text>
-        </View>
-        <View style={{ gap: 14, marginBottom: 28, paddingHorizontal: 18 }}>
-          {blogPosts.map((post) => (
+        ) : recent.map((row) => {
+          const isFav = favourites.has(String(row.id));
+          const sub = subtitleFor(row);
+          return (
             <TouchableOpacity
-              key={post.url}
-              onPress={() => Linking.openURL(post.url)}
+              key={String(row.id)}
+              onPress={() => router.push({ pathname: '/(tabs)/items/[id]', params: { id: String(row.id) } } as any)}
+              activeOpacity={0.75}
               style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: 16,
-                paddingVertical: 16,
-                paddingHorizontal: 16,
-                borderWidth: 1,
-                borderColor: '#D8E6EE',
-                shadowColor: '#000',
-                shadowOpacity: 0.03,
-                shadowRadius: 6,
-                shadowOffset: { width: 0, height: 2 },
-                elevation: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 14,
+                paddingVertical: 14,
+                marginHorizontal: 20,
+                borderBottomWidth: 1,
+                borderBottomColor: c.ruleSoft,
               }}
-              accessibilityRole="link"
-              accessibilityLabel={`Open blog post: ${post.title}`}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.primary, fontSize: 18, fontWeight: '600', marginBottom: 6 }}>{post.title}</Text>
-                  <Text style={{ color: theme.muted, fontSize: 15.5 }}>{post.summary}</Text>
+              {covers[String(row.id)] ? (
+                <Image
+                  source={{ uri: covers[String(row.id)] }}
+                  style={{ width: 54, height: 54, backgroundColor: c.surfaceSoft }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={{
+                  width: 54, height: 54,
+                  backgroundColor: c.surfaceSoft,
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Ionicons name="image-outline" size={18} color={c.inkLight} />
                 </View>
-                <Ionicons name="arrow-forward" size={18} color={theme.accent} />
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+              )}
 
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ ...tokens.type.nameSmall, color: c.ink }} numberOfLines={1}>
+                  {row.name || 'Untitled object'}
+                </Text>
+                {!!sub && (
+                  <Text style={{ color: c.inkLabel, fontSize: 14, marginTop: 3 }} numberOfLines={1}>
+                    {sub}
+                  </Text>
+                )}
+              </View>
+
+              {isFav ? (
+                <Ionicons name="star" size={17} color={c.accent} />
+              ) : (
+                <Text style={{ color: c.inkFact, fontSize: 14 }}>{shortDate(row.created_at)}</Text>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+
+        {/* How full the archive is — only once it is nearly so */}
+        {!loading && itemCap !== null && counts.items >= Math.floor(itemCap * 0.8) && (
+          <Text style={{
+            color: c.inkFact, fontSize: 15, lineHeight: 22,
+            paddingHorizontal: 20, paddingTop: 22,
+          }}>
+            {counts.items >= itemCap
+              ? `Your archive holds ${itemCap} objects, and it is full.`
+              : `${counts.items} of ${itemCap} objects kept.`}
+          </Text>
+        )}
+
+        {/* Closing line */}
+        {!loading && counts.items > 0 && (
+          <Text style={{
+            color: c.inkLabel,
+            fontSize: 16,
+            lineHeight: 23,
+            paddingHorizontal: 20,
+            paddingTop: 24,
+          }}>
+            {counts.items === 1
+              ? 'One kept. Add another and the register grows.'
+              : `${counts.items} kept. Add one more and the register grows.`}
+          </Text>
+        )}
 
       </ScrollView>
-    </Screen>
+    </View>
   );
 }

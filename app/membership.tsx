@@ -11,6 +11,7 @@ export default function Membership() {
   const [currentPlan, setCurrentPlan] = useState<Plan>('Free');
   const [loading, setLoading] = useState(true);
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
+  const [planRows, setPlanRows] = useState<any[]>([]);
 
   const loadMembership = useCallback(async () => {
     try {
@@ -43,6 +44,16 @@ export default function Membership() {
       const resolvedPlan = (['Free', 'Pro', 'Premium'].includes(rawName) ? rawName : 'Free') as Plan;
 
       setCurrentPlan(resolvedPlan);
+
+      // Prices and limits come from the database, never from constants here —
+      // hardcoded copies drift the moment a price changes.
+      const { data: rows, error: plansError } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('is_active', true)
+        .order('id', { ascending: true });
+      if (plansError) throw plansError;
+      setPlanRows(rows ?? []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Could not load membership');
     } finally {
@@ -64,33 +75,49 @@ export default function Membership() {
     );
   }
 
-  const plans = [
-    {
-      id: 'Free' as Plan,
-      name: 'Free',
-      features: ['Up to 50 items', 'Up to 3 events', 'Up to 3 collections', 'Photo storage'],
-      icon: '📦',
-    },
-    {
-      id: 'Pro' as Plan,
-      name: 'Pro',
-      features: ['Up to 500 items', 'Up to 10 events', 'Up to 25 collections', 'Priority support'],
-      icon: '⭐',
-    },
-    {
-      id: 'Premium' as Plan,
-      name: 'Premium',
-      features: ['Unlimited items', 'Unlimited events', 'Unlimited collections', '24/7 priority support'],
-      icon: '💎',
-    },
-  ];
+  const ICONS: Record<string, string> = { Free: '📦', Pro: '⭐', Premium: '💎' };
+
+  // "Up to 500 items" / "Unlimited items" — null means no cap.
+  function limitLine(value: number | null | undefined, singular: string, plural: string) {
+    if (value === null || value === undefined) return `Unlimited ${plural}`;
+    return `Up to ${value} ${value === 1 ? singular : plural}`;
+  }
+
+  function featuresFor(row: any): string[] {
+    return [
+      limitLine(row?.max_items, 'item', 'items'),
+      limitLine(row?.max_events, 'event', 'events'),
+      limitLine(row?.max_collections, 'collection', 'collections'),
+      limitLine(row?.max_photos_per_item, 'photo per object', 'photos per object'),
+    ];
+  }
+
+  const plans = planRows.map((row) => {
+    const name = String(row?.name ?? '');
+    return {
+      id: (['Free', 'Pro', 'Premium'].includes(name) ? name : 'Free') as Plan,
+      name,
+      features: featuresFor(row),
+      icon: ICONS[name] ?? '📦',
+      row,
+    };
+  });
+
+  function money(value: number | null | undefined) {
+    const n = Number(value ?? 0);
+    return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
+  }
 
   function priceFor(planId: Plan, interval: 'monthly' | 'yearly') {
-    if (planId === 'Free') return 'Free';
-    if (planId === 'Pro') return interval === 'monthly' ? '$9.99 / month' : '$79 / year';
-    if (planId === 'Premium') return interval === 'monthly' ? '$19 / month' : '$169 / year';
-    return '';
+    const plan = plans.find((p) => p.id === planId);
+    const row = plan?.row;
+    if (!row) return '';
+    if (row.is_free) return 'Free';
+    return interval === 'monthly'
+      ? `${money(row.price_monthly_usd)} / month`
+      : `${money(row.price_yearly_usd)} / year`;
   }
+
 
   return (
     <Screen>

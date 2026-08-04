@@ -1,8 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import BrandHeader from '../../components/ui/BrandHeader';
 import { supabase } from '../../lib/supabase';
+import { tokens } from '../../lib/tokens';
+
+const c = tokens.colors;
 
 export default function SignUp() {
   const router = useRouter();
@@ -200,7 +203,7 @@ export default function SignUp() {
                 value={email}
                 onChangeText={setEmail}
                 style={styles.input}
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={c.placeholder}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -211,7 +214,7 @@ export default function SignUp() {
                 value={password}
                 onChangeText={setPassword}
                 style={styles.input}
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={c.placeholder}
                 secureTextEntry
                 textContentType="newPassword"
                 importantForAutofill="yes"
@@ -222,7 +225,7 @@ export default function SignUp() {
               </Pressable>
 
               <Pressable onPress={() => router.push('/(auth)/login')} style={{ marginTop: 12 }}>
-                <Text style={[styles.subtitle, { textAlign: 'center' }]}>Already have an account? <Text style={{ color: '#2B6B8A', fontWeight: '600' }}>Log in</Text></Text>
+                <Text style={[styles.subtitle, { textAlign: 'center' }]}>Already have an account? <Text style={styles.link}>Log in</Text></Text>
               </Pressable>
             </View>
           )}
@@ -236,14 +239,14 @@ export default function SignUp() {
                 value={firstName}
                 onChangeText={setFirstName}
                 style={styles.input}
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={c.placeholder}
               />
               <TextInput
                 placeholder="Last Name"
                 value={lastName}
                 onChangeText={setLastName}
                 style={styles.input}
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={c.placeholder}
               />
               <Pressable disabled={!canNextFromName || saving} onPress={next} style={[styles.primaryBtn, (!canNextFromName || saving) && styles.btnDisabled]}>
                 <Text style={styles.primaryBtnText}>{saving ? 'Saving…' : 'Next  →'}</Text>
@@ -262,27 +265,25 @@ export default function SignUp() {
                   value={newPerson}
                   onChangeText={setNewPerson}
                   style={[styles.input, { flex: 1 }]}
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={c.placeholder}
                 />
                 <Pressable onPress={addPerson} style={[styles.secondaryBtn, { paddingHorizontal: 16 }]}>
                   <Text style={styles.secondaryBtnText}>Add</Text>
                 </Pressable>
               </View>
 
-              <FlatList
-                data={people}
-                keyExtractor={(item, index) => `${item}-${index}`}
-                renderItem={({ item, index }) => (
-                  <View style={styles.personRow}>
+              <View style={{ marginTop: 8 }}>
+                {people.length === 0 ? (
+                  <Text style={styles.muted}>No people yet. Add a few now or skip.</Text>
+                ) : people.map((item, index) => (
+                  <View key={`${item}-${index}`} style={styles.personRow}>
                     <Text style={styles.personText}>{item}</Text>
                     <Pressable onPress={() => removePerson(index)}>
                       <Text style={styles.removeLink}>Remove</Text>
                     </Pressable>
                   </View>
-                )}
-                ListEmptyComponent={<Text style={styles.muted}>No people yet. Add a few now or skip.</Text>}
-                style={{ marginTop: 8 }}
-              />
+                ))}
+              </View>
 
               <Pressable onPress={() => finish(false)} disabled={saving} style={[styles.primaryBtn, saving && styles.btnDisabled]}>
                 <Text style={styles.primaryBtnText}>{saving ? 'Saving…' : 'Save & Finish'}</Text>
@@ -300,34 +301,77 @@ export default function SignUp() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F7FAFB' },
+  safe: { flex: 1, backgroundColor: c.bg },
   scroll: { flexGrow: 1, padding: 20 },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  backLink: { color: '#B8783A', fontWeight: '600' },
+
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  backLink: { color: c.accentDeep, fontWeight: '500', fontSize: 15 },
   dots: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#D8E6EE' },
-  dotActive: { backgroundColor: '#0C1620' },
-  centerWrap: { flex: 1, alignItems: 'stretch', justifyContent: 'flex-start', paddingTop: 24, gap: 8 },
-  welcomeTitle: { fontSize: 32, fontWeight: '800', color: '#0C1620' },
-  bigTitle: { fontSize: 32, fontWeight: '800', color: '#0C1620', marginTop: 16 },
-  subtitle: { color: '#4A7A9B', marginTop: 4, marginBottom: 8, textAlign: 'left' },
-  formWrap: { gap: 12, width: '100%' },
-  fieldLabel: { color: '#4A7A9B', fontSize: 12, fontWeight: '600', letterSpacing: 0.6, marginTop: 4, marginBottom: -2 },
-  helperText: { color: '#7B8E9C', fontSize: 12, marginTop: -2, marginBottom: 6 },
-  input: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D8E6EE', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: '#0C1620', height: 48 },
-  phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  countryPickerCompact: { width: 96, height: 48, borderWidth: 1, borderColor: '#D8E6EE', borderRadius: 10, justifyContent: 'center', backgroundColor: '#FFFFFF', position: 'relative' },
-  countryPickerValue: { color: '#0C1620', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  countryPickerCompactInput: { width: '100%', height: 44, color: '#0C1620', position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, opacity: 0 },
-  phoneInput: { flex: 1 },
-  primaryBtn: { backgroundColor: '#B8783A', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16, alignItems: 'center', marginTop: 6 },
-  primaryBtnText: { color: '#FFFFFF', fontWeight: '700' },
-  secondaryBtn: { backgroundColor: '#F7FAFB', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  secondaryBtnText: { color: '#0C1620', fontWeight: '600' },
+  dot: { width: 28, height: 2, backgroundColor: c.border },
+  dotActive: { backgroundColor: c.ink },
+
+  centerWrap: { flex: 1, alignItems: 'stretch', justifyContent: 'flex-start', paddingTop: 20 },
+  formWrap: { gap: 14, width: '100%', paddingTop: 20 },
+
+  welcomeTitle: { fontSize: 32, fontWeight: '600', color: c.ink, letterSpacing: -0.4 },
+  bigTitle: { fontSize: 32, fontWeight: '600', color: c.ink, letterSpacing: -0.4, marginTop: 4 },
+  subtitle: { color: c.muted, marginTop: 6, marginBottom: 8, fontSize: 16, lineHeight: 23 },
+
+  fieldLabel: { color: c.ink, fontSize: 14, fontWeight: '500', marginBottom: 8 },
+  helperText: { color: c.muted, fontSize: 14, marginTop: 8 },
+
+  input: {
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: tokens.radius.md,
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+    color: c.ink,
+    fontSize: 16,
+    minHeight: 48,
+  },
+
+  primaryBtn: {
+    backgroundColor: c.primary,
+    borderRadius: tokens.radius.sm,
+    paddingVertical: 17,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    marginTop: 8,
+  },
+  primaryBtnText: { color: c.primaryText, fontWeight: '700', fontSize: 16, letterSpacing: 0.3 },
+
+  secondaryBtn: {
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: tokens.radius.sm,
+    paddingVertical: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+  },
+  secondaryBtnText: { color: c.ink, fontWeight: '500', fontSize: 15 },
   btnDisabled: { opacity: 0.5 },
-  link: { color: '#B8783A', fontWeight: '600' },
-  muted: { color: '#4A7A9B', marginTop: 10, textAlign: 'center' },
-  personRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: '#D8E6EE', borderRadius: 8, backgroundColor: '#FFFFFF', marginTop: 8 },
-  personText: { color: '#0C1620', fontWeight: '500' },
-  removeLink: { color: '#B8783A', fontWeight: '600' },
+
+  link: { color: c.accentDeep, fontWeight: '500' },
+  muted: { color: c.muted, marginTop: 12, textAlign: 'center', fontSize: 15 },
+
+  personRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: tokens.radius.md,
+    backgroundColor: c.card,
+    marginTop: 8,
+  },
+  personText: { color: c.ink, fontWeight: '500', fontSize: 15 },
+  removeLink: { color: c.accentDeep, fontWeight: '500', fontSize: 14 },
 });

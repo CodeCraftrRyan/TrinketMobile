@@ -11,6 +11,9 @@ import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
 import BrandHeader from '../../components/ui/BrandHeader';
 import { supabase } from '../../lib/supabase';
+import { tokens } from '../../lib/tokens';
+
+const c = tokens.colors;
 
 const PHOTO_BUCKET = 'item-photos';
 
@@ -722,148 +725,340 @@ export default function AddTab() {
     }
   }, [eventId, eventName, events]);
 
+  const labelStyle = { ...tokens.type.label, color: c.inkLabel, marginBottom: 8 };
+  const fieldBox = {
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: tokens.radius.md,
+    paddingHorizontal: 14,
+    minHeight: 52,
+    justifyContent: 'center' as const,
+  };
+  const fieldText = { ...tokens.type.ui, color: c.ink };
+
+  async function onSave() {
+    try {
+      setSavingPhotos(true);
+      if (isEditing && id) {
+        await syncItemPeople(id);
+        await syncItemCollection(id);
+        await syncItemPhotos(id);
+        router.replace({ pathname: '/(tabs)/items/[id]', params: { id } } as any);
+        return;
+      }
+      const newId = await createItem();
+      if (newId) {
+        router.replace({ pathname: '/(tabs)/items/[id]', params: { id: newId } } as any);
+        return;
+      }
+      Alert.alert('Save failed', 'The object could not be saved. Please try again.');
+    } catch (e: any) {
+      Alert.alert('Save failed', e?.message ?? 'Please try again');
+    } finally {
+      setSavingPhotos(false);
+    }
+  }
+
+  const cover = photos[0];
+  const atPhotoLimit = photos.length >= maxPhotos;
+
   return (
-  <ScrollView style={{ flex: 1, backgroundColor: '#4A7A9B' }}>
-      <View style={{ paddingHorizontal: 20, paddingVertical: 20 }}>
-        <BrandHeader
-          style={{ marginTop: 32, marginBottom: 20 }}
-          textColor="#FFFFFF"
-          subtitleColor="#9BBCD1"
-        />
-        {/* Photos (multi-image, plan-gated) */}
-        <View style={{ marginBottom: 18 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 14, fontFamily: 'DMSans_500Medium' }}>Photos</Text>
-            <Text style={{ color: '#9BBCD1', fontSize: 12, fontWeight: '600' }}>{photos.length} / {maxPhotos}</Text>
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+
+      <View style={{
+        backgroundColor: c.surfaceDark,
+        paddingTop: 56,
+        paddingBottom: 16,
+        paddingHorizontal: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
+          <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Cancel</Text>
+        </TouchableOpacity>
+        <Text style={{ ...tokens.type.nameSmall, color: c.bg }}>
+          {isEditing ? 'Edit object' : 'Add an object'}
+        </Text>
+        <TouchableOpacity onPress={onSave} disabled={savingPhotos} hitSlop={10}>
+          <Text style={{ ...tokens.type.ui, color: c.accent, opacity: savingPhotos ? 0.5 : 1 }}>
+            {savingPhotos ? 'Saving' : 'Save'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 160 }} keyboardShouldPersistTaps="handled">
+
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <View style={{ width: 120, height: 120 }}>
+            {cover?.displayUri ? (
+              <>
+                <Image source={{ uri: cover.displayUri }}
+                  style={{ width: 120, height: 120, borderRadius: tokens.radius.md }}
+                  resizeMode="cover" />
+                <View style={{
+                  position: 'absolute', left: 0, bottom: 0, right: 0,
+                  backgroundColor: 'rgba(12,22,32,0.55)',
+                  borderBottomLeftRadius: tokens.radius.md,
+                  borderBottomRightRadius: tokens.radius.md,
+                  paddingVertical: 5, paddingHorizontal: 8,
+                }}>
+                  <Text style={{ ...tokens.type.label, color: c.bg }}>Cover</Text>
+                </View>
+                <TouchableOpacity onPress={() => removePhoto(cover.key)}
+                  style={{
+                    position: 'absolute', top: -6, right: -6,
+                    backgroundColor: c.surfaceDark, borderRadius: 11,
+                    width: 22, height: 22, alignItems: 'center', justifyContent: 'center',
+                  }}>
+                  <Ionicons name="close" size={13} color={c.bg} />
+                </TouchableOpacity>
+              </>
+            ) : (
+              <View style={{
+                width: 120, height: 120,
+                backgroundColor: c.surfaceSoft,
+                borderRadius: tokens.radius.md,
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Ionicons name="image-outline" size={26} color={c.inkLight} />
+              </View>
+            )}
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 2, paddingRight: 8 }}>
-            {photos.map((p) => (
-              <View key={p.key} style={{ width: 100, height: 100 }}>
+
+          <View style={{ flex: 1, gap: 12 }}>
+            <TouchableOpacity
+              onPress={handlePhotoUpload}
+              disabled={atPhotoLimit}
+              style={{
+                flex: 1, borderWidth: 1, borderColor: c.border, borderStyle: 'dashed',
+                borderRadius: tokens.radius.md, backgroundColor: c.card,
+                alignItems: 'center', justifyContent: 'center',
+                opacity: atPhotoLimit ? 0.45 : 1,
+              }}>
+              <Ionicons name="camera-outline" size={20} color={c.accentCool} />
+              <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.accentCool, marginTop: 4 }}>
+                Photograph
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handlePhotoUpload}
+              disabled={atPhotoLimit}
+              style={{
+                flex: 1, borderWidth: 1, borderColor: c.border, borderStyle: 'dashed',
+                borderRadius: tokens.radius.md, backgroundColor: c.card,
+                alignItems: 'center', justifyContent: 'center',
+                opacity: atPhotoLimit ? 0.45 : 1,
+              }}>
+              <Ionicons name="images-outline" size={20} color={c.accentCool} />
+              <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.accentCool, marginTop: 4 }}>
+                From library
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {photos.length > 1 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 10, paddingTop: 12 }}>
+            {photos.slice(1).map((p) => (
+              <View key={p.key} style={{ width: 66, height: 66 }}>
                 {p.displayUri ? (
-                  <Image source={{ uri: p.displayUri }} style={{ width: 100, height: 100, borderRadius: 12, resizeMode: 'cover' }} />
+                  <Image source={{ uri: p.displayUri }}
+                    style={{ width: 66, height: 66, borderRadius: tokens.radius.md }} resizeMode="cover" />
                 ) : (
-                  <View style={{ width: 100, height: 100, borderRadius: 12, backgroundColor: '#F7FAFB', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="image" size={28} color="#9BBCD1" />
-                  </View>
+                  <View style={{ width: 66, height: 66, borderRadius: tokens.radius.md, backgroundColor: c.surfaceSoft }} />
                 )}
-                <TouchableOpacity
-                  onPress={() => removePhoto(p.key)}
-                  style={{ position: 'absolute', top: -6, right: -6, backgroundColor: '#0C1620', borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <Ionicons name="close" size={14} color="#fff" />
+                <TouchableOpacity onPress={() => removePhoto(p.key)}
+                  style={{
+                    position: 'absolute', top: -6, right: -6,
+                    backgroundColor: c.surfaceDark, borderRadius: 10,
+                    width: 20, height: 20, alignItems: 'center', justifyContent: 'center',
+                  }}>
+                  <Ionicons name="close" size={12} color={c.bg} />
                 </TouchableOpacity>
               </View>
             ))}
-            {photos.length < maxPhotos && (
-              <TouchableOpacity
-                onPress={handlePhotoUpload}
-                activeOpacity={0.8}
-                style={{ width: 100, height: 100, backgroundColor: '#F7FAFB', borderRadius: 12, borderWidth: 1, borderColor: '#D8E6EE', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Ionicons name="camera" size={28} color="#4A7A9B" />
-                <Text style={{ color: '#4A7A9B', fontSize: 11, fontWeight: '700', marginTop: 4 }}>Add Photo</Text>
-              </TouchableOpacity>
-            )}
           </ScrollView>
-          {photos.length >= maxPhotos && (
-            <Text style={{ color: '#9BBCD1', fontSize: 11, marginTop: 8 }}>
-              Photo limit reached for your plan. Upgrade to add more.
-            </Text>
-          )}
-        </View>
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 17.85,
-          paddingVertical: 16.8,
-          borderWidth: 1,
-          borderColor: '#D8E6EE',
-          backgroundColor: '#FFFFFF',
-          marginTop: '2%',
-          marginBottom: '2%',
-          ...(focusedField !== 'name' && { borderBottomWidth: 1, borderBottomColor: '#F7FAFB' }),
-          borderRadius: 10,
-        }}>
-          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 15.225, fontFamily: 'DMSans_500Medium' }}>Name</Text>
+        )}
+
+        <Text style={{ ...tokens.type.fact, color: c.inkLabel, marginTop: 10 }}>
+          {photos.length} of {maxPhotos} {maxPhotos === 1 ? 'photograph' : 'photographs'}
+        </Text>
+
+        <Text style={{ ...labelStyle, marginTop: 26 }}>What is it</Text>
+        <View style={fieldBox}>
           <TextInput
-            style={{ flex: 2, color: '#4A7A9B', fontSize: 15.225, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}
+            style={fieldText}
             value={name}
             onChangeText={setName}
-            placeholder="Grandma's Locket..."
-            placeholderTextColor="#9BBCD1"
-            onFocus={() => {
-              setFocusedField('name');
-              if (name === '' || name === "Grandma's Locket...") setName('');
-            }}
+            placeholder="Faience plate"
+            placeholderTextColor={c.inkLight}
+            onFocus={() => setFocusedField('name')}
             onBlur={() => setFocusedField('')}
           />
         </View>
 
-        {/* Category */}
+        <Text style={{ ...labelStyle, marginTop: 22 }}>Category</Text>
         <TouchableOpacity
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 17,
-            paddingVertical: 16,
-            borderWidth: 1,
-            borderColor: '#D8E6EE',
-            backgroundColor: '#FFFFFF',
-            marginTop: '2%',
-            marginBottom: '2%',
-            ...(focusedField !== 'category' && { borderBottomWidth: 1, borderBottomColor: '#F7FAFB' }),
-            borderRadius: 10,
-          }}
-          onPress={() => {
-            setFocusedField('category');
-            setCategoryModalVisible(true);
-          }}
-          activeOpacity={0.8}
-        >
-          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Category</Text>
-          <Text style={{ flex: 2, color: '#4A7A9B', fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
-            {category?.label ?? 'Select category'}
+          onPress={() => { setFocusedField('category'); setCategoryModalVisible(true); }}
+          style={[fieldBox, { flexDirection: 'row', alignItems: 'center' }]}>
+          <Text style={[fieldText, { flex: 1, color: category?.label ? c.ink : c.inkLight }]} numberOfLines={1}>
+            {categoriesLoading ? 'Loading categories' : (category?.label ?? 'Select a category')}
           </Text>
-          <Ionicons name="chevron-forward" size={16} color="#4A7A9B" />
+          <Ionicons name="chevron-down" size={15} color={c.inkLabel} />
         </TouchableOpacity>
 
-  {/* Description */}
-        <TouchableOpacity
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 17,
-            paddingVertical: 16,
-            borderWidth: 1,
-            borderColor: '#D8E6EE',
-            backgroundColor: '#FFFFFF',
-            marginTop: '2%',
-            marginBottom: '2%',
-            ...(focusedField !== 'description' && { borderBottomWidth: 1, borderBottomColor: '#F7FAFB' }),
-            borderRadius: 10,
-          }}
-          onPress={() => setFocusedField('description')}
-          activeOpacity={0.8}
-        >
-          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Description</Text>
-          <View style={{ flex: 2 }}>
-            <TextInput
-              style={{ color: '#4A7A9B', fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="e.g. 'Gold locket with initials'"
-              placeholderTextColor="#9BBCD1"
-              onFocus={() => {
-                setFocusedField('description');
-                if (description === '' || description === "'Gold locket with initials'") setDescription('');
-              }}
-              onBlur={() => setFocusedField('')}
-            />
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 22 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={labelStyle}>Where it lives</Text>
+            <TouchableOpacity onPress={handleRoomPress} style={[fieldBox, { flexDirection: 'row', alignItems: 'center' }]}>
+              <Text style={[fieldText, { flex: 1 }]} numberOfLines={1}>{room.label}</Text>
+              <Ionicons name="chevron-down" size={15} color={c.inkLabel} />
+            </TouchableOpacity>
           </View>
-          <Ionicons name="chevron-forward" size={16} color="#4A7A9B" />
-        </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={labelStyle}>Whose it was</Text>
+            <TouchableOpacity
+              onPress={() => { setFocusedField('people'); setPeopleModalVisible(true); }}
+              style={[fieldBox, { flexDirection: 'row', alignItems: 'center' }]}>
+              <Text style={[fieldText, { flex: 1, color: selectedPeople.length ? c.ink : c.inkLight }]} numberOfLines={1}>
+                {selectedPeople.length ? selectedPeople.join(', ') : 'Anyone'}
+              </Text>
+              <Ionicons name="chevron-down" size={15} color={c.inkLabel} />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-  {/* Category Modal */}
+        <Text style={{ ...labelStyle, marginTop: 22 }}>The story</Text>
+        <View style={[fieldBox, { minHeight: 132, paddingVertical: 12, justifyContent: 'flex-start' }]}>
+          <TextInput
+            style={[fieldText, { minHeight: 108, textAlignVertical: 'top' }]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Who gave it to you, when, and what was happening at the time."
+            placeholderTextColor={c.inkLight}
+            multiline
+            onFocus={() => setFocusedField('description')}
+            onBlur={() => setFocusedField('')}
+          />
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
+          {['Who gave it to you?', 'What sat next to it?', 'Where did it live before?'].map((prompt) => (
+            <TouchableOpacity
+              key={prompt}
+              onPress={() => setDescription((prev) => (prev ? prev + ' ' : '') + prompt + ' ')}
+              style={{
+                paddingHorizontal: 13, paddingVertical: 10,
+                borderWidth: 1, borderColor: c.border,
+                borderRadius: tokens.radius.md, backgroundColor: c.card,
+              }}>
+              <Text style={{ ...tokens.type.ui, fontSize: 14, color: c.accentCool }}>{prompt}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 22 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={labelStyle}>How it arrived</Text>
+            <TouchableOpacity onPress={handleAcquiredPress} style={[fieldBox, { flexDirection: 'row', alignItems: 'center' }]}>
+              <Text style={[fieldText, { flex: 1 }]} numberOfLines={1}>{acquired.label}</Text>
+              <Ionicons name="chevron-down" size={15} color={c.inkLabel} />
+            </TouchableOpacity>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={labelStyle}>Date acquired</Text>
+            <View style={fieldBox}>
+              <TextInput
+                style={fieldText}
+                value={date}
+                onChangeText={setDate}
+                placeholder={today}
+                placeholderTextColor={c.inkLight}
+                keyboardType="numbers-and-punctuation"
+                maxLength={10}
+              />
+            </View>
+          </View>
+        </View>
+
+        <Text style={{ ...labelStyle, marginTop: 22 }}>Estimated value</Text>
+        <View style={fieldBox}>
+          <TextInput
+            style={fieldText}
+            value={estimatedValue}
+            onChangeText={setEstimatedValue}
+            placeholder="Optional, for insurance"
+            placeholderTextColor={c.inkLight}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 22 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={labelStyle}>Event</Text>
+            <TouchableOpacity
+              onPress={() => { setFocusedField('event'); setEventModalVisible(true); setNewEventName(''); }}
+              style={[fieldBox, { flexDirection: 'row', alignItems: 'center' }]}>
+              <Text style={[fieldText, { flex: 1, color: eventName ? c.ink : c.inkLight }]} numberOfLines={1}>
+                {eventName || 'None'}
+              </Text>
+              <Ionicons name="chevron-down" size={15} color={c.inkLabel} />
+            </TouchableOpacity>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={labelStyle}>Collection</Text>
+            <TouchableOpacity
+              onPress={() => { setFocusedField('collection'); setCollectionModalVisible(true); setNewCollectionName(''); }}
+              style={[fieldBox, { flexDirection: 'row', alignItems: 'center' }]}>
+              <Text style={[fieldText, { flex: 1, color: collection ? c.ink : c.inkLight }]} numberOfLines={1}>
+                {collection || 'None'}
+              </Text>
+              <Ionicons name="chevron-down" size={15} color={c.inkLabel} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {isEditing && (
+          <TouchableOpacity
+            onPress={() => {
+              if (!id) return;
+              Alert.alert('Delete object', 'This permanently removes the object and its photographs. Continue?', [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      try {
+                        const { data: photoRows } = await supabase
+                          .from('item_photos').select('storage_path').eq('item_id', id);
+                        const paths = (photoRows ?? [])
+                          .map((r: { storage_path?: string | null }) => r.storage_path)
+                          .filter((v): v is string => Boolean(v));
+                        if (paths.length) await supabase.storage.from(PHOTO_BUCKET).remove(paths);
+                        await supabase.from('item_photos').delete().eq('item_id', id);
+                      } catch (e) {
+                        console.warn('Failed to clean item photos on delete', e);
+                      }
+                      await supabase.from('item_people').delete().eq('item_id', id);
+                      await supabase.from('collection_items').delete().eq('item_id', id);
+                      const { error } = await supabase.from('items').delete().eq('id', id);
+                      if (error) throw error;
+                      router.replace('/(tabs)/items');
+                    } catch (e: any) {
+                      Alert.alert('Delete failed', e?.message ?? 'Please try again');
+                    }
+                  },
+                },
+              ]);
+            }}
+            style={{ marginTop: 32, paddingVertical: 14, alignItems: 'center' }}>
+            <Text style={{ ...tokens.type.ui, color: c.accentDeep }}>Delete this object</Text>
+          </TouchableOpacity>
+        )}
+
         <Modal
           visible={categoryModalVisible}
           animationType="slide"
@@ -898,36 +1093,6 @@ export default function AddTab() {
             </View>
           </View>
         </Modal>
-
-  {/* Room/Location (Scrollable Picklist) */}
-        <TouchableOpacity
-          onPress={handleRoomPress}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 17,
-            paddingVertical: 16,
-            borderWidth: 1,
-            borderColor: '#D8E6EE',
-            backgroundColor: '#FFFFFF',
-            marginTop: '2%',
-            marginBottom: '2%',
-            ...(focusedField !== 'room' && { borderBottomWidth: 1, borderBottomColor: '#F7FAFB' }),
-            borderRadius: 10,
-          }}
-          onFocus={() => setFocusedField('room')}
-          onBlur={() => setFocusedField('')}
-          activeOpacity={0.8}
-        >
-          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Room/Location</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#4A7A9B', borderRadius: 12.75, paddingHorizontal: 10, paddingVertical: 2.5, marginRight: 6 }}>
-            <Ionicons name={room.icon as any} size={14.5} color="#fff" style={{ marginRight: 4 }} />
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12.75, fontFamily: 'DMSans_500Medium' }}>{room.label}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color="#4A7A9B" />
-        </TouchableOpacity>
-
-        {/* Room/Location Modal */}
         <Modal
           visible={roomModalVisible}
           animationType="slide"
@@ -957,66 +1122,6 @@ export default function AddTab() {
             </View>
           </View>
         </Modal>
-
-        {/* Estimated Value */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 17.85,
-          paddingVertical: 16.8,
-          borderWidth: 1,
-          borderColor: '#D8E6EE',
-          backgroundColor: '#FFFFFF',
-          marginTop: '2%',
-          marginBottom: '2%',
-          ...(focusedField !== 'value' && { borderBottomWidth: 1, borderBottomColor: '#F7FAFB' }),
-          borderRadius: 10,
-        }}>
-          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 15.225, fontFamily: 'DMSans_500Medium' }}>Estimated Value</Text>
-          <View style={{ flex: 2 }}>
-            <TextInput
-              style={{ color: '#4A7A9B', fontSize: 15.225, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}
-              value={estimatedValue}
-              onChangeText={setEstimatedValue}
-              placeholder="$0.00 (optional)"
-              placeholderTextColor="#9BBCD1"
-              keyboardType="numeric"
-              onFocus={() => setFocusedField('value')}
-              onBlur={() => setFocusedField('')}
-            />
-            <Text style={{ color: '#4A7A9B', fontSize: 11, textAlign: 'right', marginTop: 2 }}>Estimate if known, e.g. $100.00</Text>
-          </View>
-        </View>
-
-        {/* People */}
-        <TouchableOpacity
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 17,
-            paddingVertical: 16,
-            borderWidth: 1,
-            borderColor: '#D8E6EE',
-            backgroundColor: '#FFFFFF',
-            marginTop: '2%',
-            marginBottom: '2%',
-            ...(focusedField !== 'people' && { borderBottomWidth: 1, borderBottomColor: '#F7FAFB' }),
-            borderRadius: 10,
-          }}
-          onPress={() => {
-            setFocusedField('people');
-            setPeopleModalVisible(true);
-          }}
-          activeOpacity={0.8}
-        >
-          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>People</Text>
-          <Text style={{ flex: 2, color: selectedPeople.length ? '#4A7A9B' : '#9AAAB5', fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
-            {selectedPeople.length ? selectedPeople.join(', ') : 'Select people'}
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color="#4A7A9B" />
-        </TouchableOpacity>
-
-        {/* People Modal */}
         <Modal
           visible={peopleModalVisible}
           animationType="slide"
@@ -1084,69 +1189,6 @@ export default function AddTab() {
             </View>
           </View>
         </Modal>
-
-        {/* Date Acquired */}
-        <TouchableOpacity
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 17,
-            paddingVertical: 16,
-            borderWidth: 1,
-            borderColor: '#D8E6EE',
-            backgroundColor: '#FFFFFF',
-            marginTop: '2%',
-            marginBottom: '2%',
-            ...(focusedField !== 'date' && { borderBottomWidth: 1, borderBottomColor: '#F7FAFB' }),
-            borderRadius: 10,
-          }}
-          onPress={() => setFocusedField('date')}
-          activeOpacity={0.8}
-        >
-          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Date Acquired</Text>
-          <TextInput
-            style={{ flex: 2, color: '#4A7A9B', fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}
-            value={date}
-            onChangeText={setDate}
-            placeholder={today}
-            keyboardType="numbers-and-punctuation"
-            maxLength={10}
-            placeholderTextColor="#9BBCD1"
-            onFocus={() => setFocusedField('date')}
-            onBlur={() => setFocusedField('')}
-          />
-          <Ionicons name="chevron-forward" size={16} color="#4A7A9B" />
-        </TouchableOpacity>
-
-        {/* Acquired Picklist */}
-        <TouchableOpacity
-          onPress={handleAcquiredPress}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 17,
-            paddingVertical: 16,
-            borderWidth: 1,
-            borderColor: '#D8E6EE',
-            backgroundColor: '#FFFFFF',
-            marginTop: '2%',
-            marginBottom: '2%',
-            ...(focusedField !== 'acquired' && { borderBottomWidth: 1, borderBottomColor: '#F7FAFB' }),
-            borderRadius: 10,
-          }}
-          onFocus={() => setFocusedField('acquired')}
-          onBlur={() => setFocusedField('')}
-          activeOpacity={0.8}
-        >
-          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Acquired</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#B8783A', borderRadius: 12.75, paddingHorizontal: 10, paddingVertical: 2.5, marginRight: 6 }}>
-            <Ionicons name={acquired.icon as any} size={14.5} color="#fff" style={{ marginRight: 4 }} />
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12.75, fontFamily: 'DMSans_500Medium' }}>{acquired.label}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color="#4A7A9B" />
-        </TouchableOpacity>
-
-        {/* Acquired Modal */}
         <Modal
           visible={acquiredModalVisible}
           animationType="slide"
@@ -1176,37 +1218,6 @@ export default function AddTab() {
             </View>
           </View>
         </Modal>
-
-        {/* Event Lookup */}
-        <TouchableOpacity
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 17,
-            paddingVertical: 16,
-            borderWidth: 1,
-            borderColor: '#D8E6EE',
-            backgroundColor: '#FFFFFF',
-            marginTop: '2%',
-            marginBottom: '2%',
-            ...(focusedField !== 'event' && { borderBottomWidth: 1, borderBottomColor: '#F7FAFB' }),
-            borderRadius: 10,
-          }}
-          onPress={() => {
-            setFocusedField('event');
-            setEventModalVisible(true);
-            setNewEventName('');
-          }}
-          activeOpacity={0.8}
-        >
-          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Event</Text>
-          <Text style={{ flex: 2, color: '#4A7A9B', fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
-            {eventName || 'Select event'}
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color="#4A7A9B" />
-        </TouchableOpacity>
-
-        {/* Event Modal */}
         <Modal
           visible={eventModalVisible}
           animationType="slide"
@@ -1299,37 +1310,6 @@ export default function AddTab() {
             </View>
           </View>
         </Modal>
-
-        {/* Collection Lookup */}
-        <TouchableOpacity
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 17,
-            paddingVertical: 16,
-            borderWidth: 1,
-            borderColor: '#D8E6EE',
-            backgroundColor: '#FFFFFF',
-            marginTop: '2%',
-            marginBottom: '2%',
-            ...(focusedField !== 'collection' && { borderBottomWidth: 1, borderBottomColor: '#F7FAFB' }),
-            borderRadius: 10,
-          }}
-          onPress={() => {
-            setFocusedField('collection');
-            setCollectionModalVisible(true);
-            setNewCollectionName('');
-          }}
-          activeOpacity={0.8}
-        >
-          <Text style={{ flex: 1, fontWeight: '700', color: '#0C1620', fontSize: 14.5, fontFamily: 'DMSans_500Medium' }}>Collection</Text>
-          <Text style={{ flex: 2, color: '#4A7A9B', fontSize: 14.5, textAlign: 'right', fontFamily: 'DMSans_400Regular', fontWeight: '600' }}>
-            {collection || 'Select collection'}
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color="#4A7A9B" />
-        </TouchableOpacity>
-
-        {/* Collection Modal */}
         <Modal
           visible={collectionModalVisible}
           animationType="slide"
@@ -1420,127 +1400,8 @@ export default function AddTab() {
             </View>
           </View>
         </Modal>
-        {isEditing && (
-          <View style={{ gap: 12, marginTop: 12 }}>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity
-                disabled={savingPhotos}
-                onPress={async () => {
-                  try {
-                    setSavingPhotos(true);
-                    if (id) {
-                      await syncItemPeople(id);
-                      await syncItemCollection(id);
-                      await syncItemPhotos(id);
-                    }
-                    Alert.alert('Saved', 'Item changes saved.');
-                  } catch (e: any) {
-                    Alert.alert('Save failed', e?.message ?? 'Please try again');
-                    return;
-                  } finally {
-                    setSavingPhotos(false);
-                  }
-                  if (id) {
-                    router.replace({ pathname: '/(tabs)/items/[id]', params: { id } } as any);
-                    return;
-                  }
-                  router.back();
-                }}
-                style={{ flex: 1, backgroundColor: '#B8783A', paddingVertical: 14, borderRadius: 12, alignItems: 'center', opacity: savingPhotos ? 0.6 : 1 }}
-              >
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{savingPhotos ? 'Saving…' : 'Save'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  if (id) {
-                    router.replace({ pathname: '/(tabs)/items/[id]', params: { id } } as any);
-                    return;
-                  }
-                  router.back();
-                }}
-                style={{ flex: 1, backgroundColor: '#D8E6EE', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
-              >
-                <Text style={{ color: '#0C1620', fontWeight: '700', fontSize: 16 }}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                if (!id) return;
-                Alert.alert('Delete item', 'This will permanently delete the item. Continue?', [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        // Remove stored photo files + rows first.
-                        try {
-                          const { data: photoRows } = await supabase
-                            .from('item_photos')
-                            .select('storage_path')
-                            .eq('item_id', id);
-                          const paths = (photoRows ?? [])
-                            .map((r: { storage_path?: string | null }) => r.storage_path)
-                            .filter((v): v is string => Boolean(v));
-                          if (paths.length) await supabase.storage.from(PHOTO_BUCKET).remove(paths);
-                          await supabase.from('item_photos').delete().eq('item_id', id);
-                        } catch (e) {
-                          console.warn('Failed to clean item photos on delete', e);
-                        }
-                        await supabase.from('item_people').delete().eq('item_id', id);
-                        await supabase.from('collection_items').delete().eq('item_id', id);
-                        const { error } = await supabase.from('items').delete().eq('id', id);
-                        if (error) throw error;
-                        router.replace('/(tabs)/items');
-                      } catch (e: any) {
-                        Alert.alert('Delete failed', e?.message ?? 'Please try again');
-                      }
-                    },
-                  },
-                ]);
-              }}
-              style={{ backgroundColor: '#FDECEC', borderWidth: 1, borderColor: '#F3B4B4', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#C0392B', fontWeight: '700', fontSize: 16 }}>Delete Item</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        {!isEditing && (
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-            <TouchableOpacity
-              disabled={savingPhotos}
-              onPress={async () => {
-                try {
-                  setSavingPhotos(true);
-                  const newId = await createItem();
-                  if (newId) {
-                    Alert.alert('Saved', 'Item created.');
-                    router.replace({ pathname: '/(tabs)/items/[id]', params: { id: newId } } as any);
-                    return;
-                  }
-                  Alert.alert('Save failed', 'The item could not be created. Please try again.');
-                } catch (e: any) {
-                  Alert.alert('Save failed', e?.message ?? 'Please try again');
-                } finally {
-                  setSavingPhotos(false);
-                }
-              }}
-              style={{ flex: 1, backgroundColor: '#B8783A', paddingVertical: 14, borderRadius: 12, alignItems: 'center', opacity: savingPhotos ? 0.6 : 1 }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{savingPhotos ? 'Saving…' : 'Save'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={{ flex: 1, backgroundColor: '#D8E6EE', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#0C1620', fontWeight: '700', fontSize: 16 }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        {/* Extra space at bottom of page */}
-        <View style={{ height: 120 }} />
-      </View>
-    </ScrollView>
+
+      </ScrollView>
+    </View>
   );
 }
-

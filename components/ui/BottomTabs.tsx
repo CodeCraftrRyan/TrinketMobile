@@ -58,7 +58,7 @@ export default function BottomTabs(props: BottomTabBarProps) {
         </View>
         {/* Right tab(s) */}
         <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }}>
-          {state.routes.filter((r) => r.name === 'items').map((route) => {
+          {state.routes.filter((r) => r.name === 'collections').map((route) => {
             const index = state.routes.findIndex((r) => r.key === route.key);
             const isFocused = state.index === index;
             const onPress = () => {
