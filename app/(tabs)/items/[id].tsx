@@ -10,9 +10,6 @@ const c = tokens.colors;
 const PHOTO_BUCKET = 'item-photos';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// TRK-0002 — a stable accession number derived from the row id.
-const accession = (id: string | number) => `TRK-${String(id).padStart(4, '0')}`;
-
 export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -444,7 +441,6 @@ export default function ItemDetail() {
         <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
           <Text style={{ ...tokens.type.label, color: c.inkFact }}>
             {(categoryName || item.item_category || item.category || 'Uncategorised').toString().toUpperCase()}
-            {'  ·  '}{accession(item.id)}
           </Text>
           <Text style={{ ...tokens.type.display, fontSize: 32, lineHeight: 38, color: c.ink, marginTop: 6 }}>
             {item.name || item.title}

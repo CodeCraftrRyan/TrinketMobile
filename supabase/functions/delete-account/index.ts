@@ -20,7 +20,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const BUCKETS = ['item-photos', 'search-queries', 'item-image'];
+const BUCKETS = ['item-photos', 'search-queries'];
 const NON_CASCADING = ['subscriptions', 'people', 'jobs', 'account_verification_codes'];
 
 const json = (body: unknown, status = 200) =>
