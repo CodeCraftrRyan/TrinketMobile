@@ -17,7 +17,9 @@ export default function Login() {
   async function onLogin() {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      // Trim: a trailing space from autofill or a paste is invisible and
+      // fails the sign-in with no explanation.
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
       router.replace('/(tabs)/home');
     } catch (e: any) {
@@ -49,9 +51,9 @@ export default function Login() {
             subtitleStyle={styles.logoSubtitle}
           />
 
-          <Text style={styles.eyebrow}>WELCOME BACK</Text>
-          <Text style={styles.bigTitle}>Log in to Trinket</Text>
-          <Text style={styles.subtitle}>Your personal archive is waiting.</Text>
+          <Text style={styles.eyebrow}></Text>
+          <Text style={styles.bigTitle}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Log into your account.</Text>
 
           <View style={styles.formCard}>
             <View style={styles.inputGroup}>

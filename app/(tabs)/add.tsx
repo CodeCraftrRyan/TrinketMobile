@@ -58,9 +58,10 @@ const ROOM_OPTIONS = [
 
 const ACQUIRED_OPTIONS = [
   { label: 'Gift', icon: 'gift' },
-  { label: 'Purchase', icon: 'cart' },
-  { label: 'Inheritance', icon: 'ribbon' },
+  { label: 'Purchased', icon: 'cart' },
+  { label: 'Inherited', icon: 'ribbon' },
   { label: 'Found', icon: 'search' },
+  { label: 'Made', icon: 'hammer' },
   { label: 'Other', icon: 'help-circle' },
 ];
 
@@ -1045,28 +1046,42 @@ export default function AddTab() {
             onBlur={() => setFocusedField('')}
           />
         </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
-          {['Who gave it to you?', 'What sat next to it?', 'Where did it live before?'].map((prompt) => (
-            <TouchableOpacity
-              key={prompt}
-              onPress={() => setDescription((prev) => (prev ? prev + ' ' : '') + prompt + ' ')}
-              style={{
-                paddingHorizontal: 13, paddingVertical: 10,
-                borderWidth: 1, borderColor: c.border,
-                borderRadius: tokens.radius.md, backgroundColor: c.card,
-              }}>
-              <Text style={{ ...tokens.type.ui, fontSize: 14, color: c.accentCool }}>{prompt}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
 
-        <View style={{ flexDirection: 'row', gap: 12, marginTop: 22 }}>
+        <View style={{ marginTop: 22 }}>
           <View style={{ flex: 1 }}>
             <Text style={labelStyle}>How it arrived</Text>
-            <TouchableOpacity onPress={handleAcquiredPress} style={[fieldBox, { flexDirection: 'row', alignItems: 'center' }]}>
-              <Text style={[fieldText, { flex: 1 }]} numberOfLines={1}>{acquired.label}</Text>
-              <Ionicons name="chevron-down" size={15} color={c.inkLabel} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {ACQUIRED_OPTIONS.map((option) => {
+                const on = option.label === acquired?.label;
+                return (
+                  <TouchableOpacity
+                    key={option.label}
+                    onPress={() => setAcquired(option)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 7,
+                      paddingHorizontal: 14,
+                      paddingVertical: 11,
+                      borderRadius: tokens.radius.md,
+                      borderWidth: 1,
+                      borderColor: on ? c.ink : c.border,
+                      backgroundColor: on ? c.ink : c.card,
+                    }}>
+                    <Ionicons
+                      name={option.icon as any}
+                      size={15}
+                      color={on ? c.bg : c.accentCool}
+                    />
+                    <Text style={{ ...tokens.type.ui, fontSize: 15, color: on ? c.bg : c.ink }}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={labelStyle}>Date acquired</Text>
@@ -1120,6 +1135,30 @@ export default function AddTab() {
             </TouchableOpacity>
           </View>
         </View>
+
+        <TouchableOpacity
+          onPress={onSave}
+          disabled={savingPhotos}
+          style={{
+            marginTop: 32,
+            paddingVertical: 17,
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: 48,
+            borderRadius: tokens.radius.sm,
+            backgroundColor: c.primary,
+            opacity: savingPhotos ? 0.6 : 1,
+          }}>
+          <Text style={{ ...tokens.type.button, color: c.primaryText }}>
+            {savingPhotos ? 'Saving…' : (isEditing ? 'Save changes' : 'Save this object')}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ marginTop: 12, paddingVertical: 14, alignItems: 'center' }}>
+          <Text style={{ ...tokens.type.ui, color: c.inkLabel }}>Cancel</Text>
+        </TouchableOpacity>
 
         {isEditing && (
           <TouchableOpacity

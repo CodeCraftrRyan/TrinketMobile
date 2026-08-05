@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
 
@@ -199,7 +199,7 @@ export default function Home() {
                 color: c.bg,
                 marginTop: 4,
               }} numberOfLines={2}>
-                {familyName ? `${familyName} family archive` : 'Your family archive'}
+                {familyName ? `${familyName} Family Archive` : 'Your family archive'}
               </Text>
             </View>
             <TouchableOpacity
@@ -278,9 +278,9 @@ export default function Home() {
             <Ionicons name="camera" size={20} color={c.primaryText} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ ...tokens.type.nameSmall, color: c.ink }}>Find something by photograph</Text>
+            <Text style={{ ...tokens.type.nameSmall, color: c.ink }}>Search by Image</Text>
             <Text style={{ color: c.inkLabel, fontSize: 14, marginTop: 2 }}>
-              Point at an object and we&rsquo;ll look for it
+              Find an object in your archive by taking a photo of it, or selecting one from your camera roll.
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={c.inkLabel} />
