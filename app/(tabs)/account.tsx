@@ -21,6 +21,9 @@ export default function Account() {
   const [plan, setPlan] = useState<any>(null);
   const [counts, setCounts] = useState({ items: 0, collections: 0, events: 0 });
   const { settings, setLargeText, setHighContrast } = useAccessibilitySettings();
+  const [supportUntil, setSupportUntil] = useState<string | null>(null);
+  const [supportLog, setSupportLog] = useState<{ looked_at: string; note: string | null }[]>([]);
+  const [changingSupport, setChangingSupport] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -78,6 +81,47 @@ export default function Account() {
     }
   }, [userId]);
 
+  // Whether the archive is currently open to support, and what has been seen.
+  const loadSupportAccess = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const [{ data: grant }, { data: log }] = await Promise.all([
+        supabase.from('support_access').select('expires_at').eq('user_id', userId).maybeSingle(),
+        supabase.from('support_access_log').select('looked_at,note')
+          .eq('user_id', userId).order('looked_at', { ascending: false }).limit(5),
+      ]);
+      const until = grant?.expires_at ?? null;
+      setSupportUntil(until && new Date(until) > new Date() ? until : null);
+      setSupportLog(log ?? []);
+    } catch (e: any) {
+      console.warn('Could not read support access', e?.message ?? e);
+    }
+  }, [userId]);
+
+  async function setSupportAccess(open: boolean) {
+    if (!userId) return;
+    try {
+      setChangingSupport(true);
+      if (open) {
+        const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { error } = await supabase
+          .from('support_access')
+          .upsert({ user_id: userId, granted_at: new Date().toISOString(), expires_at: expires },
+                  { onConflict: 'user_id' });
+        if (error) throw error;
+        setSupportUntil(expires);
+      } else {
+        const { error } = await supabase.from('support_access').delete().eq('user_id', userId);
+        if (error) throw error;
+        setSupportUntil(null);
+      }
+    } catch (e: any) {
+      Alert.alert('Could not change that', e?.message ?? 'Please try again.');
+    } finally {
+      setChangingSupport(false);
+    }
+  }
+
   const loadPeople = useCallback(async () => {
     if (!userId) return;
     try {
@@ -106,8 +150,8 @@ export default function Account() {
     }
   }, [userId]);
 
-  useEffect(() => { loadPeople(); loadArchive(); }, [loadPeople, loadArchive]);
-  useFocusEffect(useCallback(() => { loadPeople(); loadArchive(); }, [loadPeople, loadArchive]));
+  useEffect(() => { loadPeople(); loadArchive(); loadSupportAccess(); }, [loadPeople, loadArchive, loadSupportAccess]);
+  useFocusEffect(useCallback(() => { loadPeople(); loadArchive(); loadSupportAccess(); }, [loadPeople, loadArchive, loadSupportAccess]));
 
   const handleSignOut = () => {
     Alert.alert('Log out', 'Are you sure you want to log out?', [
@@ -422,6 +466,60 @@ export default function Account() {
               trackColor={{ false: c.border, true: c.accent }} thumbColor="#FFFFFF"
               ios_backgroundColor={c.border} accessibilityLabel="High contrast" />
           </View>
+        </Card>
+
+        {/* Support access */}
+        <Label>Who can see this</Label>
+        <Card>
+          <View style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
+            <View style={{
+              flexDirection: settings.largeText ? 'column' : 'row',
+              alignItems: settings.largeText ? 'flex-start' : 'center',
+              justifyContent: 'space-between',
+              gap: settings.largeText ? 10 : 12,
+            }}>
+              <Text style={{ ...tokens.type.ui, color: c.ink, flex: settings.largeText ? undefined : 1 }}>
+                Let support look at my archive
+              </Text>
+              <Switch
+                value={!!supportUntil}
+                onValueChange={setSupportAccess}
+                disabled={changingSupport}
+                trackColor={{ false: c.border, true: c.accent }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor={c.border}
+                accessibilityLabel="Let support look at my archive"
+              />
+            </View>
+            <Text style={{ ...tokens.type.fact, color: c.inkLabel, marginTop: 10, lineHeight: 20 }}>
+              {supportUntil
+                ? `Open until ${new Date(supportUntil).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}. Turn it off any time.`
+                : 'Off. Turn this on only if you have asked for help with something, and it closes itself after a week.'}
+            </Text>
+          </View>
+
+          {supportLog.length > 0 && (
+            <>
+              <Divider />
+              <View style={{ paddingHorizontal: 18, paddingVertical: 16 }}>
+                <Text style={{ ...tokens.type.label, color: c.inkLabel, marginBottom: 10 }}>
+                  When it was looked at
+                </Text>
+                {supportLog.map((entry, i) => (
+                  <View key={`${entry.looked_at}-${i}`} style={{ paddingVertical: 5 }}>
+                    <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.ink }}>
+                      {new Date(entry.looked_at).toLocaleDateString('en-US', {
+                        month: 'long', day: 'numeric', year: 'numeric',
+                      })}
+                    </Text>
+                    {!!entry.note && (
+                      <Text style={{ color: c.inkLabel, fontSize: 14, marginTop: 2 }}>{entry.note}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
         </Card>
 
         {/* Settings */}
