@@ -120,7 +120,7 @@ export default function NewEvent() {
       {/* Top bar */}
       <View style={{
         backgroundColor: c.surfaceDark,
-        paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20,
+        paddingTop: 72, paddingBottom: 16, paddingHorizontal: 20,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>

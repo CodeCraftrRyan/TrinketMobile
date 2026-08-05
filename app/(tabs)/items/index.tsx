@@ -208,7 +208,7 @@ export default function Items() {
       >
 
         {/* Masthead */}
-        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 28 }}>
+        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 72, paddingHorizontal: 20, paddingBottom: 28 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <TouchableOpacity onPress={() => router.back()} hitSlop={10}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>

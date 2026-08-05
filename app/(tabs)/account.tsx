@@ -227,13 +227,8 @@ export default function Account() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
 
         {/* Masthead */}
-        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 0 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>Profile</Text>
-            <TouchableOpacity onPress={promptForPerson} hitSlop={10}>
-              <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Edit</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 72, paddingHorizontal: 20, paddingBottom: 32 }}>
+          <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>Profile</Text>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 22 }}>
             <View style={{

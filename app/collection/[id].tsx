@@ -137,7 +137,7 @@ export default function CollectionDetail() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
 
         {/* Masthead */}
-        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 26 }}>
+        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 72, paddingHorizontal: 20, paddingBottom: 26 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <TouchableOpacity onPress={() => router.back()} hitSlop={10}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -151,10 +151,7 @@ export default function CollectionDetail() {
             </TouchableOpacity>
           </View>
 
-          <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75, marginTop: 22 }}>
-            Collection · {items.length} {items.length === 1 ? 'object' : 'objects'}
-          </Text>
-          <Text style={{ ...tokens.type.display, fontSize: 32, lineHeight: 38, color: c.bg, marginTop: 6 }}>
+          <Text style={{ ...tokens.type.display, fontSize: 32, lineHeight: 38, color: c.bg, marginTop: 24 }}>
             {collection?.name ?? 'Collection'}
           </Text>
           {(collection?.description || collection?.created_at) && (

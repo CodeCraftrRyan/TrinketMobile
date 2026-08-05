@@ -122,7 +122,7 @@ export default function EventsTab() {
       >
 
         {/* Masthead */}
-        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 28 }}>
+        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 72, paddingHorizontal: 20, paddingBottom: 28 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>
               {events.length} {events.length === 1 ? 'event' : 'events'} · {objectTotal} {objectTotal === 1 ? 'object' : 'objects'}

@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
 import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
@@ -157,30 +157,33 @@ export default function Collections() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
 
         {/* Masthead */}
-        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 28 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>
-              {collections.length} {collections.length === 1 ? 'collection' : 'collections'} · {objectTotal} {objectTotal === 1 ? 'object' : 'objects'}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
-              <TouchableOpacity
-                onPress={() => router.push('/visual-search')}
-                hitSlop={10}
-                accessibilityLabel="Find an object by photograph">
-                <Ionicons name="camera-outline" size={20} color={c.accent} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setAdding((v) => !v)} hitSlop={10}>
-                <Text style={{ ...tokens.type.ui, color: c.accent }}>{adding ? 'Cancel' : 'New'}</Text>
-              </TouchableOpacity>
+        <View style={{ backgroundColor: c.surfaceDark, paddingTop: 72, paddingHorizontal: 20, paddingBottom: 26 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>Trinket</Text>
+              <Text style={{ ...tokens.type.display, fontSize: 34, lineHeight: 40, color: c.bg, marginTop: 4 }}>
+                Collections
+              </Text>
             </View>
+            <TouchableOpacity
+              onPress={() => router.push('/visual-search')}
+              accessibilityRole="button"
+              accessibilityLabel="Find an object by photograph"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 7,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                marginBottom: 6,
+                borderWidth: 1,
+                borderColor: c.accent,
+                borderRadius: tokens.radius.sm,
+              }}>
+              <Ionicons name="camera-outline" size={16} color={c.accent} />
+              <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.accent }}>Find by photo</Text>
+            </TouchableOpacity>
           </View>
-
-          <Text style={{ ...tokens.type.display, fontSize: 34, lineHeight: 40, color: c.bg, marginTop: 8 }}>
-            Collections
-          </Text>
-          <Text style={{ ...tokens.type.ui, color: c.inkGhost, opacity: 0.85, marginTop: 8, lineHeight: 23 }}>
-            Objects grouped the way you&rsquo;d group them on a table.
-          </Text>
         </View>
 
         {/* New collection */}
@@ -304,6 +307,7 @@ export default function Collections() {
             </Text>
             <TouchableOpacity
               onPress={() => setAdding(true)}
+              accessibilityLabel="Make a new collection"
               style={{
                 marginTop: 18, paddingHorizontal: 22, paddingVertical: 14,
                 borderWidth: 1, borderColor: c.border,
