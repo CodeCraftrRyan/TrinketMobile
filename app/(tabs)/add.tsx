@@ -90,6 +90,8 @@ export default function AddTab() {
   const [peopleOptions, setPeopleOptions] = useState<string[]>([]);
   const [peopleModalVisible, setPeopleModalVisible] = useState(false);
   const [peopleFilter, setPeopleFilter] = useState('');
+  const [newPersonName, setNewPersonName] = useState('');
+  const [savingPerson, setSavingPerson] = useState(false);
   const [eventId, setEventId] = useState<string | null>(null);
   const [eventName, setEventName] = useState('');
   const [events, setEvents] = useState<{ id: string; name: string }[]>([]);
@@ -840,6 +842,36 @@ export default function AddTab() {
     if (error) throw error;
   }
 
+  async function addPerson() {
+    const name = newPersonName.trim();
+    if (!name) return;
+    if (peopleOptions.some((p) => p.toLowerCase() === name.toLowerCase())) {
+      setSelectedPeople((prev) => (prev.includes(name) ? prev : [...prev, name]));
+      setNewPersonName('');
+      return;
+    }
+    try {
+      setSavingPerson(true);
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      if (userErr) throw userErr;
+      const userId = userData?.user?.id;
+      if (!userId) throw new Error('Please sign in first.');
+
+      // people.user_id is not-null with no default.
+      const { error } = await supabase.from('people').insert([{ name, user_id: userId }]);
+      if (error) throw error;
+
+      setPeopleOptions((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
+      setSelectedPeople((prev) => [...prev, name]);
+      setNewPersonName('');
+      setPeopleFilter('');
+    } catch (e: any) {
+      Alert.alert('Could not add that name', e?.message ?? 'Please try again.');
+    } finally {
+      setSavingPerson(false);
+    }
+  }
+
   async function onSave() {
     try {
       setSavingPhotos(true);
@@ -876,18 +908,21 @@ export default function AddTab() {
       <View style={{
         backgroundColor: c.surfaceDark,
         paddingTop: 72,
-        paddingBottom: 16,
+        paddingBottom: 18,
         paddingHorizontal: 20,
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         justifyContent: 'space-between',
       }}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
           <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Cancel</Text>
         </TouchableOpacity>
-        <Text style={{ ...tokens.type.nameSmall, color: c.bg }}>
-          {isEditing ? 'Edit object' : 'Add an object'}
-        </Text>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>Trinket</Text>
+          <Text style={{ ...tokens.type.nameSmall, color: c.bg, marginTop: 2 }}>
+            {isEditing ? 'Edit object' : 'Add an object'}
+          </Text>
+        </View>
         <TouchableOpacity onPress={onSave} disabled={savingPhotos} hitSlop={10}>
           <Text style={{ ...tokens.type.ui, color: c.accent, opacity: savingPhotos ? 0.5 : 1 }}>
             {savingPhotos ? 'Saving' : 'Save'}
@@ -1297,6 +1332,32 @@ export default function AddTab() {
                   placeholderTextColor={c.inkLight}
                 />
               </View>
+              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 8, paddingBottom: 12 }}>
+                <TextInput
+                  style={{ flex: 1, backgroundColor: c.bg, borderRadius: tokens.radius.md, paddingHorizontal: 14, paddingVertical: 12, color: c.ink, fontSize: 15, borderWidth: 1, borderColor: c.border }}
+                  value={newPersonName}
+                  onChangeText={setNewPersonName}
+                  placeholder="Someone new"
+                  placeholderTextColor={c.inkLight}
+                  autoCapitalize="words"
+                  onSubmitEditing={addPerson}
+                  returnKeyType="done"
+                />
+                <TouchableOpacity
+                  onPress={addPerson}
+                  disabled={!newPersonName.trim() || savingPerson}
+                  style={{
+                    backgroundColor: c.primary,
+                    borderRadius: tokens.radius.sm,
+                    paddingHorizontal: 18,
+                    justifyContent: 'center',
+                    opacity: !newPersonName.trim() || savingPerson ? 0.5 : 1,
+                  }}>
+                  <Text style={{ ...tokens.type.button, color: c.primaryText }}>
+                    {savingPerson ? '…' : 'Add'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
               <FlatList
                 data={peopleOptions.filter((person) => person.toLowerCase().includes(peopleFilter.toLowerCase()))}
                 keyExtractor={(item) => item}
@@ -1319,7 +1380,9 @@ export default function AddTab() {
                   );
                 }}
                 ListEmptyComponent={
-                  <Text style={{ textAlign: 'center', color: c.inkLabel, paddingVertical: 16, fontSize: 15 }}>No people found.</Text>
+                  <Text style={{ textAlign: 'center', color: c.inkLabel, paddingVertical: 16, fontSize: 15 }}>
+                    No names yet. Add one above.
+                  </Text>
                 }
                 showsVerticalScrollIndicator={false}
               />
