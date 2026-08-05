@@ -11,7 +11,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.codecrftr.trinket",
-      "buildNumber": "5"
+      "buildNumber": "6",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Trinket uses the camera to photograph the objects you catalogue, and to find an object again by pointing at it.",
+        "NSPhotoLibraryUsageDescription": "Trinket uses your photo library so you can choose an existing photograph of an object instead of taking a new one."
+      }
     },
     "android": {
       "adaptiveIcon": {
