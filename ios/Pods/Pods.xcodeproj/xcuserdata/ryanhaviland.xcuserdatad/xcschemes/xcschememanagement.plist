@@ -29,11 +29,6 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
-		<key>EXImageLoader.xcscheme</key>
-		<dict>
-			<key>isShown</key>
-			<false/>
-		</dict>
 		<key>Expo.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -49,12 +44,27 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>ExpoDomWebView.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>ExpoFileSystem-ExpoFileSystem_privacy.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>ExpoFileSystem.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>ExpoFont.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
 		</dict>
-		<key>ExpoHead.xcscheme</key>
+		<key>ExpoGlassEffect.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -84,12 +94,42 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>ExpoLogBox.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>ExpoModulesCore.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>ExpoModulesJSI.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>ExpoModulesWorklets.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>ExpoModulesWorkletsAdapter.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>ExpoRouter.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>ExpoSplashScreen.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>ExpoSymbols.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -100,6 +140,11 @@
 			<false/>
 		</dict>
 		<key>ExpoSystemUI.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>ExpoUI.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -129,6 +174,16 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>RCTSwiftUI.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>RCTSwiftUIWrapper.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>RCTTypeSafety.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -140,6 +195,11 @@
 			<false/>
 		</dict>
 		<key>RNCAsyncStorage.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>RNCMaskedView.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -364,6 +424,11 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>React-intersectionobservernativemodule.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>React-jserrorhandler.xcscheme</key>
 		<dict>
 			<key>isShown</key>
@@ -419,12 +484,27 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>React-mutationobservernativemodule.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>React-networking.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>React-oscompat.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
 		</dict>
 		<key>React-perflogger.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>React-performancecdpmetrics.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
@@ -459,12 +539,27 @@
 			<key>isShown</key>
 			<false/>
 		</dict>
+		<key>React-timing-React-timing_privacy.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
 		<key>React-timing.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
 		</dict>
 		<key>React-utils.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>React-viewtransitionnativemodule.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+		</dict>
+		<key>React-webperformancenativemodule.xcscheme</key>
 		<dict>
 			<key>isShown</key>
 			<false/>
