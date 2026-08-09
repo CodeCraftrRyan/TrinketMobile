@@ -42,11 +42,11 @@ export const colors = {
   accentWarm: base.bronze,
 };
 
-// Type scale. Mobile keeps Cormorant Garamond and DM Sans — the web faces
+// Type scale. Display face is EB Garamond, matching the web.
 // (EB Garamond, Public Sans) are not bundled here.
 export const type = {
-  display:   { fontFamily: 'CormorantGaramond_300Light', fontWeight: '300' as const, fontSize: 40, lineHeight: 46, letterSpacing: -0.6 },
-  title:     { fontFamily: 'CormorantGaramond_300Light', fontWeight: '300' as const, fontSize: 30, lineHeight: 36, letterSpacing: -0.3 },
+  display:   { fontFamily: 'EBGaramond_400Regular', fontWeight: '400' as const, fontSize: 40, lineHeight: 46, letterSpacing: -0.6 },
+  title:     { fontFamily: 'EBGaramond_400Regular', fontWeight: '400' as const, fontSize: 30, lineHeight: 36, letterSpacing: -0.3 },
   name:      { fontFamily: 'DMSans_500Medium',           fontWeight: '500' as const, fontSize: 22, lineHeight: 27 },
   nameSmall: { fontFamily: 'DMSans_500Medium',           fontWeight: '500' as const, fontSize: 17, lineHeight: 22 },
   lead:      { fontFamily: 'DMSans_400Regular',          fontWeight: '400' as const, fontSize: 17, lineHeight: 25 },

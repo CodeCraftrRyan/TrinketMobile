@@ -17,6 +17,7 @@ type Item = {
   location: string | null;
   people: string[] | null;
   category_id: string | null;
+  estimated_value: number | null;
 };
 
 const longDate = (raw?: string | null) => {
@@ -80,7 +81,7 @@ export default function CollectionDetail() {
 
       const { data: rows, error: rowsErr } = await supabase
         .from('items')
-        .select('id,name,created_at,photo_url,location,people,category_id')
+        .select('id,name,created_at,photo_url,location,people,category_id,estimated_value')
         .in('id', itemIds)
         .order('created_at', { ascending: true });
       if (rowsErr) throw rowsErr;
@@ -155,6 +156,20 @@ export default function CollectionDetail() {
           <Text style={{ ...tokens.type.display, fontSize: 32, lineHeight: 38, color: c.bg, marginTop: 24 }}>
             {collection?.name ?? 'Collection'}
           </Text>
+          {(() => {
+            const valued = items.filter(it => typeof it.estimated_value === 'number' && it.estimated_value > 0);
+            if (!valued.length) return null;
+            const total = valued.reduce((s, it) => s + (it.estimated_value as number), 0);
+            const money = '$' + Math.round(total).toLocaleString();
+            const note = valued.length === items.length
+              ? `Collected value ${money}.`
+              : `Collected value ${money}, across ${valued.length} of ${items.length} objects.`;
+            return (
+              <Text style={{ ...tokens.type.ui, color: c.inkGhost, opacity: 0.85, marginTop: 10 }}>
+                {note}
+              </Text>
+            );
+          })()}
           {(collection?.description || collection?.created_at) && (
             <Text style={{ ...tokens.type.ui, color: c.inkGhost, opacity: 0.85, marginTop: 10, lineHeight: 23 }}>
               {collection?.description ? `${collection.description} ` : ''}

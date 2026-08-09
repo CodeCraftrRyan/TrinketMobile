@@ -30,7 +30,7 @@ const shortDate = (raw?: string | null) => {
 
 export default function Items() {
   const router = useRouter();
-  const { location: locationParam } = useLocalSearchParams<{ location?: string }>();
+  const { location: locationParam, missingValue } = useLocalSearchParams<{ location?: string; missingValue?: string }>();
   const [items, setItems] = useState<Item[]>([]);
   const itemsRef = useRef<Item[]>([]);
   const [covers, setCovers] = useState<Record<string, string>>({});
@@ -185,7 +185,10 @@ export default function Items() {
         || normalize(it.location).includes(query)
         || people.some((n) => normalize(n).includes(query))
       : true;
-    return matchesPerson && matchesQuery;
+    const matchesValue = missingValue === '1'
+      ? !(typeof (it as any).estimated_value === 'number' && (it as any).estimated_value > 0)
+      : true;
+    return matchesPerson && matchesQuery && matchesValue;
   });
 
   const ordered = newestFirst ? filtered : [...filtered].reverse();

@@ -53,6 +53,8 @@ const shortDate = (raw?: string | null) => {
 
 export default function Home() {
   const router = useRouter();
+  const [totalValue, setTotalValue] = useState<number>(0);
+  const [valuedCount, setValuedCount] = useState<number>(0);
   const [familyName, setFamilyName] = useState('');
   const [initials, setInitials] = useState('T');
   const [counts, setCounts] = useState({ items: 0, collections: 0, events: 0 });
@@ -72,12 +74,19 @@ export default function Home() {
       setFamilyName(familyNameFrom(meta));
       setInitials(initialsFrom(meta, user.email));
 
-      const [it, co, ev, cats] = await Promise.all([
+      const [it, co, ev, cats, vals] = await Promise.all([
         supabase.from('items').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
         supabase.from('collections').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
         supabase.from('events').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
         supabase.from('categories').select('id,name'),
+        supabase.from('items').select('estimated_value').eq('user_id', user.id).not('estimated_value', 'is', null),
       ]);
+      {
+        const rows = (vals?.data ?? []) as { estimated_value: number | null }[];
+        const valued = rows.filter(r => typeof r.estimated_value === 'number' && r.estimated_value > 0);
+        setValuedCount(valued.length);
+        setTotalValue(valued.reduce((s, r) => s + (r.estimated_value as number), 0));
+      }
       // What the plan holds, so the archive can say when it is nearly full.
       try {
         const { data: sub } = await supabase
@@ -233,6 +242,26 @@ export default function Home() {
               </TouchableOpacity>
             ))}
           </View>
+          {totalValue > 0 && (
+            <TouchableOpacity
+              onPress={() => router.push({ pathname: '/(tabs)/items', params: { missingValue: '1' } } as any)}
+              activeOpacity={0.6}
+              accessibilityRole="button"
+              accessibilityLabel="See objects without a value"
+              style={{ paddingVertical: 18, borderTopWidth: 1, borderTopColor: 'rgba(216,230,238,0.18)' }}>
+              <Text style={{ color: c.bg, fontSize: 26, fontWeight: '500' }}>
+                ${Math.round(totalValue).toLocaleString()}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                <Text style={{ ...tokens.type.label, letterSpacing: 0.4, color: c.inkGhost, opacity: 0.8 }}>
+                  {valuedCount === counts.items
+                    ? 'ARCHIVE VALUE'
+                    : `ARCHIVE VALUE ACROSS ${valuedCount} OF ${counts.items} OBJECTS`}
+                </Text>
+                <Ionicons name="chevron-forward" size={11} color={c.inkGhost} style={{ opacity: 0.6 }} />
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Find by photograph */}
@@ -251,7 +280,7 @@ export default function Home() {
             paddingVertical: 16,
             borderWidth: 1,
             borderColor: c.accent,
-            borderRadius: tokens.radius.sm,
+            borderRadius: tokens.radius.lg,
             backgroundColor: c.card,
           }}>
           <View style={{

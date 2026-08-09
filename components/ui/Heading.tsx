@@ -13,7 +13,7 @@ type HeadingProps = {
 export function Heading({ children, level = 1, className = "", style }: HeadingProps) {
 	const sizeClass = level === 1 ? "text-2xl" : level === 2 ? "text-xl" : "text-lg";
 	const weightClass = "font-semibold";
-		const fontFamily = level <= 2 ? "CormorantGaramond_300Light" : "DMSans_400Regular";
+		const fontFamily = level <= 2 ? "EBGaramond_400Regular" : "DMSans_400Regular";
 
 	return (
 		<Text

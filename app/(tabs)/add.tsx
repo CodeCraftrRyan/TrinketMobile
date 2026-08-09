@@ -9,7 +9,6 @@ import { Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressabl
 // SDK 54 moved readAsStringAsync to the legacy entry point.
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
-import BrandHeader from '../../components/ui/BrandHeader';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
 
@@ -102,6 +101,7 @@ export default function AddTab() {
   const isEditing = Boolean(id);
   const today = new Date().toISOString().split('T')[0];
   const [focusedField, setFocusedField] = useState('');
+  const [suggesting, setSuggesting] = useState(false);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<{ id?: string; label: string; icon: string } | null>(null);
   const [categoryLabel, setCategoryLabel] = useState<string | null>(null);
@@ -109,7 +109,7 @@ export default function AddTab() {
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [estimatedValue, setEstimatedValue] = useState('');
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-  const [room, setRoom] = useState(ROOM_OPTIONS[0]);
+  const [room, setRoom] = useState<{ label: string; icon: string } | null>(null);
   const [roomModalVisible, setRoomModalVisible] = useState(false);
   const [customRoom, setCustomRoom] = useState('');
   const [description, setDescription] = useState('');
@@ -153,9 +153,7 @@ export default function AddTab() {
     if (incomingPhoto && typeof incomingPhoto === 'string' && incomingPhoto.length > 0) {
       incomingPhotoApplied.current = true;
       setPhotos([{ key: genKey(), localUri: incomingPhoto, displayUri: incomingPhoto }]);
-      if (typeof incomingDescription === 'string' && incomingDescription.trim()) {
-        setDescription((prev) => (prev && prev.trim() ? prev : incomingDescription.trim()));
-      }
+
     }
   }, [incomingPhoto, incomingDescription, isEditing]);
 
@@ -348,6 +346,47 @@ export default function AddTab() {
   };
 
   // Upload one local file into item-photos/<uid>/<itemId>/<file> and return the path.
+  async function suggestDetails() {
+    const local = photos.find(p => p.localUri)?.localUri;
+    if (!local) { Alert.alert('Add a photograph first', 'Suggestions are read from a newly added photo.'); return; }
+    setSuggesting(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+      if (!userId) throw new Error('Please sign in first.');
+      const ext = (local.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const base64 = await FileSystem.readAsStringAsync(local, { encoding: FileSystem.EncodingType.Base64 });
+      const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+      const { error: upErr } = await supabase.storage
+        .from('search-queries')
+        .upload(path, decode(base64), { contentType, upsert: false });
+      if (upErr) throw upErr;
+      const { data, error } = await supabase.functions.invoke('describe-item', { body: { imagePath: path } });
+      if (error) throw error;
+      const s = (data as any)?.suggestion ?? {};
+      console.log('SUGGESTION:', JSON.stringify(s), '| options:', categoryOptions.map(o => o.label).join('|'), '| current:', category?.label ?? 'none');
+      // Fill empty fields only — never overwrite what was written.
+      if (s.name && !name.trim()) setName(s.name);
+      if (!description.trim()) {
+        const extra = [s.era, s.materials].filter(Boolean).join(' · ');
+        setDescription([s.description, extra ? `(${extra})` : ''].filter(Boolean).join(' ').trim());
+      }
+      if (s.estimated_value && !estimatedValue.trim()) setEstimatedValue(String(s.estimated_value));
+      if (s.category && !category) {
+        const match = categoryOptions.find(o => o.label.toLowerCase() === String(s.category).toLowerCase());
+        if (match) { setCategory(match); setCategoryLabel(match.label); }
+      }
+    } catch (e: any) {
+      const msg = e?.message ?? '';
+      Alert.alert('Could not suggest', msg.includes('limit_reached') || msg.includes('429')
+        ? 'You have used all your AI lookups this month.'
+        : 'Something went wrong reading the photograph.');
+    } finally {
+      setSuggesting(false);
+    }
+  }
+
   async function uploadPhoto(localUri: string, userId: string, itemId: string | number, index: number) {
     const ext = (localUri.split('.').pop() || 'jpg').toLowerCase().split('?')[0];
     const fileName = `${Date.now()}-${index}.${ext}`;
@@ -771,8 +810,8 @@ export default function AddTab() {
         }));
         setCategoryOptions(options);
         if (options.length > 0) {
-          setCategory(prev => prev ?? options[0]);
-          setCategoryLabel(prev => prev ?? options[0].label);
+
+
         }
       } catch (e) {
         console.warn('Failed to load categories', e);
@@ -1073,7 +1112,7 @@ export default function AddTab() {
           {photos.length} of {maxPhotos} {maxPhotos === 1 ? 'photograph' : 'photographs'}
         </Text>
 
-        <Text style={{ ...labelStyle, marginTop: 26 }}>What is it</Text>
+        <Text style={{ ...labelStyle, marginTop: 26 }}>What is it?</Text>
         <View style={fieldBox}>
           <TextInput
             style={fieldText}
@@ -1098,9 +1137,9 @@ export default function AddTab() {
 
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 22 }}>
           <View style={{ flex: 1 }}>
-            <Text style={labelStyle}>Where it lives</Text>
+            <Text style={labelStyle}>Location</Text>
             <TouchableOpacity onPress={handleRoomPress} style={[fieldBox, { flexDirection: 'row', alignItems: 'center' }]}>
-              <Text style={[fieldText, { flex: 1 }]} numberOfLines={1}>{room.label}</Text>
+              <Text style={[fieldText, { flex: 1, color: room ? c.ink : c.inkLight }]} numberOfLines={1}>{room?.label ?? "Select a room"}</Text>
               <Ionicons name="chevron-down" size={15} color={c.inkLabel} />
             </TouchableOpacity>
             {room?.label === 'Other' && (
@@ -1127,6 +1166,21 @@ export default function AddTab() {
           </View>
         </View>
 
+        <TouchableOpacity
+          onPress={suggestDetails}
+          disabled={suggesting}
+          style={{
+            marginTop: 22, alignSelf: 'flex-start',
+            flexDirection: 'row', alignItems: 'center', gap: 7,
+            paddingHorizontal: 14, paddingVertical: 10,
+            borderWidth: 1, borderColor: c.accent, borderRadius: tokens.radius.md,
+            opacity: suggesting ? 0.6 : 1,
+          }}>
+          <Ionicons name="sparkles-outline" size={15} color={c.accentDeep} />
+          <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.accentDeep }}>
+            {suggesting ? 'Reading the photograph…' : 'Suggest details from photo'}
+          </Text>
+        </TouchableOpacity>
         <Text style={{ ...labelStyle, marginTop: 22 }}>The story</Text>
         <View style={[fieldBox, { minHeight: 132, paddingVertical: 12, justifyContent: 'flex-start' }]}>
           <TextInput
@@ -1345,7 +1399,7 @@ export default function AddTab() {
                     style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: c.ruleSoft }}
                   >
                     <Ionicons name={item.icon as any} size={18} color={c.accentCool} style={{ marginRight: 10 }} />
-                    <Text style={{ fontSize: 16, color: c.ink, fontWeight: item.label === room.label ? 'bold' : '600' }}>{item.label}</Text>
+                    <Text style={{ fontSize: 16, color: c.ink, fontWeight: item.label === room?.label ? 'bold' : '600' }}>{item.label}</Text>
                   </Pressable>
                 )}
                 showsVerticalScrollIndicator={false}

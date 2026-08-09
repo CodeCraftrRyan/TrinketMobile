@@ -26,5 +26,5 @@ export default function TabHeader({ title, actionTitle, onAction, actionDisabled
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingTop: Platform.OS === 'ios' ? 14 : 10, paddingRight: 4 },
-  title: { fontSize: 22, fontWeight: '300', color: tokens.colors.ink, fontFamily: 'CormorantGaramond_300Light' },
+  title: { fontSize: 22, fontWeight: '400', color: tokens.colors.ink, fontFamily: 'EBGaramond_400Regular' },
 });

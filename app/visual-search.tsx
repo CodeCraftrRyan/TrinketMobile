@@ -281,7 +281,7 @@ export default function VisualSearchScreen() {
               Not the one you meant? Keep this as its own object.
             </Text>
             <TouchableOpacity
-              onPress={() => router.push({ pathname: '/(tabs)/add', params: { incomingPhoto: queryImage ?? '', incomingDescription: seenDescription ?? '' } } as any)}
+              onPress={() => router.push({ pathname: '/(tabs)/add', params: { incomingPhoto: queryImage ?? '' } } as any)}
               style={{
                 marginTop: 14, paddingHorizontal: 22, paddingVertical: 14,
                 borderRadius: tokens.radius.sm,
@@ -300,7 +300,7 @@ export default function VisualSearchScreen() {
               This one isn&rsquo;t in your archive yet. Keep it?
             </Text>
             <TouchableOpacity
-              onPress={() => router.push({ pathname: '/(tabs)/add', params: { incomingPhoto: queryImage ?? '', incomingDescription: seenDescription ?? '' } } as any)}
+              onPress={() => router.push({ pathname: '/(tabs)/add', params: { incomingPhoto: queryImage ?? '' } } as any)}
               style={{
                 marginTop: 18, paddingHorizontal: 22, paddingVertical: 15,
                 borderRadius: tokens.radius.sm, backgroundColor: c.primary,

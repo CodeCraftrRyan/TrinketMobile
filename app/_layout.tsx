@@ -1,4 +1,4 @@
-import { CormorantGaramond_300Light, CormorantGaramond_300Light_Italic, CormorantGaramond_400Regular, CormorantGaramond_500Medium, useFonts as useCormorantFonts } from '@expo-google-fonts/cormorant-garamond';
+import { EBGaramond_400Regular, EBGaramond_400Regular_Italic, EBGaramond_500Medium, useFonts as useCormorantFonts } from '@expo-google-fonts/eb-garamond';
 import { DMMono_300Light, DMMono_400Regular, useFonts as useDMMonoFonts } from '@expo-google-fonts/dm-mono';
 import { DMSans_300Light, DMSans_400Regular, DMSans_500Medium, DMSans_700Bold, useFonts as useDMSansFonts } from '@expo-google-fonts/dm-sans';
 import { Stack } from "expo-router";
@@ -94,10 +94,9 @@ function AccessibilityShell() {
 
 export default function RootLayout() {
   const [cormorantLoaded] = useCormorantFonts({
-    CormorantGaramond_300Light,
-    CormorantGaramond_300Light_Italic,
-    CormorantGaramond_400Regular,
-    CormorantGaramond_500Medium,
+    EBGaramond_400Regular,
+    EBGaramond_400Regular_Italic,
+    EBGaramond_500Medium,
   });
   const [dmSansLoaded] = useDMSansFonts({
     DMSans_300Light,

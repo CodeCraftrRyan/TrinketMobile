@@ -18,7 +18,7 @@ export default function Welcome() {
             subtitle="YOUR PERSONAL ARCHIVE"
             subtitleColor="#4A7A9B"
             style={{ marginBottom: 20 }}
-            titleStyle={{ fontSize: 46, fontFamily: 'CormorantGaramond_400Regular', letterSpacing: 0.5 }}
+            titleStyle={{ fontSize: 46, fontFamily: 'EBGaramond_400Regular', letterSpacing: 0.5 }}
             subtitleStyle={{ fontSize: 20, fontFamily: 'DMSans_500Medium', letterSpacing: 1.2 }}
           />
           <Text style={{ fontSize: 20, color: '#4A7A9B', fontWeight: '600', marginBottom: 32, textAlign: 'center', letterSpacing: 0.2, fontFamily: 'DMSans_500Medium' }}>
