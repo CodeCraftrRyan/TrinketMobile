@@ -6,7 +6,7 @@ import { tokens } from '../lib/tokens';
 const c = tokens.colors;
 
 const UPDATED = 'July 31, 2026';
-const CONTACT = 'privacy@yourtrinkets.com';
+const CONTACT = 'admin@yourtrinkets.com';
 
 const SECTIONS: { title: string; body: string }[] = [
   {

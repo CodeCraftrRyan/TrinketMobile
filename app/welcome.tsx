@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import BrandHeader from '../components/ui/BrandHeader';
 
 export default function Welcome() {
@@ -53,9 +53,13 @@ export default function Welcome() {
           {/* Dev-only dummy button removed */}
 
           {/* Footer Links - muted, spaced */}
+{/* Footer Links - muted, spaced */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 18 }}>
-            {['Terms of Use', 'Privacy Policy', 'Subscription Terms'].map((txt, i) => (
-              <TouchableOpacity key={txt} onPress={() => {}}>
+            {[
+              ['Terms of Use', 'https://www.yourtrinkets.com/Terms'],
+              ['Privacy Policy', 'https://www.yourtrinkets.com/Privacy'],
+            ].map(([txt, url], i) => (
+              <TouchableOpacity key={txt} onPress={() => Linking.openURL(url)}>
                 <Text style={{ color: '#4A7A9B', fontSize: 14, marginHorizontal: 4, fontFamily: 'DMSans_400Regular' }}>{txt}{i < 2 ? ' ·' : ''}</Text>
               </TouchableOpacity>
             ))}

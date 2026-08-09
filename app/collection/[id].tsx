@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
@@ -121,7 +122,7 @@ export default function CollectionDetail() {
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const ordered = oldestFirst ? items : [...items].reverse();
   const mosaic = items.map((i) => covers[String(i.id)]).filter(Boolean).slice(0, 3);
@@ -145,7 +146,7 @@ export default function CollectionDetail() {
               <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Collections</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => router.push({ pathname: '/(tabs)/items', params: { collection: String(id) } } as any)}
+              onPress={() => router.push({ pathname: '/collection-edit', params: { id: String(id) } } as any)}
               hitSlop={10}>
               <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Edit</Text>
             </TouchableOpacity>
