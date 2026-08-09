@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, Share, Text, TouchableOpacity, View } from 'react-native';
 import { addRecentlyViewed } from '../../../lib/recent';
 import { supabase } from '../../../lib/supabase';
@@ -33,7 +33,7 @@ export default function ItemDetail() {
     return peopleNames;
   }
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     let mounted = true;
     async function load() {
       if (!id) return;
@@ -211,7 +211,7 @@ export default function ItemDetail() {
     }
     load();
     return () => { mounted = false; };
-  }, [id]);
+  }, [id]));
 
   async function toggleFavourite() {
     if (!userId || !item?.id) return;
