@@ -215,7 +215,7 @@ export default function EventDetail() {
           return (
             <TouchableOpacity
               key={String(row.id)}
-              onPress={() => router.push({ pathname: '/(tabs)/items/[id]', params: { id: String(row.id) } } as any)}
+              onPress={() => router.push({ pathname: '/(tabs)/items/[id]', params: { id: String(row.id), from: 'event', fromId: String(id) } } as any)}
               activeOpacity={0.75}
               style={{
                 flexDirection: 'row', alignItems: 'center', gap: 14,

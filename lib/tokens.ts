@@ -53,7 +53,7 @@ export const type = {
   body:      { fontFamily: 'DMSans_400Regular',          fontWeight: '400' as const, fontSize: 16, lineHeight: 24 },
   ui:        { fontFamily: 'DMSans_400Regular',          fontWeight: '400' as const, fontSize: 16, lineHeight: 22 },
   button:    { fontFamily: 'DMSans_500Medium',           fontWeight: '700' as const, fontSize: 16, letterSpacing: 0.3 },
-  label:     { fontFamily: 'DMSans_500Medium',           fontWeight: '500' as const, fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase' as const },
+  label:     { fontFamily: 'DMSans_500Medium',           fontWeight: '500' as const, fontSize: 11, letterSpacing: 0.4, textTransform: 'uppercase' as const },
   fact:      { fontFamily: 'DMSans_400Regular',          fontWeight: '400' as const, fontSize: 13, lineHeight: 18 },
 };
 

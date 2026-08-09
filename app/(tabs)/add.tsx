@@ -50,10 +50,39 @@ const getCategoryIcon = (label: string) => {
 
 
 const ROOM_OPTIONS = [
+  { label: 'Attic', icon: 'home' },
+  { label: 'Balcony', icon: 'sunny' },
+  { label: 'Basement', icon: 'layers' },
+  { label: 'Bathroom', icon: 'water' },
+  { label: 'Bedroom 1', icon: 'bed' },
+  { label: 'Bedroom 2', icon: 'bed' },
+  { label: 'Bedroom 3', icon: 'bed' },
+  { label: 'Closet', icon: 'shirt' },
+  { label: 'Craft Room', icon: 'color-palette' },
+  { label: 'Dining Room', icon: 'restaurant' },
+  { label: 'Entryway', icon: 'enter' },
+  { label: 'Garage', icon: 'car' },
+  { label: 'Guest Room', icon: 'people' },
+  { label: 'Hallway', icon: 'walk' },
+  { label: 'Home Gym', icon: 'barbell' },
+  { label: 'Kids Room', icon: 'happy' },
+  { label: 'Kitchen', icon: 'pizza' },
+  { label: 'Laundry Room', icon: 'shirt' },
   { label: 'Living Room', icon: 'home' },
-  { label: 'Bedroom', icon: 'bed' },
+  { label: 'Main Bedroom', icon: 'bed' },
+  { label: 'Media Room', icon: 'tv' },
+  { label: 'Mudroom', icon: 'footsteps' },
+  { label: 'Nursery', icon: 'heart' },
   { label: 'Office', icon: 'briefcase' },
+  { label: 'Pantry', icon: 'basket' },
+  { label: 'Patio', icon: 'sunny' },
+  { label: 'Playroom', icon: 'game-controller' },
+  { label: 'Safe', icon: 'lock-closed' },
+  { label: 'Shed', icon: 'construct' },
   { label: 'Storage', icon: 'archive' },
+  { label: 'Utility Room', icon: 'build' },
+  { label: 'Workshop', icon: 'hammer' },
+  { label: 'Other', icon: 'ellipsis-horizontal' },
 ];
 
 const ACQUIRED_OPTIONS = [
@@ -82,6 +111,7 @@ export default function AddTab() {
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [room, setRoom] = useState(ROOM_OPTIONS[0]);
   const [roomModalVisible, setRoomModalVisible] = useState(false);
+  const [customRoom, setCustomRoom] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(today);
   const [acquired, setAcquired] = useState(ACQUIRED_OPTIONS[0]);
@@ -579,7 +609,7 @@ export default function AddTab() {
       estimated_value: Number.isFinite(cleanedValue as number) ? cleanedValue : null,
       date_purchased: date.trim() || null,
       acquisition_method: acquired?.label ?? null,
-      location: room?.label ?? null,
+      location: room?.label === 'Other' ? (customRoom.trim() || null) : (room?.label ?? null),
       category_id: category?.id ?? null,
       event_id: eventId ?? null,
       user_id: userId,
@@ -678,7 +708,12 @@ export default function AddTab() {
         const roomLabel = data.location ?? data.room ?? null;
         if (roomLabel) {
           const foundRoom = ROOM_OPTIONS.find(option => option.label.toLowerCase() === String(roomLabel).toLowerCase());
-          if (foundRoom) setRoom(foundRoom);
+          if (foundRoom) {
+            setRoom(foundRoom);
+          } else {
+            const other = ROOM_OPTIONS.find(o => o.label === 'Other');
+            if (other) { setRoom(other); setCustomRoom(String(roomLabel)); }
+          }
         }
 
         const acquiredLabel = data.acquisition_method ?? data.acquired ?? null;
@@ -834,7 +869,7 @@ export default function AddTab() {
         estimated_value: Number.isFinite(cleanedValue as number) ? cleanedValue : null,
         date_purchased: date.trim() || null,
         acquisition_method: acquired?.label ?? null,
-        location: room?.label ?? null,
+        location: room?.label === 'Other' ? (customRoom.trim() || null) : (room?.label ?? null),
         category_id: category?.id ?? null,
         event_id: eventId ?? null,
       })
@@ -1068,6 +1103,16 @@ export default function AddTab() {
               <Text style={[fieldText, { flex: 1 }]} numberOfLines={1}>{room.label}</Text>
               <Ionicons name="chevron-down" size={15} color={c.inkLabel} />
             </TouchableOpacity>
+            {room?.label === 'Other' && (
+              <TextInput
+                value={customRoom}
+                onChangeText={setCustomRoom}
+                placeholder="Name the place…"
+                placeholderTextColor={c.inkLight}
+                autoCapitalize="words"
+                style={[fieldBox, fieldText, { marginTop: 8 }]}
+              />
+            )}
           </View>
           <View style={{ flex: 1 }}>
             <Text style={labelStyle}>Whose it was</Text>

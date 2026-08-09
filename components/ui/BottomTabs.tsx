@@ -4,30 +4,52 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '../../lib/tokens';
 
+type TabDef = { name: string; label: string; icon: keyof typeof Ionicons.glyphMap };
+
+const LEFT_TABS: TabDef[] = [
+  { name: 'home', label: 'Home', icon: 'home-outline' },
+  { name: 'collections', label: 'Collections', icon: 'albums-outline' },
+];
+const RIGHT_TABS: TabDef[] = [
+  { name: 'events', label: 'Events', icon: 'calendar-outline' },
+  { name: 'account', label: 'Profile', icon: 'person-outline' },
+];
+
 export default function BottomTabs(props: BottomTabBarProps) {
   const { state, navigation } = props;
   const insets = useSafeAreaInsets();
   const BAR_HEIGHT = 56;
 
+  const renderTab = (def: TabDef) => {
+    const route = state.routes.find((r) => r.name === def.name);
+    if (!route) return null;
+    const index = state.routes.findIndex((r) => r.key === route.key);
+    const isFocused = state.index === index;
+    const onPress = () => {
+      const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+      if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name as never);
+    };
+    const color = isFocused ? tokens.colors.surface : tokens.colors.inkGhost;
+    return (
+      <TouchableOpacity
+        key={route.key}
+        accessibilityRole="button"
+        accessibilityState={isFocused ? { selected: true } : {}}
+        onPress={onPress}
+        style={styles.tabItem}
+      >
+        <Ionicons name={def.icon} size={26} color={color} />
+        <Text style={{ color, fontSize: 11, marginTop: 2 }}>{def.label}</Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.wrapper} pointerEvents="box-none">
-      <View style={[styles.pill, { paddingBottom: insets.bottom, height: BAR_HEIGHT + insets.bottom }]}> 
-        {/* Left tab(s) */}
-        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
-          {state.routes.filter((r) => r.name === 'home').map((route) => {
-            const index = state.routes.findIndex((r) => r.key === route.key);
-            const isFocused = state.index === index;
-            const onPress = () => {
-              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name as never);
-            };
-            return (
-              <TouchableOpacity key={route.key} accessibilityRole="button" accessibilityState={isFocused ? { selected: true } : {}} onPress={onPress} style={styles.tabItem}>
-                <Ionicons name="home-outline" size={28} color={isFocused ? tokens.colors.surface : tokens.colors.inkGhost} />
-                <Text style={{ color: isFocused ? tokens.colors.surface : tokens.colors.inkGhost, fontSize: 12, marginTop: 2 }}>Home</Text>
-              </TouchableOpacity>
-            );
-          })}
+      <View style={[styles.pill, { paddingBottom: insets.bottom, height: BAR_HEIGHT + insets.bottom }]}>
+        {/* Left tabs */}
+        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center' }}>
+          {LEFT_TABS.map(renderTab)}
         </View>
         {/* Center floating button */}
         <View style={{ width: 80, alignItems: 'center', marginBottom: 24 }} pointerEvents="box-none">
@@ -56,22 +78,9 @@ export default function BottomTabs(props: BottomTabBarProps) {
             </View>
           </TouchableOpacity>
         </View>
-        {/* Right tab(s) */}
-        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }}>
-          {state.routes.filter((r) => r.name === 'collections').map((route) => {
-            const index = state.routes.findIndex((r) => r.key === route.key);
-            const isFocused = state.index === index;
-            const onPress = () => {
-              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name as never);
-            };
-            return (
-              <TouchableOpacity key={route.key} accessibilityRole="button" accessibilityState={isFocused ? { selected: true } : {}} onPress={onPress} style={styles.tabItem}>
-                <Ionicons name="albums-outline" size={28} color={isFocused ? tokens.colors.surface : tokens.colors.inkGhost} />
-                <Text style={{ color: isFocused ? tokens.colors.surface : tokens.colors.inkGhost, fontSize: 12, marginTop: 2 }}>Collection</Text>
-              </TouchableOpacity>
-            );
-          })}
+        {/* Right tabs */}
+        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center' }}>
+          {RIGHT_TABS.map(renderTab)}
         </View>
       </View>
     </View>
@@ -102,32 +111,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     width: '100%',
     justifyContent: 'space-around',
-  shadowColor: tokens.colors.ink,
+    shadowColor: tokens.colors.ink,
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 6,
   },
   tabItem: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 0,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  searchButton: {
-    marginLeft: 8,
-  },
-  searchInner: {
-    width: 44,
-    height: 44,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    borderColor: 'transparent',
-  },
-  searchInnerActive: {
-  backgroundColor: '#0C1620',
-  borderColor: '#0C1620',
   },
 });

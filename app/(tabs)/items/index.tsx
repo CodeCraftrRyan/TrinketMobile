@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -30,6 +30,7 @@ const shortDate = (raw?: string | null) => {
 
 export default function Items() {
   const router = useRouter();
+  const { location: locationParam } = useLocalSearchParams<{ location?: string }>();
   const [items, setItems] = useState<Item[]>([]);
   const itemsRef = useRef<Item[]>([]);
   const [covers, setCovers] = useState<Record<string, string>>({});
@@ -40,6 +41,7 @@ export default function Items() {
   const [showPeople, setShowPeople] = useState(false);
   const [favourites, setFavourites] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  useEffect(() => { if (locationParam) setSearchQuery(String(locationParam)); }, [locationParam]);
   const [newestFirst, setNewestFirst] = useState(true);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

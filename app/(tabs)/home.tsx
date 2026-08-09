@@ -189,34 +189,19 @@ export default function Home() {
 
         {/* Masthead */}
         <View style={{ backgroundColor: c.surfaceDark, paddingTop: 56, paddingHorizontal: 20, paddingBottom: 0 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>Trinket</Text>
-              <Text style={{
-                ...tokens.type.display,
-                fontSize: 34,
-                lineHeight: 40,
-                color: c.bg,
-                marginTop: 4,
-              }} numberOfLines={2}>
-                {familyName ? `${familyName} Family Archive` : 'Your Family Archive'}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => router.push({ pathname: '/(tabs)/account' })}
-              accessibilityLabel="Account"
-              style={{
-                width: 46, height: 46,
-                borderWidth: 1, borderColor: c.accent,
-                borderRadius: tokens.radius.md,
-                alignItems: 'center', justifyContent: 'center',
-                marginTop: 4,
-              }}
-            >
-              <Text style={{ color: c.bg, fontSize: 15, fontWeight: '500', letterSpacing: 0.5 }}>
-                {initials}
-              </Text>
-            </TouchableOpacity>
+          <View>
+            <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.85, fontSize: 15, letterSpacing: 2.2 }}>
+              Trinket
+            </Text>
+            <Text style={{
+              ...tokens.type.display,
+              fontSize: 34,
+              lineHeight: 40,
+              color: c.bg,
+              marginTop: 6,
+            }} numberOfLines={2}>
+              {familyName ? `${familyName} Family Archive` : 'Your Family Archive'}
+            </Text>
           </View>
 
           {/* Register totals */}
@@ -240,7 +225,7 @@ export default function Home() {
               >
                 <Text style={{ color: c.bg, fontSize: 26, fontWeight: '500' }}>{value}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                  <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.8 }}>
+                  <Text style={{ ...tokens.type.label, letterSpacing: 0.4, color: c.inkGhost, opacity: 0.8 }}>
                     {label}
                   </Text>
                   <Ionicons name="chevron-forward" size={11} color={c.inkGhost} style={{ opacity: 0.6 }} />
@@ -390,9 +375,6 @@ export default function Home() {
             paddingHorizontal: 20,
             paddingTop: 24,
           }}>
-            {counts.items === 1
-              ? 'One kept. Add another and the register grows.'
-              : `${counts.items} kept. Add one more and the register grows.`}
           </Text>
         )}
 

@@ -11,7 +11,12 @@ const PHOTO_BUCKET = 'item-photos';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ItemDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from, fromId } = useLocalSearchParams<{ id: string; from?: string; fromId?: string }>();
+  const goBack = () => {
+    if (from === 'collection' && fromId) { router.replace({ pathname: '/collection/[id]', params: { id: fromId } } as any); return; }
+    if (from === 'event' && fromId) { router.replace({ pathname: '/events-detail', params: { id: fromId } } as any); return; }
+    router.back();
+  };
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<any | null>(null);
@@ -256,7 +261,7 @@ export default function ItemDetail() {
         <Text style={{ ...tokens.type.ui, color: c.inkLabel, marginBottom: 12 }}>
           That object is no longer in the archive.
         </Text>
-        <Text onPress={() => router.back()} style={{ ...tokens.type.ui, color: c.accentDeep }}>Go back</Text>
+        <Text onPress={goBack} style={{ ...tokens.type.ui, color: c.accentDeep }}>Go back</Text>
       </View>
     );
   }
@@ -364,7 +369,7 @@ export default function ItemDetail() {
         paddingTop: 72, paddingBottom: 14, paddingHorizontal: 20,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={10}
+        <TouchableOpacity onPress={goBack} hitSlop={10}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           <Ionicons name="chevron-back" size={19} color={c.inkGhost} />
           <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Archive</Text>
@@ -448,17 +453,27 @@ export default function ItemDetail() {
 
           {chips.length > 0 && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 18 }}>
-              {chips.map(([icon, label]) => (
-                <View key={label} style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 7,
-                  paddingHorizontal: 13, paddingVertical: 10,
-                  borderWidth: 1, borderColor: c.border,
-                  borderRadius: tokens.radius.md, backgroundColor: c.card,
-                }}>
-                  <Ionicons name={icon as any} size={15} color={c.accentCool} />
-                  <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.ink }}>{label}</Text>
-                </View>
-              ))}
+              {chips.map(([icon, label]) => {
+                const isLocation = icon === 'location-outline';
+                const Chip = isLocation ? TouchableOpacity : View;
+                return (
+                  <Chip key={label}
+                    {...(isLocation ? {
+                      onPress: () => router.push({ pathname: '/(tabs)/items', params: { location: label } } as any),
+                      accessibilityRole: 'button' as const,
+                    } : {})}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', gap: 7,
+                      paddingHorizontal: 13, paddingVertical: 10,
+                      borderWidth: 1, borderColor: isLocation ? c.accentCool : c.border,
+                      borderRadius: tokens.radius.md, backgroundColor: c.card,
+                    }}>
+                    <Ionicons name={icon as any} size={15} color={c.accentCool} />
+                    <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.ink }}>{label}</Text>
+                    {isLocation && <Ionicons name="chevron-forward" size={13} color={c.accentCool} />}
+                  </Chip>
+                );
+              })}
             </View>
           )}
         </View>
