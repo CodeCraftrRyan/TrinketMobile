@@ -84,32 +84,37 @@ supabase link --project-ref "$PROJECT_REF" || true
 if [[ "$DEPLOY_ONLY" != true ]]; then
   echo "Setting secrets..."
 
-  # Known secret keys we may set from env or secrets file (only set if value present)
-  KEYS=(SUPABASE_SERVICE_ROLE_KEY VERIFICATION_HMAC_SECRET SENDGRID_API_KEY TWILIO_SID TWILIO_TOKEN TWILIO_FROM DEV_RETURN_CODES)
+  # Known secret keys we may set from env or secrets file (only set if value present).
+  # SUPABASE_* names are reserved by the CLI; SUPABASE_URL and
+  # SUPABASE_SERVICE_ROLE_KEY are injected into functions automatically.
+  KEYS=(VERIFICATION_HMAC_SECRET SENDGRID_API_KEY TWILIO_SID TWILIO_TOKEN TWILIO_FROM DEV_RETURN_CODES)
 
-  declare -A KV
+  if [[ -n "$SECRETS_FILE" && ! -f "$SECRETS_FILE" ]]; then
+    echo "Secrets file '$SECRETS_FILE' not found"; exit 1
+  fi
 
-  # Load from SECRETS_FILE if provided
-  if [[ -n "$SECRETS_FILE" ]]; then
-    if [[ ! -f "$SECRETS_FILE" ]]; then
-      echo "Secrets file '$SECRETS_FILE' not found"; exit 1
-    fi
+  # Look up a key in SECRETS_FILE. A plain function rather than an
+  # associative array so this runs on macOS's stock bash 3.2.
+  file_val() {
+    local want="$1" line k v
+    [[ -n "$SECRETS_FILE" ]] || return 0
     while IFS= read -r line || [[ -n "$line" ]]; do
       # skip comments and empty
-      [[ "$line" =~ ^# ]] && continue
+      [[ "$line" =~ ^[[:space:]]*# ]] && continue
       [[ -z "$line" ]] && continue
-      if [[ "$line" =~ ^([^=]+)=(.*)$ ]]; then
-        k=${BASH_REMATCH[1]}
-        v=${BASH_REMATCH[2]}
+      if [[ "$line" =~ ^(export[[:space:]]+)?([^=[:space:]]+)=(.*)$ ]]; then
+        k=${BASH_REMATCH[2]}
+        v=${BASH_REMATCH[3]}
+        [[ "$k" == "$want" ]] || continue
         # remove surrounding quotes if present
-        v=${v#"}
-        v=${v%"}
+        v=${v#\"}
+        v=${v%\"}
         v=${v#\'}
         v=${v%\'}
-        KV[$k]="$v"
+        printf "%s" "$v"
       fi
     done < "$SECRETS_FILE"
-  fi
+  }
 
   # Helper to get value from env or file
   get_val() {
@@ -118,19 +123,14 @@ if [[ "$DEPLOY_ONLY" != true ]]; then
       printf "%s" "${!key}"
       return
     fi
-    if [[ -n "${KV[$key]:-}" ]]; then
-      printf "%s" "${KV[$key]}"
-      return
-    fi
-    printf ""
+    file_val "$key"
   }
 
   for key in "${KEYS[@]}"; do
     val=$(get_val "$key")
     if [[ -n "$val" ]]; then
       echo "  Setting secret: $key"
-      # Use --project-ref to target the right project; supabase secrets set accepts multiple KEY=VALUE pairs
-      # Use a subshell to avoid exposing secrets in the parent environment
+      # Use --project-ref to target the right project
       supabase secrets set "$key=$val" --project-ref "$PROJECT_REF"
     else
       echo "  Skipping secret (not provided): $key"
@@ -145,24 +145,31 @@ supabase functions deploy account-verification --project-ref "$PROJECT_REF" --no
 
 popd >/dev/null
 
-echo "\nDeployment finished. If secrets were set, they are now stored in Supabase Secrets." 
+printf "\nDeployment finished. If secrets were set, they are now stored in Supabase Secrets.\n"
 
-cat <<EOF
+cat <<'EOF'
 Next steps / quick tests:
-- Test send endpoint (replace <PROJECT_URL> with your SUPABASE_URL e.g. https://<ref>.supabase.co):
+Both endpoints require a signed-in user's access token; the user id and email
+are taken from it. Replace <SUPABASE_URL> (e.g. https://<ref>.supabase.co) and
+set ACCESS_TOKEN to a session access token.
+
+- Test send endpoint:
   curl -X POST '<SUPABASE_URL>/functions/v1/account-verification/send' \
+    -H "Authorization: Bearer $ACCESS_TOKEN" \
     -H 'Content-Type: application/json' \
-    -d '{"userId":"test-user","method":"email","destination":"[email protected]"}'
+    -d '{}'
 
 - Test verify endpoint:
   curl -X POST '<SUPABASE_URL>/functions/v1/account-verification/verify' \
+    -H "Authorization: Bearer $ACCESS_TOKEN" \
     -H 'Content-Type: application/json' \
-    -d '{"userId":"test-user","code":"000000"}'
+    -d '{"code":"000000"}'
 
 Notes:
 - The script uses the supabase CLI; run 'supabase login' before running if you haven't authenticated.
-- SUPABASE_SERVICE_ROLE_KEY should be set as a secret; do not commit it.
+- VERIFICATION_HMAC_SECRET is required; the function rejects requests without it.
 - For QA, set DEV_RETURN_CODES=true in the secrets to have the function return the generated code.
+  Only the exact value "true" enables it. Never set it on production.
 EOF
 
 exit 0

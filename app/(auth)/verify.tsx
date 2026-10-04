@@ -3,14 +3,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import BrandHeader from '../../components/ui/BrandHeader';
+import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
 
 const c = tokens.colors;
 
 export default function Verify() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ userId?: string; email?: string; returnTo?: string }>();
-  const userId = params.userId ?? '';
+  const params = useLocalSearchParams<{ email?: string; returnTo?: string }>();
   const email = params.email ?? '';
   const returnTo = params.returnTo ?? '';
 
@@ -27,6 +27,14 @@ export default function Verify() {
     return url.replace(/\/$/, '');
   }
 
+  // The function identifies the user from this token, not from the body.
+  async function authHeaders() {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    if (!token) throw new Error('Your session has expired — please sign in again.');
+    return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  }
+
   // Auto-send an email code once when arriving at this screen.
   useEffect(() => {
     if (!sent && email) {
@@ -41,12 +49,10 @@ export default function Verify() {
       setNote('');
       const base = getSupabaseUrl();
       const sendUrl = `${base}/functions/v1/account-verification/send`;
-      const payload = { userId, method: 'email', destination: email };
-      console.log('[verify] sendCode -> url:', sendUrl, 'payload:', payload);
       const resp = await fetch(sendUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: await authHeaders(),
+        body: JSON.stringify({}),
       });
       const text = await resp.text();
       let json: any = null;
@@ -68,12 +74,10 @@ export default function Verify() {
       setVerifying(true);
       const base = getSupabaseUrl();
       const verifyUrl = `${base}/functions/v1/account-verification/verify`;
-      const payload = { userId, code };
-      console.log('[verify] verify -> url:', verifyUrl, 'payload:', payload);
       const resp = await fetch(verifyUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: await authHeaders(),
+        body: JSON.stringify({ code }),
       });
       const text = await resp.text();
       let json: any = null;
