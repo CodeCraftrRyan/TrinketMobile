@@ -3,8 +3,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 // at app startup (prevents crashes when the development client doesn't include
 // the module). The module will be dynamically imported when the user attempts
 // to pick or take a photo.
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 // SDK 54 moved readAsStringAsync to the legacy entry point.
 import { decode } from 'base64-arraybuffer';
@@ -94,7 +94,26 @@ const ACQUIRED_OPTIONS = [
 ];
 
 
+// The add screen lives inside the Tabs navigator, which keeps screens mounted
+// after you leave them. Without this, the last item's name, photos and fields
+// were still filled in the next time someone tapped "add". Remount the form on
+// every visit so each new item starts from a blank page.
 export default function AddTab() {
+  const [visit, setVisit] = useState(0);
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      setVisit((v) => v + 1);
+    }, [])
+  );
+  return <AddItemForm key={visit} />;
+}
+
+function AddItemForm() {
   const router = useRouter();
   const { id, incomingPhoto, incomingDescription, collection: collectionParam, event: eventParam } =
     useLocalSearchParams<{ id?: string; incomingPhoto?: string; incomingDescription?: string; collection?: string; event?: string }>();
