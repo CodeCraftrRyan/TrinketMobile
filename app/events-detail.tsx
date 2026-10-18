@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { tokens } from '../lib/tokens';
+import { addItemHref } from '../lib/addItemRoute';
 
 const c = tokens.colors;
 const PHOTO_BUCKET = 'item-photos';
@@ -201,7 +202,7 @@ export default function EventDetail() {
               Nothing filed under this day yet.
             </Text>
             <TouchableOpacity
-              onPress={() => router.push({ pathname: '/(tabs)/add', params: { event: String(id) } } as any)}
+              onPress={() => router.push(addItemHref({ event: String(id) }))}
               style={{
                 marginTop: 18, paddingHorizontal: 22, paddingVertical: 15,
                 borderRadius: tokens.radius.sm, backgroundColor: c.primary,
@@ -254,7 +255,7 @@ export default function EventDetail() {
 
         {!loading && ordered.length > 0 && (
           <TouchableOpacity
-            onPress={() => router.push({ pathname: '/(tabs)/add', params: { event: String(id) } } as any)}
+            onPress={() => router.push(addItemHref({ event: String(id) }))}
             style={{
               marginHorizontal: 20, marginTop: 24,
               paddingVertical: 15, alignItems: 'center',

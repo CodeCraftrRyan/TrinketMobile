@@ -5,6 +5,7 @@ import { useFocusEffect } from 'expo-router';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
+import { addItemHref } from '../../lib/addItemRoute';
 
 const c = tokens.colors;
 const PHOTO_BUCKET = 'item-photos';
@@ -221,7 +222,7 @@ export default function CollectionDetail() {
               Nothing filed here yet.
             </Text>
             <TouchableOpacity
-              onPress={() => router.push({ pathname: '/(tabs)/add', params: { collection: String(id) } } as any)}
+              onPress={() => router.push(addItemHref({ collection: String(id) }))}
               style={{
                 marginTop: 18,
                 paddingHorizontal: 22, paddingVertical: 15,
@@ -276,7 +277,7 @@ export default function CollectionDetail() {
 
         {!loading && ordered.length > 0 && (
           <TouchableOpacity
-            onPress={() => router.push({ pathname: '/(tabs)/add', params: { collection: String(id) } } as any)}
+            onPress={() => router.push(addItemHref({ collection: String(id) }))}
             style={{
               marginHorizontal: 20, marginTop: 24,
               paddingVertical: 15, alignItems: 'center',

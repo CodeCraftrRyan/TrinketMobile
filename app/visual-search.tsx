@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { tokens } from '../lib/tokens';
+import { addItemHref } from '../lib/addItemRoute';
 
 const c = tokens.colors;
 const PHOTO_BUCKET = 'item-photos';
@@ -281,7 +282,7 @@ export default function VisualSearchScreen() {
               Not the one you meant? Keep this as its own object.
             </Text>
             <TouchableOpacity
-              onPress={() => router.push({ pathname: '/(tabs)/add', params: { incomingPhoto: queryImage ?? '' } } as any)}
+              onPress={() => router.push(addItemHref({ incomingPhoto: queryImage ?? '' }))}
               style={{
                 marginTop: 14, paddingHorizontal: 22, paddingVertical: 14,
                 borderRadius: tokens.radius.sm,
@@ -300,7 +301,7 @@ export default function VisualSearchScreen() {
               This one isn&rsquo;t in your archive yet. Keep it?
             </Text>
             <TouchableOpacity
-              onPress={() => router.push({ pathname: '/(tabs)/add', params: { incomingPhoto: queryImage ?? '' } } as any)}
+              onPress={() => router.push(addItemHref({ incomingPhoto: queryImage ?? '' }))}
               style={{
                 marginTop: 18, paddingHorizontal: 22, paddingVertical: 15,
                 borderRadius: tokens.radius.sm, backgroundColor: c.primary,

@@ -110,7 +110,11 @@ export default function AddTab() {
       setVisit((v) => v + 1);
     }, [])
   );
-  return <AddItemForm key={visit} />;
+  // Also remount when the params change while the screen is already showing
+  // (e.g. tapping "+" while editing an item), since that fires no focus event.
+  const p = useLocalSearchParams<{ id?: string; incomingPhoto?: string; collection?: string; event?: string }>();
+  const formKey = [visit, p.id ?? '', p.incomingPhoto ?? '', p.collection ?? '', p.event ?? ''].join('|');
+  return <AddItemForm key={formKey} />;
 }
 
 function AddItemForm() {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import { tokens } from '../../../lib/tokens';
+import { addItemHref } from '../../../lib/addItemRoute';
 
 const c = tokens.colors;
 const PHOTO_BUCKET = 'item-photos';
@@ -335,7 +336,7 @@ export default function Items() {
             </Text>
             {items.length === 0 && (
               <TouchableOpacity
-                onPress={() => router.push('/(tabs)/add')}
+                onPress={() => router.push(addItemHref())}
                 style={{
                   marginTop: 18, paddingHorizontal: 22, paddingVertical: 15,
                   borderRadius: tokens.radius.sm, backgroundColor: c.primary,

@@ -3,6 +3,7 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '../../lib/tokens';
+import { addItemParams } from '../../lib/addItemRoute';
 
 type TabDef = { name: string; label: string; icon: keyof typeof Ionicons.glyphMap };
 
@@ -57,7 +58,7 @@ export default function BottomTabs(props: BottomTabBarProps) {
             style={styles.fab}
             onPress={() => {
               const addRoute = state.routes.find((r) => r.name === 'add');
-              if (addRoute) navigation.navigate(addRoute.name as never);
+              if (addRoute) (navigation as any).navigate(addRoute.name, addItemParams());
             }}
             accessibilityRole="button"
           >

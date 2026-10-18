@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Dimensions, Image, NativeScrollEvent, NativeS
 import { addRecentlyViewed } from '../../../lib/recent';
 import { supabase } from '../../../lib/supabase';
 import { tokens } from '../../../lib/tokens';
+import { addItemHref } from '../../../lib/addItemRoute';
 
 const c = tokens.colors;
 const PHOTO_BUCKET = 'item-photos';
@@ -384,7 +385,7 @@ export default function ItemDetail() {
             <Ionicons name="share-outline" size={21} color={c.inkGhost} />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => router.push({ pathname: '/(tabs)/add', params: { id: item.id } } as any)}
+            onPress={() => router.push(addItemHref({ id: String(item.id) }))}
             hitSlop={10}>
             <Text style={{ ...tokens.type.ui, color: c.accent }}>Edit</Text>
           </TouchableOpacity>
