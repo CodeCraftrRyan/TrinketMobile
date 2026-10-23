@@ -6,6 +6,7 @@ import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '../lib/supabase';
 import { tokens } from '../lib/tokens';
+import { DATE_ERROR, parseFlexibleDate } from '../lib/dates';
 
 const c = tokens.colors;
 const PHOTO_BUCKET = 'item-photos';
@@ -69,6 +70,15 @@ export default function NewEvent() {
       const userId = userData?.user?.id;
       if (!userId) throw new Error('Please sign in first.');
 
+      // Dates accept "1998", "June 1998" or a full date; see lib/dates.
+      const when = eventDate.trim() ? parseFlexibleDate(eventDate) : null;
+      const began = startDate.trim() ? parseFlexibleDate(startDate) : null;
+      const ended = endDate.trim() ? parseFlexibleDate(endDate) : null;
+      if ((eventDate.trim() && !when) || (startDate.trim() && !began) || (endDate.trim() && !ended)) {
+        Alert.alert('Check the date', DATE_ERROR);
+        return;
+      }
+
       let coverPath: string | null = null;
       if (coverUri) coverPath = await uploadCover(coverUri, userId);
 
@@ -77,9 +87,9 @@ export default function NewEvent() {
         .insert({
           name: name.trim(),
           user_id: userId,
-          event_date: eventDate.trim() || null,
-          start_date: startDate.trim() || null,
-          end_date: endDate.trim() || null,
+          event_date: when?.iso ?? null,
+          start_date: began?.iso ?? null,
+          end_date: ended?.iso ?? null,
           description: description.trim() || null,
           cover_photo_url: coverPath,
           people_list: peopleList
@@ -213,10 +223,11 @@ export default function NewEvent() {
             style={fieldText}
             value={eventDate}
             onChangeText={setEventDate}
-            placeholder="YYYY-MM-DD"
+            placeholder="1998, or 12 June 1998"
             placeholderTextColor={c.inkLight}
-            keyboardType="numbers-and-punctuation"
-            maxLength={10}
+            autoCapitalize="words"
+            autoCorrect={false}
+            maxLength={24}
           />
         </View>
 
@@ -231,8 +242,9 @@ export default function NewEvent() {
                 onChangeText={setStartDate}
                 placeholder="Optional"
                 placeholderTextColor={c.inkLight}
-                keyboardType="numbers-and-punctuation"
-                maxLength={10}
+                autoCapitalize="words"
+                autoCorrect={false}
+                maxLength={24}
               />
             </View>
           </View>
@@ -245,8 +257,9 @@ export default function NewEvent() {
                 onChangeText={setEndDate}
                 placeholder="Optional"
                 placeholderTextColor={c.inkLight}
-                keyboardType="numbers-and-punctuation"
-                maxLength={10}
+                autoCapitalize="words"
+                autoCorrect={false}
+                maxLength={24}
               />
             </View>
           </View>

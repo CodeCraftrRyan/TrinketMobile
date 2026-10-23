@@ -14,6 +14,7 @@ import { fetchLookups, lookupsLine, readFunctionError, type Lookups } from '../.
 import { addLocation, fetchLocations, iconForLocation, type LocationOption } from '../../lib/locations';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
+import { DATE_ERROR, DATE_HINT, formatFlexibleDate, parseFlexibleDate } from '../../lib/dates';
 
 const c = tokens.colors;
 
@@ -108,7 +109,8 @@ function AddItemForm() {
   const [newLocationName, setNewLocationName] = useState('');
   const [savingLocation, setSavingLocation] = useState(false);
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(today);
+  // No default: an heirloom saved without touching this must not read "Acquired 2026".
+  const [date, setDate] = useState('');
   const [acquired, setAcquired] = useState(ACQUIRED_OPTIONS[0]);
   const [acquiredModalVisible, setAcquiredModalVisible] = useState(false);
   const [selectedPeople, setSelectedPeople] = useState<string[]>([]);
@@ -383,7 +385,6 @@ function AddItemForm() {
       const { data, error } = await supabase.functions.invoke('describe-item', { body: { imagePath: path } });
       if (error) throw error;
       const s = (data as any)?.suggestion ?? {};
-      console.log('SUGGESTION:', JSON.stringify(s), '| options:', categoryOptions.map(o => o.label).join('|'), '| current:', category?.label ?? 'none');
       // Fill empty fields only — never overwrite what was written.
       const filled: string[] = [];
       if (s.name && !name.trim()) { setName(s.name); filled.push('name'); }
@@ -584,7 +585,6 @@ function AddItemForm() {
   async function syncItemPeople(itemId: string | number) {
     const { data: userData, error } = await supabase.auth.getUser();
     if (error) throw error;
-    console.warn('AUTH CHECK — user:', userData?.user?.id ?? 'NO USER', 'error:', error?.message ?? 'none');
     const userId = userData?.user?.id;
     if (!userId) return;
 
@@ -660,7 +660,12 @@ function AddItemForm() {
   async function createItem() {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      Alert.alert('Missing name', 'Please enter a name');
+      Alert.alert('Missing name', 'An object needs a name.');
+      return null;
+    }
+    const parsedDate = date.trim() ? parseFlexibleDate(date) : null;
+    if (date.trim() && !parsedDate) {
+      Alert.alert('Check the date', DATE_ERROR);
       return null;
     }
     const { data: userData, error } = await supabase.auth.getUser();
@@ -673,7 +678,8 @@ function AddItemForm() {
       name: trimmedName,
       description: description.trim() || null,
       estimated_value: Number.isFinite(cleanedValue as number) ? cleanedValue : null,
-      date_purchased: date.trim() || null,
+      date_purchased: parsedDate?.iso ?? null,
+      date_purchased_precision: parsedDate?.precision ?? null,
       acquisition_method: acquired?.label ?? null,
       location: room?.label ?? null,
       category_id: category?.id ?? null,
@@ -710,7 +716,7 @@ function AddItemForm() {
         setName(data.name ?? data.title ?? '');
         setDescription(data.description ?? data.notes ?? '');
         setEstimatedValue(String(data.estimated_value ?? data.price ?? ''));
-  setDate(data.date_purchased ?? data.purchase_date ?? today);
+  setDate(formatFlexibleDate(data.date_purchased ?? data.purchase_date ?? null, data.date_purchased_precision ?? null));
   setSelectedPeople([]);
         try {
           const { data: linkRows, error: linkError } = await supabase
@@ -920,6 +926,8 @@ function AddItemForm() {
   async function updateItem(itemId: string) {
     const trimmedName = name.trim();
     if (!trimmedName) throw new Error('An object needs a name.');
+    const parsedDate = date.trim() ? parseFlexibleDate(date) : null;
+    if (date.trim() && !parsedDate) throw new Error(DATE_ERROR);
     const cleanedValue = estimatedValue.trim()
       ? Number(estimatedValue.replace(/[^0-9.]/g, ''))
       : null;
@@ -929,7 +937,8 @@ function AddItemForm() {
         name: trimmedName,
         description: description.trim() || null,
         estimated_value: Number.isFinite(cleanedValue as number) ? cleanedValue : null,
-        date_purchased: date.trim() || null,
+        date_purchased: parsedDate?.iso ?? null,
+        date_purchased_precision: parsedDate?.precision ?? null,
         acquisition_method: acquired?.label ?? null,
         location: room?.label ?? null,
         category_id: category?.id ?? null,
@@ -1291,10 +1300,11 @@ function AddItemForm() {
                 style={fieldText}
                 value={date}
                 onChangeText={setDate}
-                placeholder={today}
+                placeholder="1952, or June 1952"
                 placeholderTextColor={c.inkLight}
-                keyboardType="numbers-and-punctuation"
-                maxLength={10}
+                autoCapitalize="words"
+                autoCorrect={false}
+                maxLength={24}
               />
             </View>
           </View>

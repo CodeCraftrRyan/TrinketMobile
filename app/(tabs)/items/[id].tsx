@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Dimensions, Image, NativeScrollEvent, NativeS
 import { addRecentlyViewed } from '../../../lib/recent';
 import { supabase } from '../../../lib/supabase';
 import { tokens } from '../../../lib/tokens';
+import { formatFlexibleDate } from '../../../lib/dates';
 import { addItemHref } from '../../../lib/addItemRoute';
 
 const c = tokens.colors;
@@ -317,7 +318,7 @@ export default function ItemDetail() {
   };
   if (item.price) pushP('Price', `$${item.price}`);
   if (item.estimated_value) pushP('Estimated value', `$${item.estimated_value}`);
-  pushP('Acquired', item.date_purchased);
+  pushP('Acquired', formatFlexibleDate(item.date_purchased, item.date_purchased_precision));
   pushP('Acquired via', item.acquisition_method || item.acquired);
   pushP('Location', item.location);
   if (item.updated_at) pushP('Updated', new Date(item.updated_at).toLocaleDateString());
