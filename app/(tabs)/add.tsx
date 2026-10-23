@@ -9,6 +9,7 @@ import { Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressabl
 // SDK 54 moved readAsStringAsync to the legacy entry point.
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
+import { addLocation, fetchLocations, iconForLocation, type LocationOption } from '../../lib/locations';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
 
@@ -48,41 +49,6 @@ const getCategoryIcon = (label: string) => {
 };
 
 
-const ROOM_OPTIONS = [
-  { label: 'Attic', icon: 'home' },
-  { label: 'Balcony', icon: 'sunny' },
-  { label: 'Basement', icon: 'layers' },
-  { label: 'Bathroom', icon: 'water' },
-  { label: 'Bedroom 1', icon: 'bed' },
-  { label: 'Bedroom 2', icon: 'bed' },
-  { label: 'Bedroom 3', icon: 'bed' },
-  { label: 'Closet', icon: 'shirt' },
-  { label: 'Craft Room', icon: 'color-palette' },
-  { label: 'Dining Room', icon: 'restaurant' },
-  { label: 'Entryway', icon: 'enter' },
-  { label: 'Garage', icon: 'car' },
-  { label: 'Guest Room', icon: 'people' },
-  { label: 'Hallway', icon: 'walk' },
-  { label: 'Home Gym', icon: 'barbell' },
-  { label: 'Kids Room', icon: 'happy' },
-  { label: 'Kitchen', icon: 'pizza' },
-  { label: 'Laundry Room', icon: 'shirt' },
-  { label: 'Living Room', icon: 'home' },
-  { label: 'Main Bedroom', icon: 'bed' },
-  { label: 'Media Room', icon: 'tv' },
-  { label: 'Mudroom', icon: 'footsteps' },
-  { label: 'Nursery', icon: 'heart' },
-  { label: 'Office', icon: 'briefcase' },
-  { label: 'Pantry', icon: 'basket' },
-  { label: 'Patio', icon: 'sunny' },
-  { label: 'Playroom', icon: 'game-controller' },
-  { label: 'Safe', icon: 'lock-closed' },
-  { label: 'Shed', icon: 'construct' },
-  { label: 'Storage', icon: 'archive' },
-  { label: 'Utility Room', icon: 'build' },
-  { label: 'Workshop', icon: 'hammer' },
-  { label: 'Other', icon: 'ellipsis-horizontal' },
-];
 
 const ACQUIRED_OPTIONS = [
   { label: 'Gift', icon: 'gift' },
@@ -134,7 +100,9 @@ function AddItemForm() {
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [room, setRoom] = useState<{ label: string; icon: string } | null>(null);
   const [roomModalVisible, setRoomModalVisible] = useState(false);
-  const [customRoom, setCustomRoom] = useState('');
+  const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
+  const [newLocationName, setNewLocationName] = useState('');
+  const [savingLocation, setSavingLocation] = useState(false);
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(today);
   const [acquired, setAcquired] = useState(ACQUIRED_OPTIONS[0]);
@@ -352,7 +320,29 @@ function AddItemForm() {
 
   const handleRoomPress = () => {
     setRoomModalVisible(true);
+    // Refresh in case locations were edited in Account since the form opened.
+    fetchLocations().then(setLocationOptions).catch(() => {});
   };
+
+  useEffect(() => {
+    fetchLocations().then(setLocationOptions).catch(() => {});
+  }, []);
+
+  async function addNewLocation() {
+    if (!newLocationName.trim() || savingLocation) return;
+    setSavingLocation(true);
+    try {
+      const loc = await addLocation(newLocationName, locationOptions);
+      setLocationOptions((prev) => (prev.some((o) => o.label === loc.label) ? prev : [loc, ...prev]));
+      setRoom(loc);
+      setNewLocationName('');
+      setRoomModalVisible(false);
+    } catch (e: any) {
+      Alert.alert('Could not add that place', e?.message ?? 'Please try again.');
+    } finally {
+      setSavingLocation(false);
+    }
+  }
 
   const handleRoomSelect = (item: { label: string; icon: string }) => {
     setRoom(item);
@@ -671,7 +661,7 @@ function AddItemForm() {
       estimated_value: Number.isFinite(cleanedValue as number) ? cleanedValue : null,
       date_purchased: date.trim() || null,
       acquisition_method: acquired?.label ?? null,
-      location: room?.label === 'Other' ? (customRoom.trim() || null) : (room?.label ?? null),
+      location: room?.label ?? null,
       category_id: category?.id ?? null,
       event_id: eventId ?? null,
       user_id: userId,
@@ -769,13 +759,9 @@ function AddItemForm() {
 
         const roomLabel = data.location ?? data.room ?? null;
         if (roomLabel) {
-          const foundRoom = ROOM_OPTIONS.find(option => option.label.toLowerCase() === String(roomLabel).toLowerCase());
-          if (foundRoom) {
-            setRoom(foundRoom);
-          } else {
-            const other = ROOM_OPTIONS.find(o => o.label === 'Other');
-            if (other) { setRoom(other); setCustomRoom(String(roomLabel)); }
-          }
+          // Keep whatever was saved, even a place no longer on the list.
+          const label = String(roomLabel).trim();
+          setRoom({ label, icon: iconForLocation(label) });
         }
 
         const acquiredLabel = data.acquisition_method ?? data.acquired ?? null;
@@ -931,7 +917,7 @@ function AddItemForm() {
         estimated_value: Number.isFinite(cleanedValue as number) ? cleanedValue : null,
         date_purchased: date.trim() || null,
         acquisition_method: acquired?.label ?? null,
-        location: room?.label === 'Other' ? (customRoom.trim() || null) : (room?.label ?? null),
+        location: room?.label ?? null,
         category_id: category?.id ?? null,
         event_id: eventId ?? null,
       })
@@ -1162,19 +1148,9 @@ function AddItemForm() {
           <View style={{ flex: 1 }}>
             <Text style={labelStyle}>Location</Text>
             <TouchableOpacity onPress={handleRoomPress} style={[fieldBox, { flexDirection: 'row', alignItems: 'center' }]}>
-              <Text style={[fieldText, { flex: 1, color: room ? c.ink : c.inkLight }]} numberOfLines={1}>{room?.label ?? "Select a room"}</Text>
+              <Text style={[fieldText, { flex: 1, color: room ? c.ink : c.inkLight }]} numberOfLines={1}>{room?.label ?? "Select a location"}</Text>
               <Ionicons name="chevron-down" size={15} color={c.inkLabel} />
             </TouchableOpacity>
-            {room?.label === 'Other' && (
-              <TextInput
-                value={customRoom}
-                onChangeText={setCustomRoom}
-                placeholder="Name the place…"
-                placeholderTextColor={c.inkLight}
-                autoCapitalize="words"
-                style={[fieldBox, fieldText, { marginTop: 8 }]}
-              />
-            )}
           </View>
           <View style={{ flex: 1 }}>
             <Text style={labelStyle}>Whose it was</Text>
@@ -1410,28 +1386,74 @@ function AddItemForm() {
           transparent={true}
           onRequestClose={() => setRoomModalVisible(false)}
         >
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
           <View style={{ flex: 1, backgroundColor: 'rgba(12,22,32,0.45)', justifyContent: 'center', alignItems: 'center' }}>
-            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 18, width: '80%', maxHeight: 320, padding: 12 }}>
-              <Text style={{ ...tokens.type.nameSmall, fontSize: 17, marginBottom: 14, color: c.ink, textAlign: 'center' }}>Select Room/Location</Text>
+            <View style={{ backgroundColor: c.card, borderRadius: tokens.radius.lg, width: '85%', maxHeight: 480, padding: 16, borderWidth: 1, borderColor: c.border }}>
+              <Text style={{ ...tokens.type.nameSmall, fontSize: 17, marginBottom: 14, color: c.ink, textAlign: 'center' }}>Where it lives</Text>
+              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 8, paddingBottom: 12 }}>
+                <TextInput
+                  style={{ flex: 1, backgroundColor: c.bg, borderRadius: tokens.radius.md, paddingHorizontal: 14, paddingVertical: 12, color: c.ink, fontSize: 15, borderWidth: 1, borderColor: c.border }}
+                  value={newLocationName}
+                  onChangeText={setNewLocationName}
+                  placeholder="Add a place, e.g. Grandma’s cedar chest"
+                  placeholderTextColor={c.inkLight}
+                  autoCapitalize="words"
+                  onSubmitEditing={addNewLocation}
+                  returnKeyType="done"
+                  accessibilityLabel="New location name"
+                />
+                <TouchableOpacity
+                  onPress={addNewLocation}
+                  disabled={!newLocationName.trim() || savingLocation}
+                  accessibilityRole="button"
+                  style={{
+                    backgroundColor: c.primary,
+                    borderRadius: tokens.radius.sm,
+                    paddingHorizontal: 18,
+                    minHeight: 44,
+                    justifyContent: 'center',
+                    opacity: !newLocationName.trim() || savingLocation ? 0.5 : 1,
+                  }}>
+                  <Text style={{ ...tokens.type.button, color: c.primaryText }}>
+                    {savingLocation ? '…' : 'Add'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
               <FlatList
-                data={ROOM_OPTIONS}
-                keyExtractor={item => item.label}
-                renderItem={({ item }) => (
-                  <Pressable
-                    onPress={() => handleRoomSelect(item)}
-                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: c.ruleSoft }}
-                  >
-                    <Ionicons name={item.icon as any} size={18} color={c.accentCool} style={{ marginRight: 10 }} />
-                    <Text style={{ fontSize: 16, color: c.ink, fontWeight: item.label === room?.label ? 'bold' : '600' }}>{item.label}</Text>
-                  </Pressable>
-                )}
+                data={locationOptions}
+                keyExtractor={item => (item.id != null ? String(item.id) : item.label)}
+                renderItem={({ item, index }) => {
+                  const firstPreset = !item.own && (index === 0 || locationOptions[index - 1]?.own);
+                  const firstOwn = item.own && index === 0;
+                  return (
+                    <View>
+                      {(firstOwn || firstPreset) && (
+                        <Text style={{ ...tokens.type.label, color: c.inkLabel, paddingHorizontal: 8, paddingTop: index === 0 ? 0 : 14, paddingBottom: 4 }}>
+                          {item.own ? 'YOUR PLACES' : 'ROOMS'}
+                        </Text>
+                      )}
+                      <Pressable
+                        onPress={() => handleRoomSelect(item)}
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: c.ruleSoft }}
+                      >
+                        <Ionicons name={item.icon as any} size={18} color={c.accentCool} style={{ marginRight: 10 }} />
+                        <Text style={{ flex: 1, fontSize: 16, color: c.ink, fontWeight: item.label === room?.label ? 'bold' : '600' }}>{item.label}</Text>
+                        {item.label === room?.label && <Ionicons name="checkmark" size={18} color={c.accent} />}
+                      </Pressable>
+                    </View>
+                  );
+                }}
                 showsVerticalScrollIndicator={false}
               />
-              <TouchableOpacity onPress={() => setRoomModalVisible(false)} style={{ marginTop: 10, alignSelf: 'center' }}>
+              <Text style={{ ...tokens.type.fact, color: c.inkLabel, textAlign: 'center', marginTop: 10 }}>
+                Rename or remove your places in Account.
+              </Text>
+              <TouchableOpacity onPress={() => setRoomModalVisible(false)} style={{ marginTop: 6, alignSelf: 'center', paddingVertical: 6 }}>
                 <Text style={{ ...tokens.type.ui, color: c.accentDeep }}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
+          </KeyboardAvoidingView>
         </Modal>
         <Modal
           visible={peopleModalVisible}

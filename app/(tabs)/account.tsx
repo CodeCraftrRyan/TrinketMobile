@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import PlacesSection from '../../components/PlacesSection';
 import { useAccessibilitySettings } from '../../lib/accessibility';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
@@ -405,6 +406,9 @@ export default function Account() {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Places */}
+        <PlacesSection />
 
         {/* Plan */}
         <Label>Plan</Label>
