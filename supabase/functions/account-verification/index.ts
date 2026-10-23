@@ -132,6 +132,28 @@ async function findLatestRow(userId: string) {
   return data && data[0] ? data[0] : null;
 }
 
+// Every code for the user that could still be accepted: unused, unlocked and
+// inside the TTL. Newest first. More than one is possible when the client
+// requested several codes in quick succession (or the user tapped Resend);
+// verifying against only the newest silently killed the earlier emails.
+async function findLiveRows(userId: string) {
+  const since = new Date(Date.now() - CODE_TTL_MS).toISOString();
+  const q = `${SUPABASE_URL}/rest/v1/account_verification_codes?user_id=eq.${encodeURIComponent(userId)}&used=is.false&locked=is.false&created_at=gte.${encodeURIComponent(since)}&order=created_at.desc&select=*`;
+  const res = await fetch(q, { headers: adminHeaders });
+  if (!res.ok) throw new Error(`findLiveRows failed: ${res.status}`);
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+}
+
+async function retireOtherLiveRows(userId: string, keepId: string) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/account_verification_codes?user_id=eq.${encodeURIComponent(userId)}&used=is.false&id=neq.${encodeURIComponent(keepId)}`, {
+    method: "PATCH",
+    headers: adminHeaders,
+    body: JSON.stringify({ used: true }),
+  });
+  if (!res.ok) console.error("retireOtherLiveRows failed", res.status);
+}
+
 async function countRecentCodes(userId: string, sinceMs: number) {
   const since = new Date(Date.now() - sinceMs).toISOString();
   const q = `${SUPABASE_URL}/rest/v1/account_verification_codes?user_id=eq.${encodeURIComponent(userId)}&created_at=gte.${encodeURIComponent(since)}&select=id`;
@@ -218,8 +240,8 @@ serve(async (req: Request) => {
       const method = "email";
 
       // Cooldown: if a code was issued in the last 60s, don't create another.
-      // (Verify checks only the newest row, so stacking codes silently
-      // invalidates earlier ones and confuses testers with multiple emails.)
+      // (Verify accepts any live code, but several emails in a row still
+      // confuse people.)
       const recent = await findLatestRow(userId);
       if (recent && !recent.used && !recent.locked && recent.created_at && (Date.now() - new Date(recent.created_at).getTime()) < RESEND_COOLDOWN_MS) {
         return json({ ok: true, cooldown: true });
@@ -249,14 +271,23 @@ serve(async (req: Request) => {
     const code = String(body.code ?? "").trim();
     if (!/^\d{6}$/.test(code)) return json({ ok: false, reason: "bad", error: "Enter the 6-digit code." }, 400);
 
-    const row = await findLatestRow(userId);
-    if (!row) return json({ ok: false, reason: "no-code" }, 400);
-    if (row.used) return json({ ok: false, reason: "used" }, 400);
-    if (row.locked || (row.attempts || 0) >= MAX_ATTEMPTS) {
-      return json({ ok: false, reason: "locked", error: "Too many attempts. Request a new code." }, 423);
-    }
-    if (!row.created_at || Date.now() - new Date(row.created_at).getTime() > CODE_TTL_MS) {
+    const live = await findLiveRows(userId);
+    if (live.length === 0) {
+      // Nothing acceptable — explain why from the most recent row.
+      const latest = await findLatestRow(userId);
+      if (!latest) return json({ ok: false, reason: "no-code" }, 400);
+      if (latest.used) return json({ ok: false, reason: "used" }, 400);
+      if (latest.locked || (latest.attempts || 0) >= MAX_ATTEMPTS) {
+        return json({ ok: false, reason: "locked", error: "Too many attempts. Request a new code." }, 423);
+      }
       return json({ ok: false, reason: "expired", error: "That code has expired. Request a new one." }, 400);
+    }
+
+    // Attempts are counted against the newest live code so the lockout is as
+    // strict as before, even though any live code is accepted below.
+    const row = live[0];
+    if ((row.attempts || 0) >= MAX_ATTEMPTS) {
+      return json({ ok: false, reason: "locked", error: "Too many attempts. Request a new code." }, 423);
     }
 
     // Claim an attempt before comparing. The match on the current attempts
@@ -272,7 +303,14 @@ serve(async (req: Request) => {
     if (!claimed) return json({ ok: false, reason: "busy", error: "Please try again." }, 409);
 
     const hashed = await hmacHex(code);
-    if (!timingSafeEqual(hashed, row.hashed_code)) {
+    // Compare against every live code, not just the newest; constant-time per
+    // row, and the loop always runs to the end so timing doesn't reveal which
+    // row (if any) matched.
+    let matched: any = null;
+    for (const r of live) {
+      if (timingSafeEqual(hashed, r.hashed_code) && !matched) matched = r;
+    }
+    if (!matched) {
       const nowLocked = newAttempts >= MAX_ATTEMPTS;
       return json(
         { ok: false, reason: nowLocked ? "locked" : "bad", error: nowLocked ? "Too many attempts. Request a new code." : undefined },
@@ -293,8 +331,10 @@ serve(async (req: Request) => {
       return json({ ok: false, error: "Could not complete verification. Please try again." }, 500);
     }
 
-    // Mark the code used.
-    await patchIf(row.id, { used: "is.false" }, { used: true });
+    // Mark the matched code used and retire any other live codes for this
+    // user, so nothing in an older email can be replayed.
+    await patchIf(matched.id, { used: "is.false" }, { used: true });
+    await retireOtherLiveRows(userId, matched.id);
 
     return json({ ok: true });
   } catch (e) {
