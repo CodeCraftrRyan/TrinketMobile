@@ -2,8 +2,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import AiMark from '../components/AiMark';
+import { fetchLookups, lookupsLine, readFunctionError, type Lookups } from '../lib/aiLookups';
 import { supabase } from '../lib/supabase';
 import { tokens } from '../lib/tokens';
 import { addItemHref } from '../lib/addItemRoute';
@@ -26,6 +28,8 @@ export default function VisualSearchScreen() {
   const router = useRouter();
   const [queryImage, setQueryImage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [lookups, setLookups] = useState<Lookups | null>(null);
+  useEffect(() => { fetchLookups().then(setLookups).catch(() => {}); }, []);
   const [stage, setStage] = useState<'idle' | 'uploading' | 'searching'>('idle');
   const [results, setResults] = useState<any[]>([]);
   const [covers, setCovers] = useState<Record<string, string>>({});
@@ -137,11 +141,17 @@ export default function VisualSearchScreen() {
       }
     } catch (e: any) {
       console.warn('Visual search failed', e?.message ?? e);
-      Alert.alert('Search failed', e?.message ?? 'Please try again.');
-      setSearched(true);
+      const { limitReached, message } = await readFunctionError(e);
+      if (limitReached) {
+        Alert.alert('No lookups left this month', message ?? 'Your lookups renew at the start of next month.');
+      } else {
+        Alert.alert('Search failed', 'Please try again in a moment.');
+        setSearched(true);
+      }
     } finally {
       setBusy(false);
       setStage('idle');
+      fetchLookups().then(setLookups).catch(() => {});
     }
   }
 
@@ -157,15 +167,20 @@ export default function VisualSearchScreen() {
             <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Back</Text>
           </TouchableOpacity>
 
-          <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75, marginTop: 22 }}>
-            
-          </Text>
+          <View style={{ marginTop: 22 }}>
+            <AiMark onDark />
+          </View>
           <Text style={{ ...tokens.type.display, fontSize: 32, lineHeight: 38, color: c.bg, marginTop: 6 }}>
             Find by photograph.
           </Text>
           <Text style={{ ...tokens.type.ui, color: c.inkGhost, opacity: 0.85, marginTop: 10, lineHeight: 23 }}>
-            Photograph an object and we&rsquo;ll look for it in your archive.
+            Photograph an object and Trinket will look through your archive for the closest matches &mdash; handy when you can&rsquo;t remember what you called it.
           </Text>
+          {!!lookupsLine(lookups) && (
+            <Text style={{ ...tokens.type.fact, color: c.inkGhost, opacity: 0.75, marginTop: 10 }}>
+              {lookups?.left === 0 ? 'No lookups left this month — they renew on the 1st.' : `Each search uses one lookup · ${lookupsLine(lookups)}`}
+            </Text>
+          )}
         </View>
 
         {/* Take or choose */}

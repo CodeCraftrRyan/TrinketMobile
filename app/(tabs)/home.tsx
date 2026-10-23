@@ -2,6 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import AiMark from '../../components/AiMark';
+import { addItemHref } from '../../lib/addItemRoute';
+import { fetchLookups, lookupsLine, type Lookups } from '../../lib/aiLookups';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
 
@@ -57,6 +60,7 @@ export default function Home() {
   const [familyName, setFamilyName] = useState('');
   const [initials, setInitials] = useState('T');
   const [counts, setCounts] = useState({ items: 0, collections: 0, events: 0 });
+  const [lookups, setLookups] = useState<Lookups | null>(null);
   const [recent, setRecent] = useState<Row[]>([]);
   const [covers, setCovers] = useState<Record<string, string>>({});
   const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
@@ -177,7 +181,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(useCallback(() => {
+    load();
+    fetchLookups().then(setLookups).catch(() => {});
+  }, [load]));
 
   const subtitleFor = (row: Row) => [
     row.category_id ? categoryNames[String(row.category_id)] : null,
@@ -263,41 +270,59 @@ export default function Home() {
           )}
         </View>
 
-        {/* Find by photograph */}
-        <TouchableOpacity
-          onPress={() => router.push('/visual-search')}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="Find an object by photograph"
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 14,
-            marginHorizontal: 20,
-            marginTop: 20,
-            paddingHorizontal: 16,
-            paddingVertical: 16,
-            borderWidth: 1,
-            borderColor: c.accent,
-            borderRadius: tokens.radius.lg,
-            backgroundColor: c.card,
-          }}>
-          <View style={{
-            width: 40, height: 40,
-            borderRadius: tokens.radius.sm,
-            backgroundColor: c.accent,
-            alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Ionicons name="camera" size={20} color={c.primaryText} />
+        {/* What Trinket can do with a photograph — both AI features in one place */}
+        <View style={{
+          marginHorizontal: 20, marginTop: 20, padding: 16,
+          borderWidth: 1, borderColor: c.accent, borderRadius: tokens.radius.lg,
+          backgroundColor: c.card,
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <Text style={{ ...tokens.type.nameSmall, color: c.ink }}>Trinket can read your photographs</Text>
+            <AiMark />
           </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ ...tokens.type.nameSmall, color: c.ink }}>Search by Image</Text>
-            <Text style={{ color: c.inkLabel, fontSize: 14, marginTop: 2 }}>
-              Find an object in your archive by taking a photo of it, or selecting one from your camera roll.
+          {[
+            {
+              key: 'find', icon: 'search' as const,
+              title: 'Find by photo',
+              body: 'Photograph something and Trinket finds it in your archive.',
+              onPress: () => router.push('/visual-search'),
+            },
+            {
+              key: 'suggest', icon: 'create-outline' as const,
+              title: 'Suggest details',
+              body: 'When you add an object, Trinket drafts its name, story and value from the photo.',
+              onPress: () => router.push(addItemHref()),
+            },
+          ].map((row, i) => (
+            <TouchableOpacity
+              key={row.key}
+              onPress={row.onPress}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`${row.title}. ${row.body}`}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, minHeight: 44,
+                borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.ruleSoft,
+              }}>
+              <View style={{
+                width: 36, height: 36, borderRadius: tokens.radius.sm,
+                backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Ionicons name={row.icon} size={18} color={c.primaryText} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ ...tokens.type.ui, fontWeight: '600', color: c.ink }}>{row.title}</Text>
+                <Text style={{ color: c.inkLabel, fontSize: 14, marginTop: 2, lineHeight: 19 }}>{row.body}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={c.inkLabel} />
+            </TouchableOpacity>
+          ))}
+          {!!lookupsLine(lookups) && (
+            <Text style={{ ...tokens.type.fact, color: c.inkLabel, marginTop: 4 }}>
+              {lookupsLine(lookups)}
             </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={c.inkLabel} />
-        </TouchableOpacity>
+          )}
+        </View>
 
         {/* Recently added */}
         <View style={{

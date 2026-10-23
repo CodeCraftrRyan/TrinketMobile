@@ -9,6 +9,8 @@ import { Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressabl
 // SDK 54 moved readAsStringAsync to the legacy entry point.
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
+import AiMark from '../../components/AiMark';
+import { fetchLookups, lookupsLine, readFunctionError, type Lookups } from '../../lib/aiLookups';
 import { addLocation, fetchLocations, iconForLocation, type LocationOption } from '../../lib/locations';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
@@ -91,6 +93,8 @@ function AddItemForm() {
   const today = new Date().toISOString().split('T')[0];
   const [focusedField, setFocusedField] = useState('');
   const [suggesting, setSuggesting] = useState(false);
+  const [suggestedFields, setSuggestedFields] = useState<string[] | null>(null);
+  const [lookups, setLookups] = useState<Lookups | null>(null);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<{ id?: string; label: string; icon: string } | null>(null);
   const [categoryLabel, setCategoryLabel] = useState<string | null>(null);
@@ -326,6 +330,7 @@ function AddItemForm() {
 
   useEffect(() => {
     fetchLocations().then(setLocationOptions).catch(() => {});
+    fetchLookups().then(setLookups).catch(() => {});
   }, []);
 
   async function addNewLocation() {
@@ -380,21 +385,30 @@ function AddItemForm() {
       const s = (data as any)?.suggestion ?? {};
       console.log('SUGGESTION:', JSON.stringify(s), '| options:', categoryOptions.map(o => o.label).join('|'), '| current:', category?.label ?? 'none');
       // Fill empty fields only — never overwrite what was written.
-      if (s.name && !name.trim()) setName(s.name);
-      if (!description.trim()) {
+      const filled: string[] = [];
+      if (s.name && !name.trim()) { setName(s.name); filled.push('name'); }
+      if (!description.trim() && (s.description || s.era || s.materials)) {
         const extra = [s.era, s.materials].filter(Boolean).join(' · ');
         setDescription([s.description, extra ? `(${extra})` : ''].filter(Boolean).join(' ').trim());
+        filled.push('story');
       }
-      if (s.estimated_value && !estimatedValue.trim()) setEstimatedValue(String(s.estimated_value));
       if (s.category && !category) {
         const match = categoryOptions.find(o => o.label.toLowerCase() === String(s.category).toLowerCase());
-        if (match) { setCategory(match); setCategoryLabel(match.label); }
+        if (match) { setCategory(match); setCategoryLabel(match.label); filled.push('category'); }
       }
+      if (s.estimated_value && !estimatedValue.trim()) { setEstimatedValue(String(s.estimated_value)); filled.push('value'); }
+      setSuggestedFields(filled);
+      const used = Number((data as any)?.used);
+      const cap = (data as any)?.cap ?? null;
+      if (Number.isFinite(used)) setLookups({ used, cap, left: cap === null ? null : Math.max(0, cap - used) });
     } catch (e: any) {
-      const msg = e?.message ?? '';
-      Alert.alert('Could not suggest', msg.includes('limit_reached') || msg.includes('429')
-        ? 'You have used all your AI lookups this month.'
-        : 'Something went wrong reading the photograph.');
+      const { limitReached, message } = await readFunctionError(e);
+      if (limitReached) {
+        setLookups((l) => (l && l.cap !== null ? { ...l, used: l.cap, left: 0 } : l));
+        Alert.alert('No lookups left this month', message ?? 'Your lookups renew at the start of next month.');
+      } else {
+        Alert.alert('Could not read the photograph', 'Please try again in a moment.');
+      }
     } finally {
       setSuggesting(false);
     }
@@ -1121,6 +1135,61 @@ function AddItemForm() {
           {photos.length} of {maxPhotos} {maxPhotos === 1 ? 'photograph' : 'photographs'}
         </Text>
 
+        {/* Suggest details — the AI entry point, right where the photo is */}
+        {(() => {
+          const hasNewPhoto = photos.some((p) => p.localUri);
+          const spent = lookups?.left === 0;
+          const line = lookupsLine(lookups);
+          return (
+            <View style={{
+              marginTop: 18, padding: 16,
+              borderWidth: 1, borderRadius: tokens.radius.lg,
+              borderColor: hasNewPhoto && !suggestedFields && !spent ? c.accent : c.border,
+              backgroundColor: c.card,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={{ ...tokens.type.nameSmall, color: c.ink }}>
+                  {suggestedFields ? 'Filled in from the photograph' : 'Let Trinket read the photograph'}
+                </Text>
+                <AiMark />
+              </View>
+              <Text style={{ ...tokens.type.ui, fontSize: 15, lineHeight: 22, color: c.inkLabel, marginTop: 6 }}>
+                {suggestedFields
+                  ? (suggestedFields.length
+                      ? `Suggested the ${suggestedFields.join(', ')}. Check each one and change anything that isn’t right.`
+                      : 'Everything was already filled in, so nothing was changed.')
+                  : hasNewPhoto
+                    ? 'It will suggest a name, a few lines of story, a category and a rough value. Only empty fields are filled.'
+                    : isEditing
+                      ? 'Add a new photograph and Trinket can suggest a name, story, category and value.'
+                      : 'Take or choose a photograph first, then Trinket can suggest a name, story, category and value.'}
+              </Text>
+              {hasNewPhoto && !suggestedFields && (
+                <TouchableOpacity
+                  onPress={suggestDetails}
+                  disabled={suggesting || spent}
+                  accessibilityRole="button"
+                  style={{
+                    marginTop: 14, alignSelf: 'flex-start', minHeight: 44,
+                    flexDirection: 'row', alignItems: 'center', gap: 8,
+                    paddingHorizontal: 16, borderRadius: tokens.radius.sm,
+                    backgroundColor: c.primary, opacity: suggesting || spent ? 0.55 : 1,
+                  }}>
+                  <Ionicons name="sparkles" size={15} color={c.primaryText} />
+                  <Text style={{ ...tokens.type.button, color: c.primaryText }}>
+                    {suggesting ? 'Reading the photograph…' : 'Suggest details'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {!!line && (
+                <Text style={{ ...tokens.type.fact, color: spent ? c.accentDeep : c.inkLabel, marginTop: 10 }}>
+                  {spent ? 'No lookups left this month — they renew on the 1st.' : `Uses one lookup · ${line}`}
+                </Text>
+              )}
+            </View>
+          );
+        })()}
+
         <Text style={{ ...labelStyle, marginTop: 26 }}>What is it?</Text>
         <View style={fieldBox}>
           <TextInput
@@ -1165,21 +1234,6 @@ function AddItemForm() {
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={suggestDetails}
-          disabled={suggesting}
-          style={{
-            marginTop: 22, alignSelf: 'flex-start',
-            flexDirection: 'row', alignItems: 'center', gap: 7,
-            paddingHorizontal: 14, paddingVertical: 10,
-            borderWidth: 1, borderColor: c.accent, borderRadius: tokens.radius.md,
-            opacity: suggesting ? 0.6 : 1,
-          }}>
-          <Ionicons name="sparkles-outline" size={15} color={c.accentDeep} />
-          <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.accentDeep }}>
-            {suggesting ? 'Reading the photograph…' : 'Suggest details from photo'}
-          </Text>
-        </TouchableOpacity>
         <Text style={{ ...labelStyle, marginTop: 22 }}>The story</Text>
         <View style={[fieldBox, { minHeight: 132, paddingVertical: 12, justifyContent: 'flex-start' }]}>
           <TextInput

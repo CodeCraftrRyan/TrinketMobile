@@ -167,7 +167,7 @@ export default function Collections() {
             <TouchableOpacity
               onPress={() => router.push('/visual-search')}
               accessibilityRole="button"
-              accessibilityLabel="Find an object by photograph"
+              accessibilityLabel="Find an object by photograph, uses AI"
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -179,7 +179,7 @@ export default function Collections() {
                 borderColor: c.accent,
                 borderRadius: tokens.radius.sm,
               }}>
-              <Ionicons name="camera-outline" size={16} color={c.accent} />
+              <Ionicons name="sparkles" size={16} color={c.accent} />
               <Text style={{ ...tokens.type.ui, fontSize: 15, color: c.accent }}>Find by photo</Text>
             </TouchableOpacity>
           </View>
