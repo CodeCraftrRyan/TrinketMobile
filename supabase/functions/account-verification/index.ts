@@ -93,10 +93,24 @@ async function insertHashedCode(userId: string, method: string, destination: str
   });
   if (!res.ok) {
     const txt = await res.text();
+    // 23505 = the partial unique index account_verification_codes_one_live_per_user:
+    // another request issued a live code for this user first. Not an error.
+    if (res.status === 409 || txt.includes('23505')) return { code: null, row: null, conflict: true };
     throw new Error(`insertHashedCode failed: ${res.status} ${txt}`);
   }
   const data = await res.json();
-  return { code, row: Array.isArray(data) ? data[0] : data };
+  return { code, row: Array.isArray(data) ? data[0] : data, conflict: false };
+}
+
+// Retire any live code for the user so a fresh one can be issued (the unique
+// index allows only one live code per user).
+async function retireLiveCodes(userId: string) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/account_verification_codes?user_id=eq.${encodeURIComponent(userId)}&used=is.false&locked=is.false`, {
+    method: "PATCH",
+    headers: adminHeaders,
+    body: JSON.stringify({ used: true }),
+  });
+  if (!res.ok) throw new Error(`retireLiveCodes failed: ${res.status}`);
 }
 
 async function sendWithSendGrid(destination: string, subject: string, text: string, signal?: AbortSignal) {
@@ -252,7 +266,12 @@ serve(async (req: Request) => {
         return json({ ok: false, reason: "rate-limited", error: "Too many codes requested. Try again later." }, 429);
       }
 
-      const { code, row } = await insertHashedCode(userId, method, destination);
+      // Past the cooldown: the previous code (if any) is superseded. Between
+      // this PATCH and the INSERT a parallel request can slip in; the unique
+      // index makes exactly one of them win and the rest report cooldown.
+      if (recent && !recent.used && !recent.locked) await retireLiveCodes(userId);
+      const { code, row, conflict } = await insertHashedCode(userId, method, destination);
+      if (conflict || !code) return json({ ok: true, cooldown: true });
 
       // Keep the worker alive until delivery finishes; a bare floating promise
       // can be killed as soon as the response is returned.
