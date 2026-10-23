@@ -34,7 +34,8 @@ export default function SignUp() {
   async function createAccount() {
     // Dev shortcut: if ?devDummy=1 is present, prefill a dummy account and
     // skip real network sign up so QA can test onboarding UI locally.
-    if (devParams?.devDummy === '1') {
+    // __DEV__ only: a production build must not honour a deep-link param.
+    if (__DEV__ && devParams?.devDummy === '1') {
       // Prefill sensible dummy values and return false to simulate 'needs verification'
       setEmail('dev+test@example.com');
       setFirstName('Test');
@@ -105,10 +106,23 @@ export default function SignUp() {
     }
   }
 
+  // People go in the `people` table — the add form, Account and the filters
+  // all read it. They used to go to user_metadata.people_list, which nothing
+  // on mobile reads, so names typed here never appeared in "Whose it was".
   async function savePeopleAndFinish() {
     try {
-      const { error } = await supabase.auth.updateUser({ data: { people_list: people } });
-      if (error) throw error;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not signed in');
+      const names = (people || []).map((n) => String(n).trim()).filter(Boolean);
+      if (names.length) {
+        const { data: existing } = await supabase.from('people').select('name').eq('user_id', user.id);
+        const have = new Set((existing || []).map((r: any) => r.name));
+        const rows = names.filter((n) => !have.has(n)).map((name) => ({ name, user_id: user.id }));
+        if (rows.length) {
+          const { error: insErr } = await supabase.from('people').insert(rows);
+          if (insErr) throw insErr;
+        }
+      }
     } catch (e: any) {
       if (devParams?.devDummy === '1' || __DEV__) {
         console.warn('savePeopleAndFinish: updateUser failed but continuing in dev mode:', e?.message ?? e);
@@ -153,9 +167,6 @@ export default function SignUp() {
       if (!skipPeople) {
         await savePeopleAndFinish();
       } else {
-        // Save empty list and finish
-        const { error } = await supabase.auth.updateUser({ data: { people_list: [] } });
-        if (error) throw error;
         router.replace('/(tabs)/home');
       }
     } catch (e: any) {
@@ -257,7 +268,7 @@ export default function SignUp() {
           {step === 3 && (
             <View style={styles.formWrap}>
               <Text style={styles.bigTitle}>Create your People List</Text>
-              <Text style={styles.subtitle}>Add family and friends to easily tag them in events.</Text>
+              <Text style={styles.subtitle}>Add the people your objects came from, so you can tag them as you go. You can add more later.</Text>
 
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TextInput
