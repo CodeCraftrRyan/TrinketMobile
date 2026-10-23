@@ -153,6 +153,54 @@ export default function Account() {
   useEffect(() => { loadPeople(); loadArchive(); loadSupportAccess(); }, [loadPeople, loadArchive, loadSupportAccess]);
   useFocusEffect(useCallback(() => { loadPeople(); loadArchive(); loadSupportAccess(); }, [loadPeople, loadArchive, loadSupportAccess]));
 
+  // Account deletion is required for App Store review (guideline 5.1.1(v)).
+  // Two-step confirm: an alert explaining what goes, then the word DELETE
+  // typed in, which the delete-account function also insists on.
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete your archive?',
+      'This permanently removes your account, every object, photograph, collection and event, and cancels any subscription. It cannot be undone.',
+      [
+        { text: 'Keep my archive', style: 'cancel' },
+        {
+          text: 'Continue',
+          style: 'destructive',
+          onPress: () => {
+            Alert.prompt(
+              'Type DELETE to confirm',
+              'This is your last chance to keep everything.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete forever',
+                  style: 'destructive',
+                  onPress: async (typed?: string) => {
+                    if (String(typed || '').trim().toUpperCase() !== 'DELETE') {
+                      Alert.alert('Not deleted', 'The word DELETE did not match, so nothing was removed.');
+                      return;
+                    }
+                    try {
+                      const { error } = await supabase.functions.invoke('delete-account', {
+                        body: { confirm: 'DELETE' },
+                      });
+                      if (error) throw error;
+                    } catch (e: any) {
+                      Alert.alert('Could not delete', e?.message ?? 'Please try again, or write to admin@yourtrinkets.com.');
+                      return;
+                    }
+                    await supabase.auth.signOut().catch(() => {});
+                    router.replace('/welcome');
+                  },
+                },
+              ],
+              'plain-text',
+            );
+          },
+        },
+      ],
+    );
+  };
+
   const handleSignOut = () => {
     Alert.alert('Log out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
@@ -438,7 +486,7 @@ export default function Account() {
           <Divider />
           <Row left="Email" right={profile.email} chevron={false} />
           <Divider />
-          <Row left="Password" right="Change" onPress={() => {}} />
+          <Row left="Password" right="Change" onPress={() => router.push('/(auth)/forgot')} />
         </Card>
 
         {/* Reading */}
@@ -542,6 +590,10 @@ export default function Account() {
           <Row left="Privacy" onPress={() => router.push('/privacy')} />
           <Divider />
           <Row left="Log out" onPress={handleSignOut} danger chevron={false} />
+        </Card>
+
+        <Card>
+          <Row left="Delete my archive" onPress={handleDeleteAccount} danger chevron={false} />
         </Card>
 
       </ScrollView>
