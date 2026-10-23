@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { tokens } from '../lib/tokens';
 
@@ -70,7 +70,20 @@ export default function Membership() {
       limitLine(row?.max_collections, 'collection', 'collections'),
       limitLine(row?.max_events, 'event', 'events'),
       limitLine(row?.max_photos_per_item, 'photograph per object', 'photographs per object'),
+      limitLine(row?.max_ai_searches_per_month, 'AI lookup a month', 'AI lookups a month'),
     ];
+  }
+
+  // Payments are web-only (no in-app purchase), so upgrading means opening
+  // the Subscription page on the site. The row with the Stripe link lives
+  // there; the app only reads the result back.
+  const PLANS_URL = 'https://www.yourtrinkets.com/Subscription';
+  async function openPlans() {
+    try {
+      await Linking.openURL(PLANS_URL);
+    } catch {
+      Alert.alert('Could not open the site', `Visit ${PLANS_URL} in your browser.`);
+    }
   }
 
   const money = (value: number | null | undefined) => {
@@ -130,8 +143,22 @@ export default function Membership() {
             {currentPlan}
           </Text>
           <Text style={{ ...tokens.type.ui, color: c.inkGhost, opacity: 0.85, marginTop: 10, lineHeight: 23 }}>
-            Plans are managed on the web, at yourtrinkets.com.
+            Plans are managed on the web. Change yours there and it appears here the next time you open the app.
           </Text>
+          <TouchableOpacity
+            onPress={openPlans}
+            accessibilityRole="link"
+            style={{
+              marginTop: 16, alignSelf: 'flex-start',
+              backgroundColor: c.accent, borderRadius: tokens.radius.sm,
+              paddingVertical: 12, paddingHorizontal: 18,
+              flexDirection: 'row', alignItems: 'center', gap: 8,
+            }}>
+            <Text style={{ ...tokens.type.ui, color: c.bg, fontWeight: '600' }}>
+              {currentPlan === 'Free' ? 'Upgrade on the web' : 'Manage on the web'}
+            </Text>
+            <Ionicons name="open-outline" size={16} color={c.bg} />
+          </TouchableOpacity>
         </View>
 
         {/* Billing period */}
@@ -225,6 +252,9 @@ export default function Membership() {
           Changing plans happens on the web. Whatever you choose there appears
           here the next time you open the app.
         </Text>
+        <TouchableOpacity onPress={openPlans} accessibilityRole="link" style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 }}>
+          <Text style={{ ...tokens.type.ui, color: c.accentDeep, fontWeight: '500' }}>Open yourtrinkets.com →</Text>
+        </TouchableOpacity>
 
       </ScrollView>
     </View>
