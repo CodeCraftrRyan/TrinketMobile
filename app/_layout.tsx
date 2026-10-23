@@ -1,11 +1,29 @@
 import { EBGaramond_400Regular, EBGaramond_400Regular_Italic, EBGaramond_500Medium, useFonts as useCormorantFonts } from '@expo-google-fonts/eb-garamond';
 import { DMMono_300Light, DMMono_400Regular, useFonts as useDMMonoFonts } from '@expo-google-fonts/dm-mono';
 import { DMSans_300Light, DMSans_400Regular, DMSans_500Medium, DMSans_700Bold, useFonts as useDMSansFonts } from '@expo-google-fonts/dm-sans';
-import { Stack } from "expo-router";
-import { StatusBar, Text, TextInput } from 'react-native';
+import { Stack, router } from "expo-router";
+import { useEffect } from 'react';
+import { StatusBar, Text, TextInput, View } from 'react-native';
 import { AccessibilityProvider, useAccessibilitySettings } from '../lib/accessibility';
+import { supabase } from '../lib/supabase';
 import { theme } from '../lib/theme';
 import { tokens } from '../lib/tokens';
+
+// When the session goes away (refresh token rejected, signed out on another
+// device, account deleted) send the user to login. Without this, supabase-js
+// quietly drops the session, RLS starts returning empty arrays, and Home shows
+// "Nothing catalogued yet" to someone with a full archive.
+function AuthWatcher() {
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
+        router.replace('/(auth)/login');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+  return null;
+}
 
 const textComponent = Text as typeof Text & { defaultProps?: { style?: unknown } };
 const textInputComponent = TextInput as typeof TextInput & { defaultProps?: { style?: unknown } };
@@ -86,6 +104,7 @@ function AccessibilityShell() {
   return (
     <>
       <AccessibilityTextDefaults />
+      <AuthWatcher />
       <StatusBar barStyle="dark-content" backgroundColor="#0000" />
       <Stack key={stackKey} screenOptions={{ headerShown: false }} />
     </>
@@ -110,7 +129,8 @@ export default function RootLayout() {
   });
 
   if (!cormorantLoaded || !dmSansLoaded || !dmMonoLoaded) {
-    return null;
+    // Navy while fonts load, matching the splash, instead of a white flash.
+    return <View style={{ flex: 1, backgroundColor: '#0C1620' }} />;
   }
 
   return (
