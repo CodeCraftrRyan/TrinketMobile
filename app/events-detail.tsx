@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { tokens } from '../lib/tokens';
 import { addItemHref } from '../lib/addItemRoute';
@@ -148,6 +148,25 @@ export default function EventDetail() {
               <Ionicons name="chevron-back" size={19} color={c.inkGhost} />
               <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Events</Text>
             </TouchableOpacity>
+            {!!event && (
+              <TouchableOpacity hitSlop={10} onPress={() => {
+                // Objects filed under this event are kept; their event link is cleared (FK is SET NULL).
+                Alert.alert('Remove this event?', 'The objects from that day stay in your archive; only the event goes.', [
+                  { text: 'Keep it', style: 'cancel' },
+                  { text: 'Remove', style: 'destructive', onPress: async () => {
+                    try {
+                      const { error } = await supabase.from('events').delete().eq('id', id);
+                      if (error) throw error;
+                      router.replace('/(tabs)/events');
+                    } catch (e: any) {
+                      Alert.alert('Could not remove', e?.message ?? 'Something went wrong.');
+                    }
+                  } },
+                ]);
+              }}>
+                <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Remove</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75, marginTop: 22 }}>

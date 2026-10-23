@@ -133,7 +133,7 @@ export default function Membership() {
           <TouchableOpacity onPress={() => router.back()} hitSlop={10}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <Ionicons name="chevron-back" size={19} color={c.inkGhost} />
-            <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Profile</Text>
+            <Text style={{ ...tokens.type.ui, color: c.inkGhost }}>Account</Text>
           </TouchableOpacity>
 
           <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75, marginTop: 22 }}>

@@ -13,7 +13,7 @@ const LEFT_TABS: TabDef[] = [
 ];
 const RIGHT_TABS: TabDef[] = [
   { name: 'events', label: 'Events', icon: 'calendar-outline' },
-  { name: 'account', label: 'Profile', icon: 'person-outline' },
+  { name: 'account', label: 'Account', icon: 'person-outline' },
 ];
 
 export default function BottomTabs(props: BottomTabBarProps) {

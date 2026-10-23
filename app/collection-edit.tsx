@@ -41,6 +41,30 @@ export default function CollectionEdit() {
     })();
   }, [id]);
 
+  // Removes the collection only. collection_items cascades, so the objects
+  // themselves stay in the archive.
+  const remove = () => {
+    Alert.alert(
+      'Remove this collection?',
+      'The objects in it stay in your archive; only the grouping goes.',
+      [
+        { text: 'Keep it', style: 'cancel' },
+        {
+          text: 'Remove', style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase.from('collections').delete().eq('id', id);
+              if (error) throw error;
+              router.replace('/(tabs)/collections');
+            } catch (e: any) {
+              Alert.alert('Could not remove', e?.message ?? 'Something went wrong.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const save = async () => {
     const trimmed = name.trim();
     if (!trimmed) {
@@ -149,6 +173,10 @@ export default function CollectionEdit() {
                   }}
                 />
               </View>
+
+              <TouchableOpacity onPress={remove} style={{ paddingVertical: 14, alignItems: 'center', marginTop: 12 }}>
+                <Text style={{ ...tokens.type.ui, color: c.accentDeep }}>Remove this collection</Text>
+              </TouchableOpacity>
             </View>
           )}
         </ScrollView>
