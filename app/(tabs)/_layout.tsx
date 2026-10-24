@@ -93,6 +93,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="items" options={{ href: null }} />
       <Tabs.Screen name="events" options={{ href: null }} />
       <Tabs.Screen name="add" options={{ href: null }} />
+      {/* Redesign: the "More" tab (People, Places, Settings). Unused otherwise. */}
+      <Tabs.Screen name="more" options={{ href: null }} />
     </Tabs>
   );
 }

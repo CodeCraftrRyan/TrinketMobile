@@ -4,6 +4,8 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '../../lib/tokens';
 import { addItemParams } from '../../lib/addItemRoute';
+import { useRedesign } from '../../lib/redesign';
+import RedesignTabs from './RedesignTabs';
 
 type TabDef = { name: string; label: string; icon: keyof typeof Ionicons.glyphMap };
 
@@ -17,6 +19,13 @@ const RIGHT_TABS: TabDef[] = [
 ];
 
 export default function BottomTabs(props: BottomTabBarProps) {
+  // Redesign: Archive · Collections · + · Moments · More, drawn separately.
+  const { on: redesign } = useRedesign();
+  if (redesign) return <RedesignTabs {...(props as any)} />;
+  return <ClassicTabs {...props} />;
+}
+
+function ClassicTabs(props: BottomTabBarProps) {
   const { state, navigation } = props;
   const insets = useSafeAreaInsets();
   const BAR_HEIGHT = 56;
