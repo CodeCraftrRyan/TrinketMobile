@@ -34,6 +34,9 @@ export function RedesignProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(() => ({ on, setOn, isLoaded }), [on, setOn, isLoaded]);
+  // Draw nothing until the saved choice is read (one quick local read, like
+  // the font loading before it), so no screen mounts in the wrong design.
+  if (!isLoaded) return null;
   return <RedesignContext.Provider value={value}>{children}</RedesignContext.Provider>;
 }
 
