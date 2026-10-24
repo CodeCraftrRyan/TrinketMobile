@@ -6,12 +6,31 @@ import { addRecentlyViewed } from '../../../lib/recent';
 import { supabase } from '../../../lib/supabase';
 import { tokens } from '../../../lib/tokens';
 import { addItemHref } from '../../../lib/addItemRoute';
+import PieceDetail from '../../../components/rd/PieceDetail';
+import { useRedesign } from '../../../lib/redesign';
 
 const c = tokens.colors;
 const PHOTO_BUCKET = 'item-photos';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ItemDetail() {
+  // Redesign: the new opened-piece view. Otherwise the current one, unchanged.
+  const { on: redesign } = useRedesign();
+  return redesign ? <RedesignItem /> : <ClassicItemDetail />;
+}
+
+function RedesignItem() {
+  const { id, from, fromId } = useLocalSearchParams<{ id: string; from?: string; fromId?: string }>();
+  const router = useRouter();
+  const onBack = () => {
+    if (from === 'collection' && fromId) { router.replace({ pathname: '/collection/[id]', params: { id: fromId } } as any); return; }
+    if (from === 'event' && fromId) { router.replace({ pathname: '/events-detail', params: { id: fromId } } as any); return; }
+    if (router.canGoBack()) router.back(); else router.replace('/(tabs)/home' as any);
+  };
+  return <PieceDetail id={String(id)} onBack={onBack} />;
+}
+
+function ClassicItemDetail() {
   const { id, from, fromId } = useLocalSearchParams<{ id: string; from?: string; fromId?: string }>();
   const goBack = () => {
     if (from === 'collection' && fromId) { router.replace({ pathname: '/collection/[id]', params: { id: fromId } } as any); return; }

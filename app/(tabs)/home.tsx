@@ -5,6 +5,8 @@ import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import AiMark from '../../components/AiMark';
 import { addItemHref } from '../../lib/addItemRoute';
 import { fetchLookups, lookupsLine, type Lookups } from '../../lib/aiLookups';
+import ArchiveHome from '../../components/rd/ArchiveHome';
+import { useRedesign } from '../../lib/redesign';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
 
@@ -54,6 +56,12 @@ const shortDate = (raw?: string | null) => {
 };
 
 export default function Home() {
+  // Redesign: the Archive. Otherwise the current home, unchanged.
+  const { on: redesign } = useRedesign();
+  return redesign ? <ArchiveHome /> : <ClassicHome />;
+}
+
+function ClassicHome() {
   const router = useRouter();
   const [totalValue, setTotalValue] = useState<number>(0);
   const [valuedCount, setValuedCount] = useState<number>(0);
