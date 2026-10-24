@@ -7,12 +7,12 @@ import { signCovers } from './pieces';
 import { supabase } from './supabase';
 
 export const ITEM_FIELDS =
-  'id,name,description,photo_url,people,location,year_manufactured,year,memory_date,event_id,created_at';
+  'id,name,description,photo_url,people,location,year_manufactured,year,memory_date,event_id,estimated_value,created_at';
 
 export type Piece = {
   id: string | number; name: string | null; description?: string | null; photo_url?: string | null;
   people?: string[] | null; location?: string | null; year?: string | null; year_manufactured?: string | null;
-  memory_date?: string | null; event_id?: string | number | null; created_at?: string | null;
+  memory_date?: string | null; event_id?: string | number | null; estimated_value?: number | null; created_at?: string | null;
 };
 export type Moment = {
   id: string | number; name: string | null; description?: string | null; start_date?: string | null;
@@ -56,8 +56,50 @@ export async function coversFor(rows: Piece[]): Promise<Record<string, string>> 
 /** Every piece the person has, with the fields these screens need. */
 export async function loadPieces(userId?: string): Promise<Piece[]> {
   const id = userId ?? await uid();
-  return fetchAllRows<Piece>(() =>
+  const pieces = await fetchAllRows<Piece>(() =>
     supabase.from('items').select(ITEM_FIELDS).eq('user_id', id).order('created_at', { ascending: false }));
+  return withLinkedPeople(pieces, id);
+}
+
+/**
+ * People live in two places: the items.people array (older pieces and the
+ * web form) and the item_people link table (what this app's Add form
+ * writes). Merge both into each piece's `people`, so nobody is missed.
+ * Returns new objects; the rows passed in are untouched.
+ */
+export async function withLinkedPeople(pieces: Piece[], userId: string): Promise<Piece[]> {
+  if (!pieces.length) return pieces;
+  let nameById: Record<string, string> = {};
+  try {
+    const people = await fetchAllRows<any>(() => supabase.from('people').select('id,name').eq('user_id', userId).order('id'));
+    people.forEach((r) => { if (r?.id != null && r?.name) nameById[String(r.id)] = String(r.name).trim(); });
+  } catch (e) {
+    console.warn('spine: people list unavailable', e);
+    return pieces;
+  }
+  const personIds = Object.keys(nameById);
+  if (!personIds.length) return pieces;
+  const byItem: Record<string, string[]> = {};
+  try {
+    for (let i = 0; i < personIds.length; i += CHUNK) {
+      const links = await fetchAllRows<any>(() =>
+        supabase.from('item_people').select('item_id,person_id').in('person_id', personIds.slice(i, i + CHUNK)).order('item_id'));
+      links.forEach((l) => {
+        const n = nameById[String(l.person_id)];
+        if (n) (byItem[String(l.item_id)] ??= []).push(n);
+      });
+    }
+  } catch (e) {
+    console.warn('spine: item_people unavailable', e);
+    return pieces;
+  }
+  return pieces.map((p) => {
+    const linked = byItem[String(p.id)];
+    if (!linked?.length) return p;
+    const seen = new Set(namesOf(p.people).map(norm));
+    const merged = [...namesOf(p.people), ...linked.filter((n) => !seen.has(norm(n)) && seen.add(norm(n)))];
+    return { ...p, people: merged };
+  });
 }
 
 /** The year a piece speaks of, for ordering a timeline. null when undated. */
@@ -173,8 +215,8 @@ export async function loadMoment(momentId: string) {
     .select('id,name,description,start_date,event_date,end_date,people_list').eq('id', momentId).maybeSingle();
   if (error) throw error;
   if (!ev) return null;
-  const pieces = await fetchAllRows<Piece>(() =>
-    supabase.from('items').select(ITEM_FIELDS).eq('user_id', id).eq('event_id', momentId).order('created_at', { ascending: false }));
+  const pieces = await withLinkedPeople(await fetchAllRows<Piece>(() =>
+    supabase.from('items').select(ITEM_FIELDS).eq('user_id', id).eq('event_id', momentId).order('created_at', { ascending: false })), id);
   const people = Array.from(new Set([...namesOf((ev as Moment).people_list), ...pieces.flatMap((p) => namesOf(p.people))]));
   return { moment: ev as Moment, pieces, people, covers: await coversFor(pieces) };
 }

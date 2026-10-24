@@ -63,7 +63,9 @@ function ClassicItemDetail() {
         if (error) throw error;
         if (!mounted) return;
         setItem(data ?? null);
-        setPeopleNames([]);
+        // Names on the item itself (web-added); linked people are added below.
+        const ownPeople: string[] = Array.isArray(data?.people) ? data.people.filter(Boolean).map(String) : [];
+        setPeopleNames(ownPeople);
 
         const { data: userData } = await supabase.auth.getUser();
         const uid = userData?.user?.id ?? null;
@@ -119,7 +121,7 @@ function ClassicItemDetail() {
               const names = (peopleRows ?? [])
                 .filter((row: { name?: string | null }) => row?.name)
                 .map((row: { name?: string | null }) => String(row.name));
-              setPeopleNames(names);
+              setPeopleNames(Array.from(new Set([...ownPeople, ...names])));
             }
           } catch (e) {
             console.warn('Failed to load item people', e);

@@ -1,3 +1,4 @@
+import { withLinkedPeople } from '../../lib/spine';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -143,7 +144,8 @@ function ClassicHome() {
         .order('created_at', { ascending: false })
         .limit(6);
       if (rowsErr) throw rowsErr;
-      const list = (rows ?? []) as Row[];
+      // Include people tagged through item_people, for the subtitles.
+      const list = (await withLinkedPeople((rows ?? []) as any, user.id)) as unknown as Row[];
       setRecent(list);
 
       // Favourites, so a kept object shows a star rather than a date.
