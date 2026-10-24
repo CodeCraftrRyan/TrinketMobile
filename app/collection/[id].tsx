@@ -1,3 +1,6 @@
+import { withLinkedPeople } from '../../lib/spine';
+import { CollectionView } from '../../components/rd/CollectionsScreens';
+import { useRedesign } from '../../lib/redesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -36,6 +39,13 @@ const shortDate = (raw?: string | null) => {
 };
 
 export default function CollectionDetail() {
+  // Redesign: name, count and a grid of pieces. Otherwise unchanged.
+  const { on } = useRedesign();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return on ? <CollectionView id={String(id)} /> : <ClassicCollectionDetail />;
+}
+
+function ClassicCollectionDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
 
@@ -86,7 +96,8 @@ export default function CollectionDetail() {
         .in('id', itemIds)
         .order('created_at', { ascending: true });
       if (rowsErr) throw rowsErr;
-      const list = (rows ?? []) as Item[];
+      // Include people tagged through item_people, for the subtitles.
+      const list = (await withLinkedPeople((rows ?? []) as any, user.id)) as unknown as Item[];
       setItems(list);
 
       // Cover photographs. items.photo_url holds a storage PATH — sign it.

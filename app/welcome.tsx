@@ -1,8 +1,16 @@
+import WelcomeScreen from '../components/rd/WelcomeScreen';
+import { useRedesign } from '../lib/redesign';
 import { useRouter } from 'expo-router';
 import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import BrandHeader from '../components/ui/BrandHeader';
 
 export default function Welcome() {
+  // Redesign: frost page, Garamond wordmark, navy + hairline buttons.
+  const { on } = useRedesign();
+  return on ? <WelcomeScreen /> : <ClassicWelcome />;
+}
+
+function ClassicWelcome() {
   const router = useRouter();
   return (
     <View style={{ flex: 1, backgroundColor: '#0C1620' }}>

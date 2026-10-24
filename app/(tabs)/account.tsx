@@ -4,12 +4,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import PlacesSection from '../../components/PlacesSection';
 import { useAccessibilitySettings } from '../../lib/accessibility';
+import { useRedesign } from '../../lib/redesign';
 import { supabase } from '../../lib/supabase';
-import { tokens } from '../../lib/tokens';
-
-const c = tokens.colors;
+import { rdCompat } from '../../lib/rdCompat';
+import { rd } from '../../lib/rdTokens';
+import { tokens as baseTokens } from '../../lib/tokens';
 
 export default function Account() {
+  const { on: redesignOn, setOn: setRedesignOn } = useRedesign();
   const router = useRouter();
   const [profile, setProfile] = useState({ name: '', email: '', initials: '', since: '' });
   const [userId, setUserId] = useState<string | null>(null);
@@ -21,6 +23,10 @@ export default function Account() {
   const [plan, setPlan] = useState<any>(null);
   const [counts, setCounts] = useState({ items: 0, collections: 0, events: 0 });
   const { settings, setLargeText, setHighContrast } = useAccessibilitySettings();
+  // Redesign: the same screen in v5 colours and type. High contrast keeps its
+  // own black-and-white palette in either design.
+  const tokens = redesignOn && !settings.highContrast ? rdCompat : baseTokens;
+  const c = tokens.colors;
   const [supportUntil, setSupportUntil] = useState<string | null>(null);
   const [supportLog, setSupportLog] = useState<{ looked_at: string; note: string | null }[]>([]);
   const [changingSupport, setChangingSupport] = useState(false);
@@ -264,9 +270,9 @@ export default function Account() {
 
   // null means the plan does not cap this.
   const usage: { label: string; used: number; cap: number | null }[] = [
-    { label: 'Objects', used: counts.items, cap: plan?.max_items ?? null },
+    { label: redesignOn ? 'Pieces' : 'Objects', used: counts.items, cap: plan?.max_items ?? null },
     { label: 'Collections', used: counts.collections, cap: plan?.max_collections ?? null },
-    { label: 'Events', used: counts.events, cap: plan?.max_events ?? null },
+    { label: redesignOn ? 'Moments' : 'Events', used: counts.events, cap: plan?.max_events ?? null },
   ];
 
   const Label = ({ children }: any) => (
@@ -319,6 +325,25 @@ export default function Account() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
 
         {/* Masthead */}
+        {redesignOn ? (
+          <View style={{ paddingTop: 72, paddingHorizontal: 20, paddingBottom: 8 }}>
+            <Text style={tokens.type.label}>Settings</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 18 }}>
+              <View style={{
+                width: 60, height: 60, borderWidth: 1, borderColor: rd.color.mist, borderRadius: rd.radius.mark,
+                backgroundColor: rd.color.paper, alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Text style={{ fontFamily: rd.font.display, fontSize: 24, color: rd.color.navy }}>{profile.initials}</Text>
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={rd.type.title} numberOfLines={1}>{profile.name}</Text>
+                <Text style={{ ...rd.type.fact, marginTop: 2 }} numberOfLines={1}>
+                  {[profile.email, profile.since ? `keeping since ${profile.since}` : ''].filter(Boolean).join(' · ')}
+                </Text>
+              </View>
+            </View>
+          </View>
+        ) : (
         <View style={{ backgroundColor: c.surfaceDark, paddingTop: 72, paddingHorizontal: 20, paddingBottom: 32 }}>
           <Text style={{ ...tokens.type.label, color: c.inkGhost, opacity: 0.75 }}>Profile</Text>
 
@@ -347,6 +372,7 @@ export default function Account() {
           </View>
 
         </View>
+        )}
 
         {/* What the archive holds, against what the plan allows */}
         <Label>Your archive</Label>
@@ -517,6 +543,24 @@ export default function Account() {
               trackColor={{ false: c.border, true: c.accent }} thumbColor="#FFFFFF"
               ios_backgroundColor={c.border} accessibilityLabel="High contrast" />
           </View>
+          <Divider />
+          {/* Opt-in for the redesign (TRINKET_SPEC v5). Saved on this device. */}
+          <View style={{ paddingHorizontal: 18, paddingVertical: 15 }}>
+            <View style={{
+              flexDirection: settings.largeText ? 'column' : 'row',
+              alignItems: settings.largeText ? 'flex-start' : 'center',
+              justifyContent: 'space-between',
+              gap: settings.largeText ? 10 : 12,
+            }}>
+              <Text style={{ ...tokens.type.ui, color: c.ink, flex: settings.largeText ? undefined : 1 }}>Try the new design</Text>
+              <Switch value={redesignOn} onValueChange={setRedesignOn}
+                trackColor={{ false: c.border, true: c.accent }} thumbColor="#FFFFFF"
+                ios_backgroundColor={c.border} accessibilityLabel="Try the new design" />
+            </View>
+            <Text style={{ ...tokens.type.fact, color: c.inkLabel, marginTop: 8, lineHeight: 20 }}>
+              A preview of Trinket's new look. Your pieces stay the same. Turn it off any time.
+            </Text>
+          </View>
         </Card>
 
         {/* Support access */}
@@ -576,6 +620,15 @@ export default function Account() {
         {/* Settings */}
         <Label>Settings</Label>
         <Card>
+          {redesignOn && (
+            <>
+              {/* Keep a record: the printable booklet / CSV lives on the web. */}
+              <Row left="Keep a record" right="On the web" onPress={() => Linking.openURL('https://yourtrinkets.com/export').catch(() => {
+                Alert.alert('Couldn’t open the browser', 'Visit yourtrinkets.com/export to print or download your archive.');
+              })} />
+              <Divider />
+            </>
+          )}
           <Row left="Questions" onPress={() => router.push('/faq')} />
           <Divider />
           <Row left="Get in touch" onPress={async () => {

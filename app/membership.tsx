@@ -1,3 +1,5 @@
+import PlansScreen from '../components/rd/PlansScreen';
+import { useRedesign } from '../lib/redesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -10,6 +12,12 @@ const c = tokens.colors;
 type Plan = 'Free' | 'Pro' | 'Premium';
 
 export default function Membership() {
+  // Redesign: plan comparison + "Continue on the web" (no in-app payment).
+  const { on } = useRedesign();
+  return on ? <PlansScreen /> : <ClassicMembership />;
+}
+
+function ClassicMembership() {
   const router = useRouter();
   const [currentPlan, setCurrentPlan] = useState<Plan>('Free');
   const [loading, setLoading] = useState(true);

@@ -1,3 +1,6 @@
+import { withLinkedPeople } from '../lib/spine';
+import { MomentView } from '../components/rd/MomentsScreens';
+import { useRedesign } from '../lib/redesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -34,6 +37,13 @@ const shortDate = (raw?: string | null) => {
 };
 
 export default function EventDetail() {
+  // Redesign: the moment, its pieces and its people. Otherwise unchanged.
+  const { on } = useRedesign();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return on ? <MomentView id={String(id)} /> : <ClassicEventDetail />;
+}
+
+function ClassicEventDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -89,7 +99,8 @@ export default function EventDetail() {
         .eq('event_id', id)
         .order('created_at', { ascending: true });
       if (rowsErr) throw rowsErr;
-      const list = (rows ?? []) as Item[];
+      // Include people tagged through item_people, for the subtitles.
+      const list = (await withLinkedPeople((rows ?? []) as any, user.id)) as unknown as Item[];
       setItems(list);
 
       const paths: Record<string, string> = {};

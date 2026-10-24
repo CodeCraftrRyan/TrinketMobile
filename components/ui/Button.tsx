@@ -1,14 +1,25 @@
 import { Pressable, StyleSheet, Text } from "react-native";
+import { rd } from "../../lib/rdTokens";
+import { useRedesign } from "../../lib/redesign";
 import { tokens } from "../../lib/tokens";
 
 export function Button({ title, onPress, disabled, variant = 'primary' }: { title:string; onPress:() => void; disabled?:boolean; variant?: 'primary' | 'soft' | 'ghost' }) {
+  const { on: redesign } = useRedesign();
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={[variant === 'primary' ? styles.button : variant === 'soft' ? styles.soft : styles.ghost, disabled && styles.disabled]}
+      accessibilityRole="button"
+      style={[
+        variant === 'primary' ? styles.button : variant === 'soft' ? styles.soft : styles.ghost,
+        redesign && (variant === 'primary' ? rdStyles.button : variant === 'soft' ? rdStyles.soft : rdStyles.ghost),
+        disabled && styles.disabled,
+      ]}
     >
-      <Text style={[variant === 'primary' ? styles.text : variant === 'soft' ? styles.softText : styles.ghostText]}>{title}</Text>
+      <Text style={[
+        variant === 'primary' ? styles.text : variant === 'soft' ? styles.softText : styles.ghostText,
+        redesign && (variant === 'primary' ? rdStyles.text : rdStyles.quietText),
+      ]}>{title}</Text>
     </Pressable>
   );
 }
@@ -65,4 +76,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontFamily: 'DMSans_500Medium',
   },
+});
+
+// Redesign: 8px corners, no shadow; navy is the only filled button.
+const rdStyles = StyleSheet.create({
+  button: {
+    backgroundColor: rd.color.navy, borderRadius: rd.radius.md, minHeight: rd.minTarget,
+    shadowOpacity: 0, shadowRadius: 0, elevation: 0,
+  },
+  soft: { backgroundColor: rd.color.paper, borderColor: rd.color.mist, borderRadius: rd.radius.md, minHeight: rd.minTarget },
+  ghost: { borderColor: rd.color.mist, borderRadius: rd.radius.md, minHeight: rd.minTarget },
+  text: { fontFamily: rd.font.textMedium, color: rd.color.paper },
+  quietText: { fontFamily: rd.font.textMedium, color: rd.color.navy },
 });

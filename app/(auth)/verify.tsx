@@ -4,11 +4,17 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import BrandHeader from '../../components/ui/BrandHeader';
 import { supabase } from '../../lib/supabase';
-import { tokens } from '../../lib/tokens';
+import { rdCompat, rdStyleSheet } from '../../lib/rdCompat';
+import { useRedesign } from '../../lib/redesign';
+import { tokens as baseTokens } from '../../lib/tokens';
 
-const c = tokens.colors;
 
 export default function Verify() {
+  // Redesign: the same screen with v5 colours, type and shapes.
+  const { on: rdOn } = useRedesign();
+  const tokens = rdOn ? rdCompat : baseTokens;
+  const c = tokens.colors;
+  const styles = rdOn ? rdStyles : classicStyles;
   const router = useRouter();
   const params = useLocalSearchParams<{ email?: string; returnTo?: string }>();
   const email = params.email ?? '';
@@ -149,7 +155,7 @@ export default function Verify() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: typeof baseTokens.colors, tokens: typeof baseTokens) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   container: { flexGrow: 1, padding: 20 },
 
@@ -204,3 +210,6 @@ const styles = StyleSheet.create({
   resendBtnText: { color: c.accentCool, fontWeight: '500', fontSize: 15 },
   btnDisabled: { opacity: 0.5 },
 });
+
+const classicStyles = makeStyles(baseTokens.colors, baseTokens);
+const rdStyles = rdStyleSheet(makeStyles(rdCompat.colors, rdCompat as unknown as typeof baseTokens));
