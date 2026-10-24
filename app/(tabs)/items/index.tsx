@@ -55,7 +55,9 @@ function ClassicItems() {
   const [refreshing, setRefreshing] = useState(false);
 
   // --- people names per object, for the subtitle and the filter ---
-  const loadItemPeople = useCallback(async (itemIds: string[], userId: string) => {
+  // People come from both items.people (web-added) and item_people (this app).
+  const loadItemPeople = useCallback(async (rows: Item[], userId: string) => {
+    const itemIds = rows.map((r) => String(r.id));
     try {
       if (!itemIds.length) { setPeopleByItemId({}); return; }
       const { data: peopleRows } = await supabase
@@ -69,6 +71,10 @@ function ClassicItems() {
       const { data: linkRows } = await supabase
         .from('item_people').select('item_id,person_id').in('item_id', itemIds);
       const map: Record<string, string[]> = {};
+      rows.forEach((r: any) => {
+        const own = Array.isArray(r?.people) ? r.people.filter(Boolean).map(String) : [];
+        if (own.length) map[String(r.id)] = Array.from(new Set(own));
+      });
       (linkRows ?? []).forEach((row: any) => {
         if (row?.item_id == null || row?.person_id == null) return;
         const name = nameById[String(row.person_id)];
@@ -149,7 +155,7 @@ function ClassicItems() {
       }
 
       await Promise.all([
-        loadItemPeople(rows.map((r) => String(r.id)), userId),
+        loadItemPeople(rows, userId),
         loadCovers(rows),
       ]);
     } catch (e) {

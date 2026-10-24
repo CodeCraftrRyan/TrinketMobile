@@ -1,3 +1,4 @@
+import { withLinkedPeople } from '../../lib/spine';
 import { CollectionView } from '../../components/rd/CollectionsScreens';
 import { useRedesign } from '../../lib/redesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -95,7 +96,8 @@ function ClassicCollectionDetail() {
         .in('id', itemIds)
         .order('created_at', { ascending: true });
       if (rowsErr) throw rowsErr;
-      const list = (rows ?? []) as Item[];
+      // Include people tagged through item_people, for the subtitles.
+      const list = (await withLinkedPeople((rows ?? []) as any, user.id)) as unknown as Item[];
       setItems(list);
 
       // Cover photographs. items.photo_url holds a storage PATH — sign it.
