@@ -1,9 +1,12 @@
 import { EBGaramond_400Regular, EBGaramond_400Regular_Italic, EBGaramond_500Medium, useFonts as useCormorantFonts } from '@expo-google-fonts/eb-garamond';
 import { DMMono_300Light, DMMono_400Regular, useFonts as useDMMonoFonts } from '@expo-google-fonts/dm-mono';
 import { DMSans_300Light, DMSans_400Regular, DMSans_500Medium, DMSans_700Bold, useFonts as useDMSansFonts } from '@expo-google-fonts/dm-sans';
+import { PublicSans_400Regular, PublicSans_500Medium, useFonts as usePublicSansFonts } from '@expo-google-fonts/public-sans';
+import { IBMPlexMono_500Medium, useFonts as useIBMPlexMonoFonts } from '@expo-google-fonts/ibm-plex-mono';
 import { Stack } from "expo-router";
 import { StatusBar, Text, TextInput } from 'react-native';
 import { AccessibilityProvider, useAccessibilitySettings } from '../lib/accessibility';
+import { RedesignProvider, useRedesign } from '../lib/redesign';
 import { theme } from '../lib/theme';
 import { tokens } from '../lib/tokens';
 
@@ -16,6 +19,10 @@ const baseThemeColors = { ...theme };
 
 function AccessibilityTextDefaults() {
   const { settings } = useAccessibilitySettings();
+  // Redesign: body text in Public Sans at 400 (never Light), and the person's
+  // iOS text-size setting is respected (capped so layouts hold together).
+  const { on: redesign } = useRedesign();
+  const bodyFont = redesign ? 'PublicSans_400Regular' : 'DMSans_300Light';
   const scale = settings.largeText ? 1.2 : 1;
   const fontSize = 15 * scale;
   const textColor = settings.highContrast ? tokens.colors.ink : tokens.colors.inkMid;
@@ -62,27 +69,29 @@ function AccessibilityTextDefaults() {
   const baseTextStyle = Array.isArray(initialTextStyle) ? initialTextStyle : initialTextStyle ? [initialTextStyle] : [];
   textDefaults.style = [
     ...baseTextStyle,
-    { fontFamily: 'DMSans_300Light', color: textColor, fontSize, transform: [{ scale }], lineHeight: Math.round(22 * scale) },
+    { fontFamily: bodyFont, color: textColor, fontSize, transform: [{ scale }], lineHeight: Math.round(22 * scale) },
   ];
-  textDefaults.allowFontScaling = false;
-  textDefaults.maxFontSizeMultiplier = 1;
+  textDefaults.allowFontScaling = redesign;
+  textDefaults.maxFontSizeMultiplier = redesign ? 1.5 : 1;
 
   textInputComponent.defaultProps = textInputComponent.defaultProps ?? {};
   const inputDefaults = textInputComponent.defaultProps as { style?: unknown; allowFontScaling?: boolean; maxFontSizeMultiplier?: number };
   const baseInputStyle = Array.isArray(initialInputStyle) ? initialInputStyle : initialInputStyle ? [initialInputStyle] : [];
   inputDefaults.style = [
     ...baseInputStyle,
-    { fontFamily: 'DMSans_300Light', color: textColor, fontSize, transform: [{ scale }], lineHeight: Math.round(22 * scale) },
+    { fontFamily: bodyFont, color: textColor, fontSize, transform: [{ scale }], lineHeight: Math.round(22 * scale) },
   ];
-  inputDefaults.allowFontScaling = false;
-  inputDefaults.maxFontSizeMultiplier = 1;
+  inputDefaults.allowFontScaling = redesign;
+  inputDefaults.maxFontSizeMultiplier = redesign ? 1.5 : 1;
 
   return null;
 }
 
 function AccessibilityShell() {
   const { settings } = useAccessibilitySettings();
-  const stackKey = `${settings.largeText}-${settings.highContrast}`;
+  const { on: redesign } = useRedesign();
+  // Remount on a design switch too, so every screen redraws in the chosen design.
+  const stackKey = `${settings.largeText}-${settings.highContrast}-${redesign ? 'rd' : 'classic'}`;
   return (
     <>
       <AccessibilityTextDefaults />
@@ -109,13 +118,19 @@ export default function RootLayout() {
     DMMono_400Regular,
   });
 
-  if (!cormorantLoaded || !dmSansLoaded || !dmMonoLoaded) {
+  // Redesign faces. Loaded for everyone so the switch can flip instantly.
+  const [publicSansLoaded] = usePublicSansFonts({ PublicSans_400Regular, PublicSans_500Medium });
+  const [plexMonoLoaded] = useIBMPlexMonoFonts({ IBMPlexMono_500Medium });
+
+  if (!cormorantLoaded || !dmSansLoaded || !dmMonoLoaded || !publicSansLoaded || !plexMonoLoaded) {
     return null;
   }
 
   return (
     <AccessibilityProvider>
-      <AccessibilityShell />
+      <RedesignProvider>
+        <AccessibilityShell />
+      </RedesignProvider>
     </AccessibilityProvider>
   );
 }

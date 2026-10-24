@@ -4,12 +4,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import PlacesSection from '../../components/PlacesSection';
 import { useAccessibilitySettings } from '../../lib/accessibility';
+import { useRedesign } from '../../lib/redesign';
 import { supabase } from '../../lib/supabase';
 import { tokens } from '../../lib/tokens';
 
 const c = tokens.colors;
 
 export default function Account() {
+  const { on: redesignOn, setOn: setRedesignOn } = useRedesign();
   const router = useRouter();
   const [profile, setProfile] = useState({ name: '', email: '', initials: '', since: '' });
   const [userId, setUserId] = useState<string | null>(null);
@@ -468,6 +470,24 @@ export default function Account() {
             <Switch value={settings.highContrast} onValueChange={setHighContrast}
               trackColor={{ false: c.border, true: c.accent }} thumbColor="#FFFFFF"
               ios_backgroundColor={c.border} accessibilityLabel="High contrast" />
+          </View>
+          <Divider />
+          {/* Opt-in for the redesign (TRINKET_SPEC v5). Saved on this device. */}
+          <View style={{ paddingHorizontal: 18, paddingVertical: 15 }}>
+            <View style={{
+              flexDirection: settings.largeText ? 'column' : 'row',
+              alignItems: settings.largeText ? 'flex-start' : 'center',
+              justifyContent: 'space-between',
+              gap: settings.largeText ? 10 : 12,
+            }}>
+              <Text style={{ ...tokens.type.ui, color: c.ink, flex: settings.largeText ? undefined : 1 }}>Try the new design</Text>
+              <Switch value={redesignOn} onValueChange={setRedesignOn}
+                trackColor={{ false: c.border, true: c.accent }} thumbColor="#FFFFFF"
+                ios_backgroundColor={c.border} accessibilityLabel="Try the new design" />
+            </View>
+            <Text style={{ ...tokens.type.fact, color: c.inkLabel, marginTop: 8, lineHeight: 20 }}>
+              A preview of Trinket's new look. Your pieces stay the same. Turn it off any time.
+            </Text>
           </View>
         </Card>
 
