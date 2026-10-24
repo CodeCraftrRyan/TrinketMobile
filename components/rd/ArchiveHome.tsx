@@ -126,7 +126,11 @@ export default function ArchiveHome() {
           <Ionicons name="search-outline" size={22} color={rd.color.navy} />
         </TouchableOpacity>
       </View>
-      {total > 0 && <Meter total={total} cap={cap} />}
+      {total > 0 && (
+        <TouchableOpacity onPress={() => router.push('/membership')} accessibilityRole="button" accessibilityHint="Opens your plan">
+          <Meter total={total} cap={cap} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 

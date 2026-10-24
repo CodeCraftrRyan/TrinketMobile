@@ -1,8 +1,16 @@
+import PlansScreen from '../components/rd/PlansScreen';
+import { useRedesign } from '../lib/redesign';
 import { useRouter } from "expo-router";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import BrandHeader from '../components/ui/BrandHeader';
 
 export default function Pricing() {
+  // Redesign: the same plan comparison as Membership.
+  const { on } = useRedesign();
+  return on ? <PlansScreen /> : <ClassicPricing />;
+}
+
+function ClassicPricing() {
   const router = useRouter();
 
   return (
