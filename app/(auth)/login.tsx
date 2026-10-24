@@ -3,11 +3,17 @@ import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BrandHeader from '../../components/ui/BrandHeader';
 import { supabase } from '../../lib/supabase';
-import { tokens } from '../../lib/tokens';
+import { rdCompat, rdStyleSheet } from '../../lib/rdCompat';
+import { useRedesign } from '../../lib/redesign';
+import { tokens as baseTokens } from '../../lib/tokens';
 
-const c = tokens.colors;
 
 export default function Login() {
+  // Redesign: the same screen with v5 colours, type and shapes.
+  const { on: rdOn } = useRedesign();
+  const tokens = rdOn ? rdCompat : baseTokens;
+  const c = tokens.colors;
+  const styles = rdOn ? rdStyles : classicStyles;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -118,7 +124,7 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: typeof baseTokens.colors, tokens: typeof baseTokens) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   scroll: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 24 },
 
@@ -170,3 +176,6 @@ const styles = StyleSheet.create({
   signupText: { color: c.muted, fontSize: 15 },
   signupLink: { color: c.accentDeep, fontWeight: '500' },
 });
+
+const classicStyles = makeStyles(baseTokens.colors, baseTokens);
+const rdStyles = rdStyleSheet(makeStyles(rdCompat.colors, rdCompat as unknown as typeof baseTokens));
