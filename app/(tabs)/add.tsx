@@ -5,7 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 // to pick or take a photo.
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 // SDK 54 moved readAsStringAsync to the legacy entry point.
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -13,6 +13,9 @@ import AiMark from '../../components/AiMark';
 import { fetchLookups, lookupsLine, readFunctionError, type Lookups } from '../../lib/aiLookups';
 import { addLocation, fetchLocations, iconForLocation, type LocationOption } from '../../lib/locations';
 import { supabase } from '../../lib/supabase';
+import { rd } from '../../lib/rdTokens';
+import { useRedesign } from '../../lib/redesign';
+import SuggestionPanel, { type Suggestion } from '../../components/rd/SuggestionPanel';
 import { tokens } from '../../lib/tokens';
 
 const c = tokens.colors;
@@ -90,6 +93,10 @@ function AddItemForm() {
   const { id, incomingPhoto, incomingDescription, collection: collectionParam, event: eventParam } =
     useLocalSearchParams<{ id?: string; incomingPhoto?: string; incomingDescription?: string; collection?: string; event?: string }>();
   const isEditing = Boolean(id);
+  // Redesign (TRINKET_SPEC v5 §7.1): the AI suggestion is a proposal the
+  // person accepts or edits, never an auto-fill. Off → the current behaviour.
+  const { on: redesign } = useRedesign();
+  const [proposal, setProposal] = useState<Suggestion | null>(null);
   const today = new Date().toISOString().split('T')[0];
   const [focusedField, setFocusedField] = useState('');
   const [suggesting, setSuggesting] = useState(false);
@@ -364,9 +371,11 @@ function AddItemForm() {
   };
 
   // Upload one local file into item-photos/<uid>/<itemId>/<file> and return the path.
-  async function suggestDetails() {
+  // Ask the describe-item function to read the newest photo. Returns the
+  // suggestion, or null when it couldn't (the person has already been told).
+  async function requestSuggestion(): Promise<Suggestion | null> {
     const local = photos.find(p => p.localUri)?.localUri;
-    if (!local) { Alert.alert('Add a photograph first', 'Suggestions are read from a newly added photo.'); return; }
+    if (!local) { Alert.alert('Add a photograph first', 'Suggestions are read from a newly added photo.'); return null; }
     setSuggesting(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -382,25 +391,10 @@ function AddItemForm() {
       if (upErr) throw upErr;
       const { data, error } = await supabase.functions.invoke('describe-item', { body: { imagePath: path } });
       if (error) throw error;
-      const s = (data as any)?.suggestion ?? {};
-      console.log('SUGGESTION:', JSON.stringify(s), '| options:', categoryOptions.map(o => o.label).join('|'), '| current:', category?.label ?? 'none');
-      // Fill empty fields only — never overwrite what was written.
-      const filled: string[] = [];
-      if (s.name && !name.trim()) { setName(s.name); filled.push('name'); }
-      if (!description.trim() && (s.description || s.era || s.materials)) {
-        const extra = [s.era, s.materials].filter(Boolean).join(' · ');
-        setDescription([s.description, extra ? `(${extra})` : ''].filter(Boolean).join(' ').trim());
-        filled.push('story');
-      }
-      if (s.category && !category) {
-        const match = categoryOptions.find(o => o.label.toLowerCase() === String(s.category).toLowerCase());
-        if (match) { setCategory(match); setCategoryLabel(match.label); filled.push('category'); }
-      }
-      if (s.estimated_value && !estimatedValue.trim()) { setEstimatedValue(String(s.estimated_value)); filled.push('value'); }
-      setSuggestedFields(filled);
       const used = Number((data as any)?.used);
       const cap = (data as any)?.cap ?? null;
       if (Number.isFinite(used)) setLookups({ used, cap, left: cap === null ? null : Math.max(0, cap - used) });
+      return ((data as any)?.suggestion ?? {}) as Suggestion;
     } catch (e: any) {
       const { limitReached, message } = await readFunctionError(e);
       if (limitReached) {
@@ -409,9 +403,40 @@ function AddItemForm() {
       } else {
         Alert.alert('Could not read the photograph', 'Please try again in a moment.');
       }
+      return null;
     } finally {
       setSuggesting(false);
     }
+  }
+
+  // Put a suggestion into the form. Only empty fields are filled — never
+  // overwrite what was written. Returns the fields it filled.
+  function applySuggestion(s: Suggestion): string[] {
+    const filled: string[] = [];
+    if (s.name && !name.trim()) { setName(s.name); filled.push('name'); }
+    if (!description.trim() && (s.description || s.era || s.materials)) {
+      const extra = [s.era, s.materials].filter(Boolean).join(' · ');
+      setDescription([s.description, extra ? `(${extra})` : ''].filter(Boolean).join(' ').trim());
+      filled.push('story');
+    }
+    if (s.category && !category) {
+      const match = categoryOptions.find(o => o.label.toLowerCase() === String(s.category).toLowerCase());
+      if (match) { setCategory(match); setCategoryLabel(match.label); filled.push('category'); }
+    }
+    if (s.estimated_value && !estimatedValue.trim()) { setEstimatedValue(String(s.estimated_value)); filled.push('value'); }
+    return filled;
+  }
+
+  // Current design: read the photo and fill the empty fields straight away.
+  async function suggestDetails() {
+    const s = await requestSuggestion();
+    if (s) setSuggestedFields(applySuggestion(s));
+  }
+
+  // Redesign: read the photo and show the result as a proposal.
+  async function proposeDetails() {
+    const s = await requestSuggestion();
+    if (s) setProposal(s);
   }
 
   async function uploadPhoto(localUri: string, userId: string, itemId: string | number, index: number) {
@@ -864,17 +889,19 @@ function AddItemForm() {
     }
   }, [eventId, eventName, events]);
 
-  const labelStyle = { ...tokens.type.label, color: c.inkLabel, marginBottom: 8 };
+  const labelStyle = redesign
+    ? { ...rd.type.label, marginBottom: 8 }
+    : { ...tokens.type.label, color: c.inkLabel, marginBottom: 8 };
   const fieldBox = {
-    backgroundColor: c.card,
+    backgroundColor: redesign ? rd.color.paper : c.card,
     borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: tokens.radius.md,
+    borderColor: redesign ? rd.color.mist : c.border,
+    borderRadius: redesign ? rd.radius.md : tokens.radius.md,
     paddingHorizontal: 14,
     minHeight: 52,
     justifyContent: 'center' as const,
   };
-  const fieldText = { ...tokens.type.ui, color: c.ink };
+  const fieldText = redesign ? { ...rd.type.ui } : { ...tokens.type.ui, color: c.ink };
 
   // The quota triggers raise Postgres errors. Left alone they surface as
   // "Items quota exceeded (50/50)." — a database message in front of a customer.
@@ -1000,8 +1027,19 @@ function AddItemForm() {
   const atPhotoLimit = photos.length >= maxPhotos;
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
+    <View style={{ flex: 1, backgroundColor: redesign ? rd.color.frost : c.bg }}>
 
+      {redesign ? (
+        <View style={rdStyles.bar}>
+          <TouchableOpacity onPress={() => router.back()} style={rdStyles.barBtn} accessibilityRole="button">
+            <Text style={rd.type.ui}>Cancel</Text>
+          </TouchableOpacity>
+          <Text style={rd.type.label} accessibilityRole="header">{isEditing ? 'Edit piece' : 'New piece'}</Text>
+          <TouchableOpacity onPress={onSave} disabled={savingPhotos} style={[rdStyles.barBtn, { alignItems: 'flex-end' }]} accessibilityRole="button">
+            <Text style={[rd.type.uiMedium, { opacity: savingPhotos ? 0.5 : 1 }]}>{savingPhotos ? 'Saving' : 'Save'}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
       <View style={{
         backgroundColor: c.surfaceDark,
         paddingTop: 72,
@@ -1026,6 +1064,7 @@ function AddItemForm() {
           </Text>
         </TouchableOpacity>
       </View>
+      )}
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -1038,6 +1077,41 @@ function AddItemForm() {
         automaticallyAdjustKeyboardInsets
       >
 
+        {redesign ? (
+          <View>
+            <Text style={[rd.type.title, { marginBottom: 4 }]}>{isEditing ? (name || 'Untitled piece') : 'Photograph one thing'}</Text>
+            {!isEditing && <Text style={[rd.type.lead, { marginBottom: 16 }]}>Fill the square. Plain light, a plain surface.</Text>}
+            <View style={rdStyles.plate}>
+              {cover?.displayUri ? (
+                <>
+                  <Image source={{ uri: cover.displayUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover"
+                    accessibilityLabel="Cover photograph" />
+                  <TouchableOpacity onPress={() => removePhoto(cover.key)} style={rdStyles.remove}
+                    accessibilityRole="button" accessibilityLabel="Remove this photograph">
+                    <Ionicons name="close" size={16} color={rd.color.navy} />
+                  </TouchableOpacity>
+                </>
+              ) : (
+                // The thin square framing guide from the capture mockup.
+                <View style={rdStyles.guide}>
+                  <Ionicons name="camera-outline" size={28} color={rd.color.steel} />
+                </View>
+              )}
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              <TouchableOpacity onPress={takePhoto} disabled={atPhotoLimit}
+                style={[rdStyles.outline, { flex: 1, opacity: atPhotoLimit ? 0.45 : 1 }]} accessibilityRole="button">
+                <Ionicons name="camera-outline" size={18} color={rd.color.navy} />
+                <Text style={rd.type.uiMedium}>Photograph</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={pickFromLibrary} disabled={atPhotoLimit}
+                style={[rdStyles.outline, { flex: 1, opacity: atPhotoLimit ? 0.45 : 1 }]} accessibilityRole="button">
+                <Ionicons name="images-outline" size={18} color={rd.color.navy} />
+                <Text style={rd.type.uiMedium}>From library</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <View style={{ width: 120, height: 120 }}>
             {cover?.displayUri ? (
@@ -1106,6 +1180,7 @@ function AddItemForm() {
             </TouchableOpacity>
           </View>
         </View>
+        )}
 
         {photos.length > 1 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}
@@ -1131,12 +1206,26 @@ function AddItemForm() {
           </ScrollView>
         )}
 
-        <Text style={{ ...tokens.type.fact, color: c.inkLabel, marginTop: 10 }}>
+        <Text style={redesign ? { ...rd.type.fact, marginTop: 10 } : { ...tokens.type.fact, color: c.inkLabel, marginTop: 10 }}>
           {photos.length} of {maxPhotos} {maxPhotos === 1 ? 'photograph' : 'photographs'}
         </Text>
 
         {/* Suggest details — the AI entry point, right where the photo is */}
-        {(() => {
+        {redesign && (
+          <SuggestionPanel
+            hasNewPhoto={photos.some((p) => p.localUri)}
+            isEditing={isEditing}
+            suggesting={suggesting}
+            lookupsLine={lookupsLine(lookups) || null}
+            spent={lookups?.left === 0}
+            proposal={proposal}
+            accepted={suggestedFields}
+            onRead={proposeDetails}
+            onAccept={(sug) => { setSuggestedFields(applySuggestion(sug)); setProposal(null); }}
+            onDismiss={() => setProposal(null)}
+          />
+        )}
+        {!redesign && (() => {
           const hasNewPhoto = photos.some((p) => p.localUri);
           const spent = lookups?.left === 0;
           const line = lookupsLine(lookups);
@@ -1346,12 +1435,12 @@ function AddItemForm() {
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: 48,
-            borderRadius: tokens.radius.sm,
-            backgroundColor: c.primary,
+            borderRadius: redesign ? rd.radius.md : tokens.radius.sm,
+            backgroundColor: redesign ? rd.color.navy : c.primary,
             opacity: savingPhotos ? 0.6 : 1,
           }}>
-          <Text style={{ ...tokens.type.button, color: c.primaryText }}>
-            {savingPhotos ? 'Saving…' : (isEditing ? 'Save changes' : 'Save this object')}
+          <Text style={redesign ? { ...rd.type.uiMedium, color: rd.color.paper } : { ...tokens.type.button, color: c.primaryText }}>
+            {savingPhotos ? 'Saving…' : (isEditing ? 'Save changes' : (redesign ? 'Save this piece' : 'Save this object'))}
           </Text>
         </TouchableOpacity>
 
@@ -1821,3 +1910,32 @@ function AddItemForm() {
     </View>
   );
 }
+
+// Redesign styles for Add a piece. Paper bar on a mist hairline, a square
+// photo plate with a thin framing guide, navy-outline photo buttons.
+const rdStyles = StyleSheet.create({
+  bar: {
+    paddingTop: 58, paddingBottom: 6, paddingHorizontal: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: rd.color.paper, borderBottomWidth: rd.hairline, borderBottomColor: rd.color.mist,
+  },
+  barBtn: { minWidth: 72, minHeight: rd.minTarget, justifyContent: 'center', paddingHorizontal: 8 },
+  plate: {
+    width: '100%', aspectRatio: 1, backgroundColor: rd.color.ice,
+    borderWidth: rd.hairline, borderColor: rd.color.mist, borderRadius: rd.radius.md,
+    overflow: 'hidden', alignItems: 'center', justifyContent: 'center',
+  },
+  guide: {
+    width: '72%', aspectRatio: 1, borderWidth: rd.hairline, borderColor: rd.color.powder,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  remove: {
+    position: 'absolute', top: 10, right: 10, width: 36, height: 36, borderRadius: rd.radius.sm,
+    backgroundColor: rd.color.paper, borderWidth: rd.hairline, borderColor: rd.color.mist,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  outline: {
+    minHeight: rd.minTarget, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: rd.color.navy, borderRadius: rd.radius.md, backgroundColor: rd.color.paper,
+  },
+});
