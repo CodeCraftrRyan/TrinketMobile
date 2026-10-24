@@ -1,3 +1,5 @@
+import { CollectionView } from '../../components/rd/CollectionsScreens';
+import { useRedesign } from '../../lib/redesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -36,6 +38,13 @@ const shortDate = (raw?: string | null) => {
 };
 
 export default function CollectionDetail() {
+  // Redesign: name, count and a grid of pieces. Otherwise unchanged.
+  const { on } = useRedesign();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return on ? <CollectionView id={String(id)} /> : <ClassicCollectionDetail />;
+}
+
+function ClassicCollectionDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
 

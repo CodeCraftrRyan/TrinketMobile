@@ -1,3 +1,5 @@
+import { CollectionsGrid } from '../../components/rd/CollectionsScreens';
+import { useRedesign } from '../../lib/redesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -25,6 +27,12 @@ const shortDate = (raw?: string | null) => {
 };
 
 export default function Collections() {
+  // Redesign: collage grid. Otherwise the current screen, unchanged.
+  const { on } = useRedesign();
+  return on ? <CollectionsGrid /> : <ClassicCollections />;
+}
+
+function ClassicCollections() {
   const router = useRouter();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [covers, setCovers] = useState<Record<string, string>>({});

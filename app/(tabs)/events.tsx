@@ -1,3 +1,5 @@
+import { MomentsTimeline } from '../../components/rd/MomentsScreens';
+import { useRedesign } from '../../lib/redesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -28,6 +30,12 @@ const longDate = (raw?: string | null) => {
 };
 
 export default function EventsTab() {
+  // Redesign: Moments on a vertical decade timeline. Otherwise unchanged.
+  const { on } = useRedesign();
+  return on ? <MomentsTimeline /> : <ClassicEventsTab />;
+}
+
+function ClassicEventsTab() {
   const router = useRouter();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [covers, setCovers] = useState<Record<string, string>>({});

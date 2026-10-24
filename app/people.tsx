@@ -1,3 +1,5 @@
+import { PeopleIndex } from '../components/rd/PeoplePlacesScreens';
+import { useRedesign } from '../lib/redesign';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -5,6 +7,12 @@ import Screen from '../components/Screen';
 import { supabase } from '../lib/supabase';
 
 export default function People() {
+  // Redesign: everyone, with their pieces. Otherwise the current list editor.
+  const { on } = useRedesign();
+  return on ? <PeopleIndex /> : <ClassicPeople />;
+}
+
+function ClassicPeople() {
   const router = useRouter();
   const [people, setPeople] = useState<string[]>([]);
   const [newPerson, setNewPerson] = useState('');

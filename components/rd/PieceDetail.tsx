@@ -120,7 +120,11 @@ export default function PieceDetail({ id, onBack }: { id: string; onBack: () => 
   const edit = () => router.push(addItemHref({ id: String(item.id) }));
   const goCollection = () => collection && router.push({ pathname: '/collection/[id]', params: { id: collection.id } } as any);
   const goMoment = () => moment && router.push({ pathname: '/events-detail', params: { id: moment.id } } as any);
-  const goPlace = () => item?.location && router.push({ pathname: '/(tabs)/items', params: { location: item.location } } as any);
+  const goPlace = () => item?.location && router.push({ pathname: '/place', params: { name: item.location } } as any);
+  // One person links to their page; several open People.
+  const goPeople = () => people.length === 1
+    ? router.push({ pathname: '/person', params: { name: people[0] } } as any)
+    : router.push('/people');
 
   if (loading) {
     return <View style={[styles.page, styles.center]}><ActivityIndicator color={rd.color.steel} /></View>;
@@ -161,13 +165,13 @@ export default function PieceDetail({ id, onBack }: { id: string; onBack: () => 
       </>
     );
     // TODO(schema): "Written by" and "From" need their own fields.
-    facts = [['People', peopleLine, null], ['Date', date, null], ['Collection', collection?.name ?? null, collection ? goCollection : null]];
+    facts = [['People', peopleLine, people.length ? goPeople : null], ['Date', date, null], ['Collection', collection?.name ?? null, collection ? goCollection : null]];
   } else if (kind === 'photograph') {
     lead = null;
     facts = [
       ['Caption', item.description || null, null],
       ['Date', date, null],
-      ['People', peopleLine, null],
+      ['People', peopleLine, people.length ? goPeople : null],
       ['From', collection?.name ?? null, collection ? goCollection : null],
       ['Where it rests', item.location || null, item.location ? goPlace : null],
     ];
@@ -176,7 +180,7 @@ export default function PieceDetail({ id, onBack }: { id: string; onBack: () => 
       ? <Text style={styles.story}>{item.description}</Text>
       : <Missing text="Nothing written down yet." action="Add what you remember" onPress={edit} />;
     facts = [
-      ['Came from', peopleLine, null],
+      ['Came from', peopleLine, people.length ? goPeople : null],
       ['The moment', moment?.name ?? null, moment ? goMoment : null],
       ['Where it rests', item.location || null, item.location ? goPlace : null],
       ['Made', date, null],
