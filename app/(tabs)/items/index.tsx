@@ -1,3 +1,5 @@
+import SearchScreen from '../../../components/rd/SearchScreen';
+import { useRedesign } from '../../../lib/redesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -29,6 +31,12 @@ const shortDate = (raw?: string | null) => {
 };
 
 export default function Items() {
+  // Redesign: one search field and quick filter chips. Otherwise unchanged.
+  const { on } = useRedesign();
+  return on ? <SearchScreen /> : <ClassicItems />;
+}
+
+function ClassicItems() {
   const router = useRouter();
   const { location: locationParam, missingValue } = useLocalSearchParams<{ location?: string; missingValue?: string }>();
   const [items, setItems] = useState<Item[]>([]);
